@@ -3,7 +3,7 @@ import SEChatWrapper
 import getpass
 import os
 
-a=SEChatWrapper.SEChatWrapper("SE")
+#Run `. setp.sh` to set the below testing environment variables
 if("ChatExchangeU" in os.environ):
   username=os.environ["ChatExchangeU"]
 else:
@@ -14,7 +14,6 @@ if("ChatExchangeP" in os.environ):
 else:
   password=getpass.getpass("Password: ")
 
+a=SEChatWrapper.SEChatWrapper("SE")
 a.login(username,password)
-
-
-print a.br.sendMessage("11540","This was sent by ChatExchange")
+#print a.sendMessage("11540","Manish is still testing the wrapper --the wrapper, ca 15 milliseconds ago")

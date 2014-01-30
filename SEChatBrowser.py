@@ -62,14 +62,11 @@ class SEChatBrowser:
     data['fkey']=self.chatfkey
     return self.post(self.getURL(relurl),data).content
   def getSomething(self,relurl):
-    return self.get(self.getURL(relurl)).content
-  def sendMessage(self,room,message):
-    return self.postSomething("/chats/"+room+"/messages/new",{"text":message})
+    return self.session.get(self.getURL(relurl)).content
+  
   def getSoup(self,url):
     return BeautifulSoup(self.session.get(url).content)
   
-  def getHTM(self,url):
-    return self.session.get(url).content
   
   def post(self,url,data):
     return self.session.post(url,data)

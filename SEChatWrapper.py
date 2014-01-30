@@ -13,3 +13,5 @@ class SEChatWrapper:
       self.br.loginSO()
     elif (self.site=="MSO"):
       self.br.loginMSO()
+  def sendMessage(self,room,text):
+    return  self.br.postSomething("/chats/"+room+"/messages/new",{"text":text})
