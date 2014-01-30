@@ -2,19 +2,19 @@
 import json
 from BeautifulSoup import *
 import requests
-siteroot="http://chat.stackexchange.com"
 import sys
 import re
 
 
 
-class ChatBrowser:
+class SEChatBrowser:
   def __init__(self):
     #self.b=Browser()
     #self.b.set_handle_robots(False)
     #self.b.set_proxies({})
     self.session=requests.Session()
     self.chatfkey=""
+    self.chatroot="http://chat.stackexchange.com"
 
   def loginSEOpenID(self,user,password):
     fkey=self.getSoup("https://openid.stackexchange.com/account/login").find('input',{"name":"fkey"})['value'] 
@@ -25,8 +25,19 @@ class ChatBrowser:
     fkey=self.getSoup("http://stackexchange.com/users/login?returnurl=%2f").find('input',{"name":"fkey"})['value']
     data={"fkey":fkey,"oauth_version":"","oauth_server":"","openid_identifier":"https://openid.stackexchange.com/"}
     return self.session.post("http://stackexchange.com/users/authenticate",data=data,allow_redirects=True)
-  
-  def loginChat(self):
+  def loginMSO(self):
+    fkey=self.getSoup("http://meta.stackoverflow.com/users/login?returnurl=%2f").find('input',{"name":"fkey"})['value']
+    data={"fkey":fkey,"oauth_version":"","oauth_server":"","openid_identifier":"https://openid.stackexchange.com/"}
+    self.session.post("http://meta.stackoverflow.com/users/authenticate",data=data,allow_redirects=True)  
+    self.chatroot="http://chat.meta.stackoverflow.com"
+    self.updateFkey()
+  def loginSO(self):
+    fkey=self.getSoup("http://stackoverflow.com/users/login?returnurl=%2f").find('input',{"name":"fkey"})['value']
+    data={"fkey":fkey,"oauth_version":"","oauth_server":"","openid_identifier":"https://openid.stackexchange.com/"}
+    self.session.post("http://stackoverflow.com/users/authenticate",data=data,allow_redirects=True)  
+    self.chatroot="http://chat.stackoverflow.com"
+    self.updateFkey()
+  def loginChatSE(self):
     chatlogin=self.getSoup("http://stackexchange.com/users/chat-login")
     authToken=chatlogin.find('input',{"name":"authToken"})['value']
     nonce=chatlogin.find('input',{"name":"nonce"})['value']
@@ -34,17 +45,18 @@ class ChatBrowser:
     rdata=self.session.post("http://chat.stackexchange.com/login/global-fallback",data=data,allow_redirects=True,headers={"Referer":"http://stackexchange.com/users/chat-login"}).content
     fkey=BeautifulSoup(rdata).find('input',{"name":"fkey"})['value']
     self.chatfkey=fkey
+    self.chatroot="http://chat.stackexchange.com"
     return rdata
   
   def updateFkey(self):
     try:
-      fkey=getSoup("http://chat.stackexchange.com/chats/join/favorite").find('input',{"name":"fkey"})['value']
+      fkey=self.getSoup(self.getURL("chats/join/favorite")).find('input',{"name":"fkey"})['value']
       if(fkey!=None and fkey!=""):
         self.chatfkey=fkey
-        return true
-    except(e):
-      return false
-    return false
+        return True
+    except Exception as e:
+        print "Error updating fkey"
+    return False
   
   def postSomething(self,relurl,data):
     data['fkey']=self.chatfkey
@@ -64,4 +76,4 @@ class ChatBrowser:
   def getURL(self,rel):
     if(rel[0]!="/"):
       rel="/"+rel
-    return siteroot+rel
+    return self.chatroot+rel
