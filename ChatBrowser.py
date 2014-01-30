@@ -13,7 +13,7 @@ class ChatBrowser:
     #self.b=Browser()
     #self.b.set_handle_robots(False)
     #self.b.set_proxies({})
-    self.session=requests.session()
+    self.session=requests.Session()
     self.chatfkey=""
 
   def loginSEOpenID(self,user,password):
