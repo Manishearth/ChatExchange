@@ -16,3 +16,5 @@ else:
 
 a.loginSEOpenID(username,password)
 a.loginSECOM()
+a.loginChat()
+print a.sendMessage("11540","This was sent by ChatExchange")
