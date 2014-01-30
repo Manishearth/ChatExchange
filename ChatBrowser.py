@@ -19,12 +19,12 @@ class ChatBrowser:
   def loginSEOpenID(self,user,password):
     fkey=self.getSoup("https://openid.stackexchange.com/account/login").find('input',{"name":"fkey"})['value'] 
     logindata={"email":user,"password":password,"fkey":fkey}
-    self.session.post("https://openid.stackexchange.com/account/login/submit",data=logindata,allow_redirects=True)
+    return self.session.post("https://openid.stackexchange.com/account/login/submit",data=logindata,allow_redirects=True)
   
   def loginSECOM(self):
     fkey=self.getSoup("http://stackexchange.com/users/login?returnurl=%2f").find('input',{"name":"fkey"})['value']
     data={"fkey":fkey,"oauth_version":"","oauth_server":"","openid_identifier":"https://openid.stackexchange.com/"}
-    self.session.post("http://stackexchange.com/users/authenticate",data=data,allow_redirects=True)
+    return self.session.post("http://stackexchange.com/users/authenticate",data=data,allow_redirects=True)
   
   def loginChat(self):
     chatlogin=self.getSoup("http://stackexchange.com/users/chat-login")
@@ -34,6 +34,7 @@ class ChatBrowser:
     rdata=self.session.post("http://chat.stackexchange.com/login/global-fallback",data=data,allow_redirects=True,headers={"Referer":"http://stackexchange.com/users/chat-login"}).content
     fkey=BeautifulSoup(rdata).find('input',{"name":"fkey"})['value']
     self.chatfkey=fkey
+    return rdata
   
   def updateFkey(self):
     try:

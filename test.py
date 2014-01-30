@@ -14,7 +14,7 @@ else:
   print "Username: "
   password=getpass.getpass("Password: ")
 
-a.loginSEOpenID(username,password)
+print a.loginSEOpenID(username,password).content
 a.loginSECOM()
 a.loginChat()
 print a.sendMessage("11540","This was sent by ChatExchange")
