@@ -31,7 +31,7 @@ class ChatBrowser:
     authToken=chatlogin.find('input',{"name":"authToken"})['value']
     nonce=chatlogin.find('input',{"name":"nonce"})['value']
     data={"authToken":authToken,"nonce":nonce}
-    rdata=self.session.post("http://chat.stackexchange.com/login/global-fallback",data=data,,allow_redirects=True,headers={"Referer":"http://stackexchange.com/users/chat-login"}).content
+    rdata=self.session.post("http://chat.stackexchange.com/login/global-fallback",data=data,allow_redirects=True,headers={"Referer":"http://stackexchange.com/users/chat-login"}).content
     fkey=BeautifulSoup(rdata).find('input',{"name":"fkey"})['value']
     self.chatfkey=fkey
   
