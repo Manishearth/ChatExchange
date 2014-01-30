@@ -15,3 +15,4 @@ else:
   password=getpass.getpass("Password: ")
 
 a.loginSEOpenID(username,password)
+a.loginSECOM()
