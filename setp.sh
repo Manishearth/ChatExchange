@@ -1,3 +1,5 @@
+#!/bin/bash
+
 read -p "Username: " u
 export ChatExchangeU=$u
 export CEU="h"
