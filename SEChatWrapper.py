@@ -29,6 +29,7 @@ class SEChatWrapper(object):
 
   def logout(self):
     assert self.logged_in
+    self.logged_in = False
     pass # There are no threads to stop
 
   def __del__(self):
