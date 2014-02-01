@@ -1,16 +1,20 @@
 import SEChatBrowser
 import re
 import time
+import Queue
+import threading
 
 TOO_FAST_RE = "You can perform this action again in (\d+) seconds"
 
 
-class SEChatWrapper(object):
+class SEChatAsyncWrapper(object):
 
   def __init__(self, site="SE"):
     self.br = SEChatBrowser.SEChatBrowser()
     self.site = site
     self.previous = None
+    self.message_queue = Queue.Queue()
+    self.thread = threading.Thread(target=self._worker, name="message_sender")
     self.logged_in = False
 
   def login(self, username, password):
@@ -26,16 +30,35 @@ class SEChatWrapper(object):
       self.br.loginMSO()
 
     self.logged_in = True
+    self.thread.start()
 
   def logout(self):
     assert self.logged_in
-    pass # There are no threads to stop
-
-  def __del__(self):
-    assert not self.logged_in, "You forgot to log out."
+    self.message_queue.push(SystemExit)
 
   def sendMessage(self, room, text):
+    self.message_queue.push((room, text))
+
+  def __del__(self):
+    if self.logged_in:
+      self.message_queue.push(SystemExit) # todo: underscore everything used by
+                                          # the thread so this is guaranteed
+                                          # to work.
+      assert False, "You forgot to log out."
+
+  def _worker(self):
     assert self.logged_in
+    while True:
+      next = self.message_queue.get() # blocking
+      if next == SystemExit:
+        return
+      else:
+        room, text = next
+        self._actuallySendMessage(room, text) # also blocking.
+      self.message_queue.task_done()
+
+  def _actuallySendMessage(self, room, text):
+    room = str(room)
     sent = False
     if text == self.previous:
       text = " " + text
@@ -59,4 +82,3 @@ class SEChatWrapper(object):
         sent = True
         self.previous = text
     time.sleep(5)
-    return response
