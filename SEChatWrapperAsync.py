@@ -11,7 +11,7 @@ TOO_FAST_RE = "You can perform this action again in (\d+) seconds"
 
 def _getLogger():
   logHandler = logging.handlers.TimedRotatingFileHandler(
-    filename='async-wrapper.log', level=logging.DEBUG,
+    filename='async-wrapper.log',
     when="midnight", delay=True, utc=True, backupCount=7,
   )
   logHandler.setFormatter(logging.Formatter(
@@ -19,6 +19,7 @@ def _getLogger():
   ))
   logger = logging.Logger(__name__)
   logger.addHandler(logHandler)
+  logger.setLevel(logging.DEBUG)
   return logger
 
 
