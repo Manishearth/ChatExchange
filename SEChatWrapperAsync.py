@@ -4,6 +4,7 @@ import time
 import Queue
 import threading
 import logging
+import logging.handlers
 
 TOO_FAST_RE = "You can perform this action again in (\d+) seconds"
 
