@@ -29,7 +29,7 @@ def omsg(msg,wrap):
     print msg
     ret = "@"+msg['user_name']+" "+str(random.random())
     print "Spawning thread"
-    wrap.sendMessage(msg["room_id"]),ret)
+    wrap.sendMessage(msg["room_id"],ret)
 
 
 a.joinRoom(room)
