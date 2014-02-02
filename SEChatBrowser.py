@@ -87,7 +87,10 @@ class SEChatBrowser(object):
 
   def postSomething(self, relurl, data):
     data['fkey'] = self.chatfkey
-    return self.post(self.getURL(relurl), data).content
+    try:
+      self.post(self.getURL(relurl), data).json()
+    except Exception:
+      return self.post(self.getURL(relurl), data).content
 
   def getSomething(self, relurl):
     return self.session.get(self.getURL(relurl)).content
