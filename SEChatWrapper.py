@@ -1,6 +1,8 @@
 import SEChatBrowser
 import threading
 import time
+import re
+import json
 class SEChatWrapper:
   def __init__(self,site="SE"):
     self.br=SEChatBrowser.SEChatBrowser()
@@ -15,7 +17,27 @@ class SEChatWrapper:
     elif (self.site=="MSO"):
       self.br.loginMSO()
   def sendMessage(self,room,text):
-    return  self.br.postSomething("/chats/"+room+"/messages/new",{"text":text})
+    room=str(room)
+    data=self.br.postSomething("/chats/"+room+"/messages/new",{"text":text})
+    try:
+      data=json.loads(data)
+      self.br.rooms[room]["eventtime"]=data["time"]
+      return data
+    except ValueError,KeyError:
+      return False
+  def forceMessage(self,room,text,pad=1):
+    """
+    forceMessage(room,text)
+    Sends a message whenever possible, if it's being ratelimited
+    """
+    status=self.sendMessage(room,text)
+    if(status):
+      return True
+    mat=re.match("You can perform this action again in (\d)+ seconds","You can perform this action again in 3 seconds")
+    if(mat):
+      print "Waiting for ratelimit",mat.group(1)
+      time.sleep(int(mat.group(1))+pad)
+      self.forceMessage(room,text)
   def joinRoom(self,roomid):
     self.br.joinRoom(roomid)
   def watchRoom(self,roomid,func,interval):

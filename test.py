@@ -2,12 +2,12 @@ import SEChatBrowser
 import SEChatWrapper
 import getpass
 import os
-import time
+import time,threading
 import random
 #Run `. setp.sh` to set the below testing environment variables
 
 host="MSO"
-room="89"
+room="651"
 if("ChatExchangeU" in os.environ):
   username=os.environ["ChatExchangeU"]
 else:
@@ -25,7 +25,12 @@ def omsg(msg,wrap):
   print ">> ("+msg['user_name']+") ",msg['content']
   print ""
   if(msg['content'].startswith("!!/random")):
-    wrap.sendMessage(str(msg["room_id"]),"@"+msg['user_name']+" "+str(random.random()))
+    print msg
+    ret = "@"+msg['user_name']+" "+str(random.random())
+    print "Spawning thread"
+    td=threading.Thread(target=wrap.forceMessage,args=(str(msg["room_id"]),ret))
+    td.setDaemon(True)
+    td.start()
 a.joinRoom(room)
 
 a.watchRoom(room,omsg,1)
