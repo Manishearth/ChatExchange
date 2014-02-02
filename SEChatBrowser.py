@@ -18,6 +18,7 @@ class SEChatBrowser:
     self.chatfkey=""
     self.chatroot="http://chat.stackexchange.com"
     self.sockets={}
+    self.rooms={}
   def loginSEOpenID(self,user,password):
     fkey=self.getSoup("https://openid.stackexchange.com/account/login").find('input',{"name":"fkey"})['value'] 
     logindata={"email":user,"password":password,"fkey":fkey}
@@ -69,6 +70,9 @@ class SEChatBrowser:
   def getSoup(self,url):
     return BeautifulSoup(self.session.get(url).content)
   def initSocket(self,roomno,func):
+    """
+    Does not work. Use polling of /events
+    """
     eventtime=json.loads(self.postSomething("/chats/"+str(roomno)+"/events",{"since":0,"mode":"Messages","msgCount":100}))['time']
     print eventtime
     wsurl=json.loads(self.postSomething("/ws-auth",{"roomid":roomno}))['url']+"?l="+str(eventtime)
@@ -88,6 +92,25 @@ class SEChatBrowser:
     print "r2"
   def post(self,url,data):
     return self.session.post(url,data)
+  def joinRoom(self,roomid):
+    roomid=str(roomid)
+    self.session.head(self.getURL("/rooms/"+roomid))
+    self.rooms[roomid]={}
+    eventtime=json.loads(self.postSomething("/chats/"+str(roomid)+"/events",{"since":0,"mode":"Messages","msgCount":100}))['time']
+    self.rooms[roomid]["eventtime"]=eventtime
+  def pokeRoom(self,roomid):
+    roomid=str(roomid)
+    if(not self.rooms[roomid]):
+        return false
+    pokeresult=self.postSomething("/events",{"r"+roomid:self.rooms[roomid]['eventtime']})
+    pokeresult=json.loads(pokeresult)
+    try:
+        roomresult=pokeresult["r"+str(roomid)]
+        newtime=roomresult["t"]
+        self.rooms[roomid]["eventtime"]=newtime
+    except KeyError:
+        "NOP"
+    return pokeresult
   def getURL(self,rel):
     if(rel[0]!="/"):
       rel="/"+rel
