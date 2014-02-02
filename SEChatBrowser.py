@@ -4,6 +4,8 @@ from BeautifulSoup import *
 import requests
 import sys
 import re
+import websocket
+import threading
 
 
 
@@ -15,7 +17,7 @@ class SEChatBrowser:
     self.session=requests.Session()
     self.chatfkey=""
     self.chatroot="http://chat.stackexchange.com"
-
+    self.sockets={}
   def loginSEOpenID(self,user,password):
     fkey=self.getSoup("https://openid.stackexchange.com/account/login").find('input',{"name":"fkey"})['value'] 
     logindata={"email":user,"password":password,"fkey":fkey}
@@ -66,8 +68,24 @@ class SEChatBrowser:
   
   def getSoup(self,url):
     return BeautifulSoup(self.session.get(url).content)
-  
-  
+  def initSocket(self,roomno,func):
+    eventtime=json.loads(self.postSomething("/chats/"+str(roomno)+"/events",{"since":0,"mode":"Messages","msgCount":100}))['time']
+    print eventtime
+    wsurl=json.loads(self.postSomething("/ws-auth",{"roomid":roomno}))['url']+"?l="+str(eventtime)
+    print wsurl
+    self.sockets[roomno]={"url":wsurl}
+    return
+    self.sockets[roomno]['ws']=websocket.create_connection(wsurl)
+    def runner():
+        #look at wsdump.py later to handle opcodes
+        while (True):
+            a=ws.recv()
+            if(a != None and a!=""):
+                func(a)
+    print "ready"
+    self.sockets[roomno]['thread']=threading.Thread(target=runner)
+    self.sockets[roomno]['thread'].start()
+    print "r2"
   def post(self,url,data):
     return self.session.post(url,data)
   def getURL(self,rel):

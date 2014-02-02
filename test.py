@@ -16,4 +16,7 @@ else:
 
 a=SEChatWrapper.SEChatWrapper("SE")
 a.login(username,password)
+def omsg(msg):
+  print msg
+a.br.initSocket("11540",omsg)
 #print a.sendMessage("11540","Manish is still testing the wrapper --the wrapper, ca 15 milliseconds ago")
