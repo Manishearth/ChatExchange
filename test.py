@@ -1,4 +1,5 @@
-import SEChatBrowser
+#!/usr/bin/python
+
 import SEChatWrapper
 import getpass
 import os
@@ -12,11 +13,11 @@ if("ChatExchangeU" in os.environ):
   username=os.environ["ChatExchangeU"]
 else:
   print "Username: "
-  username=raw_input()
+  username = raw_input()
 if("ChatExchangeP" in os.environ):
-  password=os.environ["ChatExchangeP"]
+  password = os.environ["ChatExchangeP"]
 else:
-  password=getpass.getpass("Password: ")
+  password = getpass.getpass("Password: ")
 
 a=SEChatWrapper.SEChatWrapper(host)
 a.login(username,password)
@@ -39,3 +40,4 @@ print "Ready"
 while(True):
   b=raw_input("<< ")
   a.sendMessage(room,b)
+a.logout()

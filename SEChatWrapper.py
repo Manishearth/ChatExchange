@@ -1,22 +1,67 @@
 import SEChatBrowser
-import threading
-import time
 import re
-import json
-class SEChatWrapper:
-  def __init__(self,site="SE"):
-    self.br=SEChatBrowser.SEChatBrowser()
-    self.site=site
-  def login(self,username,password):
-    self.br.loginSEOpenID(username,password)
-    if(self.site == "SE"):
+import time
+
+TOO_FAST_RE = "You can perform this action again in (\d+) seconds"
+
+
+class SEChatWrapper(object):
+
+  def __init__(self, site="SE"):
+    self.br = SEChatBrowser.SEChatBrowser()
+    self.site = site
+    self.previous = None
+    self.logged_in = False
+
+  def login(self, username, password):
+    assert not self.logged_in
+
+    self.br.loginSEOpenID(username, password)
+    if self.site == "SE":
       self.br.loginSECOM()
       self.br.loginChatSE()
-    elif (self.site =="SO"):
+    elif self.site == "SO":
       self.br.loginSO()
-    elif (self.site=="MSO"):
+    elif self.site == "MSO":
       self.br.loginMSO()
-  def sendMessage(self,room,text):
+
+    self.logged_in = True
+
+  def logout(self):
+    assert self.logged_in
+    self.logged_in = False
+    pass # There are no threads to stop
+
+  def __del__(self):
+    assert not self.logged_in, "You forgot to log out."
+
+  def sendMessage(self, room, text):
+    assert self.logged_in
+    sent = False
+    if text == self.previous:
+      text = " " + text
+    while not sent:
+      wait = 0
+      response = self.br.postSomething("/chats/"+room+"/messages/new",
+                                       {"text": text})
+      if isinstance(response, str): # Whoops, too fast.
+        match = re.match(TOO_FAST_RE, response)
+        if match:
+          wait = int(match.group(1)) * 1.5
+      elif isinstance(response, dict):
+        if response["id"] is None: # Duplicate message?
+          text = text + " " # Let's not risk turning the message
+          wait = 1          # into a codeblock accidentally.
+
+      if wait:
+        print "Waiting %.1f seconds" % wait
+        time.sleep(wait)
+      else:
+        sent = True
+        self.previous = text
+    time.sleep(5)
+    return response
+  def sendMessageOld(self,room,text):
     room=str(room)
     data=self.br.postSomething("/chats/"+room+"/messages/new",{"text":text})
     try:
@@ -60,3 +105,4 @@ class SEChatWrapper:
 """
 [{"event_type":1,"time_stamp":1391324366,"content":"boooo","id":25123259,"user_id":31768,"user_name":"ManishEarth","room_id":11540,"room_name":"Charcoal HQ","message_id":13536215}]
 """
+
