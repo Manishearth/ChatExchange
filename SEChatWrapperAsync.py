@@ -48,22 +48,23 @@ class SEChatAsyncWrapper(object):
       self.br.loginMSO()
 
     self.logged_in = True
-    logging.self.logger.info("Logged in.")
+    self.logger.info("Logged in.")
     self.thread.start()
 
   def logout(self):
     assert self.logged_in
-    self.message_queue.push(SystemExit)
+    self.message_queue.put(SystemExit)
     self.logger.info("Logged out.")
+    self.logged_in = False
 
   def sendMessage(self, room, text):
-    self.message_queue.push((room, text))
+    self.message_queue.put((room, text))
     self.logger.info("Queued message %r for room #%r.", text, room)
     self.logger.info("Queue length: %d.", self.message_queue.qsize())
 
   def __del__(self):
     if self.logged_in:
-      self.message_queue.push(SystemExit) # todo: underscore everything used by
+      self.message_queue.put(SystemExit) # todo: underscore everything used by
                                           # the thread so this is guaranteed
                                           # to work.
       assert False, "You forgot to log out."
@@ -91,7 +92,7 @@ class SEChatAsyncWrapper(object):
     while not sent:
       wait = 0
       attempt += 1
-      self.logger.debug("Attempt %d start.")
+      self.logger.debug("Attempt %d: start.", attempt)
       response = self.br.postSomething("/chats/"+room+"/messages/new",
                                        {"text": text})
       if isinstance(response, str):
@@ -105,7 +106,7 @@ class SEChatAsyncWrapper(object):
         else: # Something went wrong. I guess that happens.
           wait = 5
           logging.error("Attempt %d: denied: unknown reason %r",
-                        attempt, response, wait)
+                        attempt, response)
       elif isinstance(response, dict):
         if response["id"] is None: # Duplicate message?
           text = text + " " # Let's not risk turning the message
