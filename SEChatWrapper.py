@@ -24,7 +24,8 @@ class SEChatWrapper:
         try:
           pokeresult=self.br.pokeRoom(roomid)
           events=pokeresult["r"+str(roomid)]["e"]
-          func(events)
+          for event in events:
+            func(event,self)
         except KeyError:
           "NOP"
         finally:
