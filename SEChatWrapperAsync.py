@@ -31,8 +31,9 @@ class SEChatAsyncWrapper(object):
     self.site = site
     self._previous = None
     self.message_queue = Queue.Queue()
-    self.thread = threading.Thread(target=self._worker, name="message_sender")
     self.logged_in = False
+    self.messages = 0
+    self.thread = threading.Thread(target=self._worker, name="message_sender")
 
   def login(self, username, password):
     assert not self.logged_in
@@ -78,10 +79,18 @@ class SEChatAsyncWrapper(object):
         self.logger.info("Worker thread exits.")
         return
       else:
+        self.messages += 1
         room, text = next
-        self.logger.info("Now serving %r for room #%r." % (text, room))
+        self.logger.info("Now serving customer %d, %r for room #%s.",
+                          self.messages, text, room)
         self._actuallySendMessage(room, text) # also blocking.
       self.message_queue.task_done()
+
+  # Appeasing the rate limiter gods is hard.
+  BACKOFF_MULTIPLIER = 2
+  BACKOFF_ADDER = 5
+
+  # When told to wait n seconds, wait n * BACKOFF_MULTIPLIER + BACKOFF_ADDER
 
   def _actuallySendMessage(self, room, text):
     room = str(room)
@@ -102,24 +111,25 @@ class SEChatAsyncWrapper(object):
           self.logger.debug("Attempt %d: denied: throttled, must wait %.1f seconds",
                             attempt, wait)
           # Wait more than that, though.
-          wait *= 1.5
+          wait *= self.BACKOFF_MULTIPLIER
         else: # Something went wrong. I guess that happens.
-          wait = 5
+          wait = self.BACKOFF_ADDER
           logging.error("Attempt %d: denied: unknown reason %r",
                         attempt, response)
       elif isinstance(response, dict):
         if response["id"] is None: # Duplicate message?
-          text = text + " " # Let's not risk turning the message
-          wait = 5          # into a codeblock accidentally.
+          text = text + " " # Append because markdown
+          wait = self.BACKOFF_ADDER
           self.logger.debug("Attempt %d: denied: duplicate, waiting %.1f seconds.",
                             attempt, wait)
 
       if wait:
+        wait += self.BACKOFF_ADDER
         self.logger.debug("Attempt %d: waiting %.1f seconds", attempt, wait)
-        time.sleep(wait)
       else:
-        self.logger.debug("Attempt %d: success", attempt)
+        wait = self.BACKOFF_ADDER
+        self.logger.debug("Attempt %d: success. Waiting %.1f seconds", attempt, wait)
         sent = True
         self._previous = text
 
-    time.sleep(5)
+      time.sleep(wait)
