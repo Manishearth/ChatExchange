@@ -93,10 +93,11 @@ class SEChatBrowser:
 
   def postSomething(self, relurl, data):
     data['fkey'] = self.chatfkey
+    req=self.post(self.getURL(relurl), data)
     try:
-      self.post(self.getURL(relurl), data).json()
+      return req.json()
     except Exception:
-      return self.post(self.getURL(relurl), data).content
+      return req.content
 
   def getSomething(self, relurl):
     return self.session.get(self.getURL(relurl)).content
@@ -128,18 +129,17 @@ class SEChatBrowser:
     return self.session.post(url,data)
   def joinRoom(self,roomid):
     roomid=str(roomid)
-    self.session.head(self.getURL("/rooms/"+roomid))
+    print self.session.head(self.getURL("/rooms/"+roomid)).headers
     self.rooms[roomid]={}
     result=self.postSomething("/chats/"+str(roomid)+"/events",{"since":0,"mode":"Messages","msgCount":100})
     print result
-    eventtime=json.loads(result)['time']
+    eventtime=result['time']
     self.rooms[roomid]["eventtime"]=eventtime
   def pokeRoom(self,roomid):
     roomid=str(roomid)
     if(not self.rooms[roomid]):
         return false
     pokeresult=self.postSomething("/events",{"r"+roomid:self.rooms[roomid]['eventtime']})
-    pokeresult=json.loads(pokeresult)
     try:
         roomresult=pokeresult["r"+str(roomid)]
         newtime=roomresult["t"]
