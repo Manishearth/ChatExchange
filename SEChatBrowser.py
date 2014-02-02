@@ -13,6 +13,8 @@ class SEChatBrowser:
     #self.b.set_handle_robots(False)
     #self.b.set_proxies({})
     self.session = requests.Session()
+    self.rooms={}
+    self.sockets={}
     self.chatfkey = ""
     self.chatroot = "http://chat.stackexchange.com"
 
