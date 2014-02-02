@@ -112,6 +112,7 @@ class SEChatAsyncWrapper(object):
                             attempt, wait)
           # Wait more than that, though.
           wait *= self.BACKOFF_MULTIPLIER
+          wait += self.BACKOFF_ADDER
         else: # Something went wrong. I guess that happens.
           wait = self.BACKOFF_ADDER
           logging.error("Attempt %d: denied: unknown reason %r",
@@ -124,7 +125,6 @@ class SEChatAsyncWrapper(object):
                             attempt, wait)
 
       if wait:
-        wait += self.BACKOFF_ADDER
         self.logger.debug("Attempt %d: waiting %.1f seconds", attempt, wait)
       else:
         wait = self.BACKOFF_ADDER
