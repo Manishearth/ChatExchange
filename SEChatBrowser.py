@@ -130,7 +130,9 @@ class SEChatBrowser:
     roomid=str(roomid)
     self.session.head(self.getURL("/rooms/"+roomid))
     self.rooms[roomid]={}
-    eventtime=json.loads(self.postSomething("/chats/"+str(roomid)+"/events",{"since":0,"mode":"Messages","msgCount":100}))['time']
+    result=self.postSomething("/chats/"+str(roomid)+"/events",{"since":0,"mode":"Messages","msgCount":100})
+    print result
+    eventtime=json.loads(result)['time']
     self.rooms[roomid]["eventtime"]=eventtime
   def pokeRoom(self,roomid):
     roomid=str(roomid)

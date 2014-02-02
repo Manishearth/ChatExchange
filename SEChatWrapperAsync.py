@@ -34,6 +34,7 @@ class SEChatAsyncWrapper(object):
     self.logged_in = False
     self.messages = 0
     self.thread = threading.Thread(target=self._worker, name="message_sender")
+    self.thread.setDaemon(True)
 
   def login(self, username, password):
     assert not self.logged_in
@@ -133,3 +134,21 @@ class SEChatAsyncWrapper(object):
         self._previous = text
 
       time.sleep(wait)
+  def joinRoom(self,roomid):
+    self.br.joinRoom(roomid)
+  def watchRoom(self,roomid,func,interval):
+    def pokeMe():
+      while(True):
+        try:
+          pokeresult=self.br.pokeRoom(roomid)
+          events=pokeresult["r"+str(roomid)]["e"]
+          for event in events:
+            func(event,self)
+        except KeyError:
+          "NOP"
+        finally:
+          time.sleep(interval)
+    thethread=threading.Thread(target=pokeMe)
+    thethread.setDaemon(True)
+    thethread.start()
+    return thethread

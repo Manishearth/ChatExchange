@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import SEChatWrapper
+import SEChatWrapper,SEChatWrapperAsync
 import getpass
 import os
 import time,threading
@@ -19,7 +19,7 @@ if("ChatExchangeP" in os.environ):
 else:
   password = getpass.getpass("Password: ")
 
-a=SEChatWrapper.SEChatWrapper(host)
+a=SEChatWrapperAsync.SEChatAsyncWrapper(host)
 a.login(username,password)
 def omsg(msg,wrap):
   print ""
@@ -34,7 +34,7 @@ def omsg(msg,wrap):
     td.start()
 a.joinRoom(room)
 
-a.watchRoom(room,omsg,1)
+#a.watchRoom(room,omsg,1)
 #print a.sendMessage("11540","Manish is still testing the wrapper --the wrapper, ca 15 milliseconds ago")
 print "Ready"
 while(True):
