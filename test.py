@@ -33,9 +33,11 @@ def omsg(msg,wrap):
 
 
 a.joinRoom(room)
-
+#def omsg2(msg):
+#  print msg
 a.watchRoom(room,omsg,1)
 #print a.sendMessage("11540","Manish is still testing the wrapper --the wrapper, ca 15 milliseconds ago")
+#a.br.initSocket("651",omsg2)
 print "Ready"
 while(True):
   b=raw_input("<< ")

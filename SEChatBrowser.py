@@ -4,7 +4,7 @@ from BeautifulSoup import *
 import requests
 import sys
 import re
-
+import websocket
 
 
 class SEChatBrowser:
@@ -108,21 +108,26 @@ class SEChatBrowser:
     """
     Does not work. Use polling of /events
     """
-    eventtime=json.loads(self.postSomething("/chats/"+str(roomno)+"/events",{"since":0,"mode":"Messages","msgCount":100}))['time']
+    eventtime=self.postSomething("/chats/"+str(roomno)+"/events",{"since":0,"mode":"Messages","msgCount":100})['time']
     print eventtime
-    wsurl=json.loads(self.postSomething("/ws-auth",{"roomid":roomno}))['url']+"?l="+str(eventtime)
+    wsurl=self.postSomething("/ws-auth",{"roomid":roomno})['url']+"?l="+str(eventtime)
     print wsurl
     self.sockets[roomno]={"url":wsurl}
-    return
-    self.sockets[roomno]['ws']=websocket.create_connection(wsurl)
+    #return
+    self.sockets[roomno]['ws']=websocket.create_connection(wsurl,header=["Origin: "+self.chatroot])
+    #self.sockets[roomno]['ws']=websocket.create_connection(wsurl)
     def runner():
+        print "start"
+        print roomno
         #look at wsdump.py later to handle opcodes
         while (True):
-            a=ws.recv()
+            a=self.sockets[roomno]['ws'].recv()
+            print "a",a
             if(a != None and a!=""):
                 func(a)
     print "ready"
     self.sockets[roomno]['thread']=threading.Thread(target=runner)
+    self.sockets[roomno]['thread'].setDaemon(True)
     self.sockets[roomno]['thread'].start()
     print "r2"
   def post(self,url,data):
