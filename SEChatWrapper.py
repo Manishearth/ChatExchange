@@ -1,20 +1,44 @@
 import SEChatBrowser
 import re
 import time
+import Queue
+import threading
+import logging
+import logging.handlers
 
 TOO_FAST_RE = "You can perform this action again in (\d+) seconds"
 
 
-class SEChatWrapper(object):
+def _getLogger():
+  logHandler = logging.handlers.TimedRotatingFileHandler(
+    filename='async-wrapper.log',
+    when="midnight", delay=True, utc=True, backupCount=7,
+  )
+  logHandler.setFormatter(logging.Formatter(
+    "%(asctime)s: %(levelname)s: %(threadName)s: %(message)s"
+  ))
+  logger = logging.Logger(__name__)
+  logger.addHandler(logHandler)
+  logger.setLevel(logging.DEBUG)
+  return logger
+
+
+class SEChatAsyncWrapper(object):
 
   def __init__(self, site="SE"):
+    self.logger = _getLogger()
     self.br = SEChatBrowser.SEChatBrowser()
     self.site = site
-    self.previous = None
+    self._previous = None
+    self.message_queue = Queue.Queue()
     self.logged_in = False
+    self.messages = 0
+    self.thread = threading.Thread(target=self._worker, name="message_sender")
+    self.thread.setDaemon(True)
 
   def login(self, username, password):
     assert not self.logged_in
+    self.logger.info("Logging in.")
 
     self.br.loginSEOpenID(username, password)
     if self.site == "SE":
@@ -26,63 +50,90 @@ class SEChatWrapper(object):
       self.br.loginMSO()
 
     self.logged_in = True
+    self.logger.info("Logged in.")
+    self.thread.start()
 
   def logout(self):
     assert self.logged_in
+    self.message_queue.put(SystemExit)
+    self.logger.info("Logged out.")
     self.logged_in = False
-    pass # There are no threads to stop
-
-  def __del__(self):
-    assert not self.logged_in, "You forgot to log out."
 
   def sendMessage(self, room, text):
+    self.message_queue.put((room, text))
+    self.logger.info("Queued message %r for room #%r.", text, room)
+    self.logger.info("Queue length: %d.", self.message_queue.qsize())
+
+  def __del__(self):
+    if self.logged_in:
+      self.message_queue.put(SystemExit) # todo: underscore everything used by
+                                          # the thread so this is guaranteed
+                                          # to work.
+      assert False, "You forgot to log out."
+
+  def _worker(self):
     assert self.logged_in
+    self.logger.info("Worker thread reporting for duty.")
+    while True:
+      next = self.message_queue.get() # blocking
+      if next == SystemExit:
+        self.logger.info("Worker thread exits.")
+        return
+      else:
+        self.messages += 1
+        room, text = next
+        self.logger.info("Now serving customer %d, %r for room #%s.",
+                          self.messages, text, room)
+        self._actuallySendMessage(room, text) # also blocking.
+      self.message_queue.task_done()
+
+  # Appeasing the rate limiter gods is hard.
+  BACKOFF_MULTIPLIER = 2
+  BACKOFF_ADDER = 5
+
+  # When told to wait n seconds, wait n * BACKOFF_MULTIPLIER + BACKOFF_ADDER
+
+  def _actuallySendMessage(self, room, text):
+    room = str(room)
     sent = False
-    if text == self.previous:
+    attempt = 0
+    if text == self._previous:
       text = " " + text
     while not sent:
       wait = 0
+      attempt += 1
+      self.logger.debug("Attempt %d: start.", attempt)
       response = self.br.postSomething("/chats/"+room+"/messages/new",
                                        {"text": text})
-      if isinstance(response, str): # Whoops, too fast.
+      if isinstance(response, str):
         match = re.match(TOO_FAST_RE, response)
-        if match:
-          wait = int(match.group(1)) * 1.5
+        if match: # Whoops, too fast.
+          wait = int(match.group(1))
+          self.logger.debug("Attempt %d: denied: throttled, must wait %.1f seconds",
+                            attempt, wait)
+          # Wait more than that, though.
+          wait *= self.BACKOFF_MULTIPLIER
+          wait += self.BACKOFF_ADDER
+        else: # Something went wrong. I guess that happens.
+          wait = self.BACKOFF_ADDER
+          logging.error("Attempt %d: denied: unknown reason %r",
+                        attempt, response)
       elif isinstance(response, dict):
         if response["id"] is None: # Duplicate message?
-          text = text + " " # Let's not risk turning the message
-          wait = 1          # into a codeblock accidentally.
+          text = text + " " # Append because markdown
+          wait = self.BACKOFF_ADDER
+          self.logger.debug("Attempt %d: denied: duplicate, waiting %.1f seconds.",
+                            attempt, wait)
 
       if wait:
-        print "Waiting %.1f seconds" % wait
-        time.sleep(wait)
+        self.logger.debug("Attempt %d: waiting %.1f seconds", attempt, wait)
       else:
+        wait = self.BACKOFF_ADDER
+        self.logger.debug("Attempt %d: success. Waiting %.1f seconds", attempt, wait)
         sent = True
-        self.previous = text
-    time.sleep(5)
-    return response
-  def sendMessageOld(self,room,text):
-    room=str(room)
-    data=self.br.postSomething("/chats/"+room+"/messages/new",{"text":text})
-    try:
-      data=json.loads(data)
-      self.br.rooms[room]["eventtime"]=data["time"]
-      return data
-    except ValueError,KeyError:
-      return False
-  def forceMessage(self,room,text,pad=1):
-    """
-    forceMessage(room,text)
-    Sends a message whenever possible, if it's being ratelimited
-    """
-    status=self.sendMessage(room,text)
-    if(status):
-      return True
-    mat=re.match("You can perform this action again in (\d)+ seconds","You can perform this action again in 3 seconds")
-    if(mat):
-      print "Waiting for ratelimit",mat.group(1)
-      time.sleep(int(mat.group(1))+pad)
-      self.forceMessage(room,text)
+        self._previous = text
+
+      time.sleep(wait)
   def joinRoom(self,roomid):
     self.br.joinRoom(roomid)
   def watchRoom(self,roomid,func,interval):
@@ -101,8 +152,3 @@ class SEChatWrapper(object):
     thethread.setDaemon(True)
     thethread.start()
     return thethread
-
-"""
-[{"event_type":1,"time_stamp":1391324366,"content":"boooo","id":25123259,"user_id":31768,"user_name":"ManishEarth","room_id":11540,"room_name":"Charcoal HQ","message_id":13536215}]
-"""
-

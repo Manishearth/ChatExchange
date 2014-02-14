@@ -1,3 +1,4 @@
+print "Deprecated class, use SEChatWrapper"
 import SEChatBrowser
 import re
 import time

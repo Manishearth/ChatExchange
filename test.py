@@ -19,7 +19,7 @@ if("ChatExchangeP" in os.environ):
 else:
   password = getpass.getpass("Password: ")
 
-a=SEChatWrapperAsync.SEChatAsyncWrapper(host)
+a=SEChatWrapper.SEChatWrapper(host)
 a.login(username,password)
 def omsg(msg,wrap):
   print ""
