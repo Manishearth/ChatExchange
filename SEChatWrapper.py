@@ -23,7 +23,7 @@ def _getLogger():
   return logger
 
 
-class SEChatAsyncWrapper(object):
+class SEChatWrapper(object):
 
   def __init__(self, site="SE"):
     self.logger = _getLogger()
