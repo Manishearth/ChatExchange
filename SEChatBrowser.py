@@ -134,10 +134,8 @@ class SEChatBrowser:
     return self.session.post(url,data)
   def joinRoom(self,roomid):
     roomid=str(roomid)
-    print self.session.head(self.getURL("/rooms/"+roomid)).headers
     self.rooms[roomid]={}
     result=self.postSomething("/chats/"+str(roomid)+"/events",{"since":0,"mode":"Messages","msgCount":100})
-    print result
     eventtime=result['time']
     self.rooms[roomid]["eventtime"]=eventtime
   def pokeRoom(self,roomid):
