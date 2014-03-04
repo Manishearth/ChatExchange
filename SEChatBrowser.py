@@ -1,6 +1,6 @@
 #from mechanize import *
 import json
-from BeautifulSoup import *
+from BeautifulSoup import BeautifulSoup
 import requests
 import sys
 import re
