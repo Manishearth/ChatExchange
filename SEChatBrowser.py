@@ -1,4 +1,3 @@
-#from mechanize import *
 import json
 from BeautifulSoup import *
 import requests
@@ -9,9 +8,6 @@ import websocket
 
 class SEChatBrowser:
   def __init__(self):
-    #self.b = Browser()
-    #self.b.set_handle_robots(False)
-    #self.b.set_proxies({})
     self.session = requests.Session()
     self.rooms={}
     self.sockets={}
@@ -19,6 +15,8 @@ class SEChatBrowser:
     self.chatroot = "http://chat.stackexchange.com"
 
   def loginSEOpenID(self, user, password):
+    self.userlogin=user
+    self.userpass=password
     fkey = self.getSoup("https://openid.stackexchange.com/account/login") \
              .find('input', {"name": "fkey"})['value']
     logindata = {"email": user,
@@ -39,7 +37,7 @@ class SEChatBrowser:
                              data=data,
                              allow_redirects=True)
 
-  def loginMSO(self):
+  def loginMSOOld(self):
     fkey = self.getSoup("http://meta.stackoverflow.com/users/login?returnurl = %2f") \
              .find('input', {"name": "fkey"})['value']
     data = {"fkey": fkey,
@@ -52,6 +50,18 @@ class SEChatBrowser:
     self.chatroot = "http://chat.meta.stackoverflow.com"
     self.updateFkey()
 
+  def loginMSO(self):
+    fkey = self.getSoup("http://meta.stackoverflow.com/users/login?returnurl = %2f") \
+             .find('input', {"name": "fkey"})['value']
+    data = {"fkey": fkey,
+            "oauth_version": "",
+            "oauth_server": "",
+            "openid_identifier": "https://openid.stackexchange.com/"}
+    self.session.post("http://meta.stackoverflow.com/users/authenticate",
+                      data=data,
+                      allow_redirects=True)
+    self.chatroot = "http://chat.meta.stackoverflow.com"
+    self.updateFkey()
   def loginSO(self):
     fkey = self.getSoup("http://stackoverflow.com/users/login?returnurl = %2f") \
              .find('input', {"name": "fkey"})['value']
@@ -114,7 +124,7 @@ class SEChatBrowser:
     print wsurl
     self.sockets[roomno]={"url":wsurl}
     #return
-    self.sockets[roomno]['ws']=websocket.create_connection(wsurl,header=["Origin: "+self.chatroot])
+    self.sockets[roomno]['ws']=websocket.create_connection(wsurl,header=["Origin: "+self.chatroot]) #make this work
     #self.sockets[roomno]['ws']=websocket.create_connection(wsurl)
     def runner():
         print "start"
