@@ -124,7 +124,7 @@ class SEChatBrowser:
     print wsurl
     self.sockets[roomno]={"url":wsurl}
     #return
-    self.sockets[roomno]['ws']=websocket.create_connection(wsurl,header=["Origin: "+self.chatroot]) #make this work
+    self.sockets[roomno]['ws']=websocket.create_connection(wsurl,origin=self.chatroot) #make this work
     #self.sockets[roomno]['ws']=websocket.create_connection(wsurl)
     def runner():
         print "start"
