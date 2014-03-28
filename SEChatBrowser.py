@@ -127,7 +127,6 @@ class SEChatBrowser:
     self.sockets[roomno]['ws']=websocket.create_connection(wsurl,origin=self.chatroot)
     #self.sockets[roomno]['ws']=websocket.create_connection(wsurl)
     def runner():
-        print "start"
         print roomno
         #look at wsdump.py later to handle opcodes
         while (True):
@@ -135,11 +134,9 @@ class SEChatBrowser:
             print "a",a
             if(a != None and a!=""):
                 func(a)
-    print "ready"
     self.sockets[roomno]['thread']=threading.Thread(target=runner)
     self.sockets[roomno]['thread'].setDaemon(True)
     self.sockets[roomno]['thread'].start()
-    print "r2"
   def post(self,url,data):
     return self.session.post(url,data)
   def joinRoom(self,roomid):
