@@ -3,8 +3,10 @@ from BeautifulSoup import BeautifulSoup
 import requests
 import sys
 import re
-import websocket
-
+try:
+  import websocket
+except:
+  "Websockets not available. Please don't use initSocket()"
 
 class SEChatBrowser:
   def __init__(self):
