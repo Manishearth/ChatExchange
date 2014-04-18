@@ -118,16 +118,14 @@ class SEChatBrowser:
     return BeautifulSoup(self.session.get(url).content)
   def initSocket(self,roomno,func):
     """
-    Does not work. Use polling of /events
+    Experimenta. Use polling of /events
     """
     eventtime=self.postSomething("/chats/"+str(roomno)+"/events",{"since":0,"mode":"Messages","msgCount":100})['time']
     print eventtime
     wsurl=self.postSomething("/ws-auth",{"roomid":roomno})['url']+"?l="+str(eventtime)
     print wsurl
     self.sockets[roomno]={"url":wsurl}
-    #return
     self.sockets[roomno]['ws']=websocket.create_connection(wsurl,origin=self.chatroot)
-    #self.sockets[roomno]['ws']=websocket.create_connection(wsurl)
     def runner():
         print roomno
         #look at wsdump.py later to handle opcodes
