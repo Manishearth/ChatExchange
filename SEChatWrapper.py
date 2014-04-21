@@ -48,6 +48,8 @@ class SEChatWrapper(object):
       self.br.loginSO()
     elif self.site == "MSO":
       self.br.loginMSO()
+    else:
+      raise ValueError("Unable to login to site: %r" % (self.site,))
 
     self.logged_in = True
     self.logger.info("Logged in.")
