@@ -157,4 +157,4 @@ class SEChatWrapper(object):
     thethread.start()
     return thethread
   def joinWatchSocket(self,roomid,func):
-    self.br.initsocket(roomid,func)
+    self.br.initSocket(roomid,func)
