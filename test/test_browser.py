@@ -1,6 +1,6 @@
 from chatexchange.browser import SEChatBrowser
 
-from .mock_responses import (
+from mock_responses import (
     only_httmock, favorite_with_test_fkey, TEST_FKEY)
 
 
