@@ -38,20 +38,6 @@ class SEChatBrowser:
     return self.session.post("http://stackexchange.com/users/authenticate",
                              data=data,
                              allow_redirects=True)
-
-  def loginMSOOld(self):
-    fkey = self.getSoup("http://meta.stackoverflow.com/users/login?returnurl = %2f") \
-             .find('input', {"name": "fkey"})['value']
-    data = {"fkey": fkey,
-            "oauth_version": "",
-            "oauth_server": "",
-            "openid_identifier": "https://openid.stackexchange.com/"}
-    self.session.post("http://meta.stackoverflow.com/users/authenticate",
-                      data=data,
-                      allow_redirects=True)
-    self.chatroot = "http://chat.meta.stackoverflow.com"
-    self.updateFkey()
-
   def loginMSE(self):
     fkey = self.getSoup("http://meta.stackexchange.com/users/login?returnurl = %2f") \
              .find('input', {"name": "fkey"})['value']
