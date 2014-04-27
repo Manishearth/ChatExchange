@@ -1,7 +1,7 @@
 default: test run-example
 
 run-example: install-dependencies
-	PYTHONPATH="src/:$(PYTHONPATH)" python example.py
+	PYTHONPATH="src/:$(PYTHONPATH)" python examples/example.py
 
 test: install-dependencies
 	PYTHONPATH="src/:$(PYTHONPATH)" python -m pytest
