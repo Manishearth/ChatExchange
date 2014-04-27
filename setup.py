@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='ChatExchange',
-    version='0.0.0dev1',
+    version='0.0.0dev2',
     url='https://github.com/Manishearth/ChatExchange',
     packages=[
         'chatexchange'

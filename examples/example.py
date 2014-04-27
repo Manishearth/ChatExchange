@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import getpass
 import logging
 import os
