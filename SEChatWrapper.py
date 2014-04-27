@@ -28,6 +28,9 @@ class SEChatWrapper(object):
   def __init__(self, site="SE"):
     self.logger = _getLogger()
     self.br = SEChatBrowser.SEChatBrowser()
+    if site == 'MSO':
+      self.logger.warn("'MSO' should no longer be used, use 'MSE' instead.")
+      site = 'MSE'
     self.site = site
     self._previous = None
     self.message_queue = Queue.Queue()
@@ -46,8 +49,6 @@ class SEChatWrapper(object):
       self.br.loginChatSE()
     elif self.site == "SO":
       self.br.loginSO()
-    elif self.site == "MSO":
-      self.br.loginMSO()
     elif self.site == "MSE":
       self.br.loginMSE()
     else:
