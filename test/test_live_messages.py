@@ -28,7 +28,7 @@ if live_testing.enabled:
             live_testing.password)
 
         test_message_code = uuid.uuid4().hex
-        test_message = "**[ChatExchange Test]** `%s`" % (test_message_code,)
+        test_message = "**[Travis ChatExchange Test]** `%s`" % (test_message_code,)
 
         replied = [False]
 
@@ -44,7 +44,7 @@ if live_testing.enabled:
         wrapper.joinRoom(room_id)
 
         wrapper.watchRoom(room_id, on_message, 1)
-
+        time.sleep(2) # Avoid race conditions
         logger.debug("Sending test message")
         wrapper.sendMessage(room_id, test_message)
 
