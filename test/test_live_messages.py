@@ -17,7 +17,7 @@ if (os.environ.get('TRAVIS_BUILD_ID') and
     os.environ.get('TRAVIS_REPO_SLUG')):
     TEST_MESSAGE_PREFIX = (
         "[ [ChatExchange@Travis](https://travis-ci.org/"
-        "{0.TRAVIS_REPO_SLUG}/builds/{0.TRAVIS_BUILD_ID}) ] "
+        "{0[TRAVIS_REPO_SLUG]}/builds/{0[TRAVIS_BUILD_ID]}) ] "
     ).format(os.environ)
 else:
     TEST_MESSAGE_PREFIX = (
