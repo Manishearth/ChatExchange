@@ -10,4 +10,4 @@ branches:
     - master
     - test
 env:
-  secure: "GOLhyebFPgHT8AZp6Kq9O9C0T6h7/fzh84L4cR4/QrmHFQKvxOy42T5Uh/oB5w/xoQ94G3e0w3eAJQnu9LF+pCGHwGMXoDSI9o3k6XNmgz1FHqI62bBIID/kpuQ6+t/dv2/fdqGA7mIujTFqbMUMNJaALJ5NEIqi6I921Rcs/s0="
+  secure: "TcOCPDytGQpQgiP4w4LRdLXn+pUvhf5SjJF4J3TXjaPUCfomNfod2WTZn3v4WBR2kg3UCaeqFo2BmGUdwCdPbrAZ3cF2W749HLNU0Z2zxFWru5W+GAGgUi2FXIzzjF+U8Hb/2fLZ6GoUiSlNzVHKo/+kvLDAyuGnGFwfH7dpEb8="
