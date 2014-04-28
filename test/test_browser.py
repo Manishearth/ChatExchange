@@ -6,13 +6,13 @@ from mock_responses import (
 
 def test_update_fkey():
     """
-    Tests that the correct fkey is retrived, using a mock response with
-    a copy of a real response from /chats/join/favorite
+    Tests that the correct chat fkey is retrived, using a mock response
+    with a copy of a real response from /chats/join/favorite
     """
     with only_httmock(favorite_with_test_fkey):
         browser = SEChatBrowser()
         browser.chatroot = "http://chat.stackexchange.com"
 
-        assert browser.updateFkey(), "fkey update failed"
+        assert browser.updateChatFkey(), "fkey update failed"
 
         assert browser.chatfkey == TEST_FKEY
