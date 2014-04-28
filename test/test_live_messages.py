@@ -13,15 +13,18 @@ import live_testing
 logger = logging.getLogger(__name__)
 
 
+TEST_ROOMS = [
+    ('SE', '11540'), # Charcoal HQ
+]
+
+
 if live_testing.enabled:
-    def test_se_message_echo():
+    @pytest.mark.parametrize('host_id,room_id', TEST_ROOMS)
+    def test_se_message_echo(host_id, room_id):
         """
         Tests that we are able to send a message, and recieve it back
         within a reasonable amount of time, on Stack Exchange chat.
         """
-
-        host_id = 'SE'
-        room_id = '11540' # Charcoal HQ
 
         wrapper = SEChatWrapper(host_id)
         wrapper.login(
