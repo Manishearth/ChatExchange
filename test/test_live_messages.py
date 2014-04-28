@@ -20,7 +20,7 @@ if live_testing.enabled:
         """
 
         host_id = 'SE'
-        room_id = '11540'
+        room_id = '11540' # Charcoal HQ
 
         wrapper = SEChatWrapper(host_id)
         wrapper.login(
