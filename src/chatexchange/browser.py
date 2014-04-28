@@ -19,91 +19,97 @@ class SEChatBrowser(object):
         self.chatroot = "http://chat.stackexchange.com"
 
     def loginSEOpenID(self, user, password):
+        """
+        Logs the browser into Stack Exchange's OpenID provider.
+        """
         self.userlogin = user
         self.userpass = password
-        fkey = self.getSoup("https://openid.stackexchange.com/account/login") \
-                         .find('input', {"name": "fkey"})['value']
-        logindata = {
-            "email": user,
-            "password": password,
-            "fkey": fkey
-        }
-        return self.session.post(
-            "https://openid.stackexchange.com/account/login/submit",
-            data=logindata, allow_redirects=True)
+
+        return self._post_with_fkey(
+            'https://openid.stackexchange.com/account/login',
+            'https://openid.stackexchange.com/account/login/submit',
+            {
+                'email': user,
+                'password': password,
+            })
 
     def loginSECOM(self):
-        fkey = self.getSoup("http://stackexchange.com/users/login?returnurl = %2f") \
-                         .find('input', {"name": "fkey"})['value']
-        data = {
-            "fkey": fkey,
-            "oauth_version": "",
-            "oauth_server": "",
-            "openid_identifier": "https://openid.stackexchange.com/"
-        }
-        return self.session.post(
-            "http://stackexchange.com/users/authenticate",
-            data=data, allow_redirects=True)
+        """
+        Logs the browser into StackExchange.com.
+        """
+        return self._post_with_fkey(
+            'http://stackexchange.com/users/login?returnurl = %2f',
+            'http://stackexchange.com/users/authenticate',
+            {
+                'oauth_version': '',
+                'oauth_server': '',
+                'openid_identifier': 'https://openid.stackexchange.com/'
+            })
 
     def loginMSOOld(self):
-        fkey = self.getSoup("http://meta.stackoverflow.com/users/login?returnurl = %2f") \
-                         .find('input', {"name": "fkey"})['value']
-        data = {
-            "fkey": fkey,
-            "oauth_version": "",
-            "oauth_server": "",
-            "openid_identifier": "https://openid.stackexchange.com/"
-        }
-        self.session.post("http://meta.stackoverflow.com/users/authenticate",
-                                            data=data,
-                                            allow_redirects=True)
+        """
+        (OBSOLETE) Logs the browser into Meta Stack Overflow.
+        """
+        self._post_with_fkey(
+            'http://meta.stackoverflow.com/users/login?returnurl = %2f',
+            'http://meta.stackoverflow.com/users/authenticate',
+            {
+                'oauth_version': '',
+                'oauth_server': '',
+                'openid_identifier': 'https://openid.stackexchange.com/'
+            })
+
         self.chatroot = "http://chat.meta.stackoverflow.com"
         self.updateChatFkey()
 
     def loginMSE(self):
-        fkey = self.getSoup("http://meta.stackexchange.com/users/login?returnurl = %2f") \
-                         .find('input', {"name": "fkey"})['value']
-        data = {
-            "fkey": fkey,
-            "oauth_version": "",
-            "oauth_server": "",
-            "openid_identifier": "https://openid.stackexchange.com/"
-        }
-        self.session.post(
-            "http://meta.stackexchange.com/users/authenticate",
-            data=data, allow_redirects=True)
+        """
+        Logs the browser into Meta Stack Exchange.
+        """
+        self._post_with_fkey(
+            'http://meta.stackexchange.com/users/login?returnurl = %2f',
+            'http://meta.stackexchange.com/users/authenticate',
+            {
+                'oauth_version': '',
+                'oauth_server': '',
+                'openid_identifier': 'https://openid.stackexchange.com/'
+            })
+
         self.chatroot = "http://chat.meta.stackexchange.com"
         self.updateChatFkey()
 
     def loginSO(self):
-        fkey = self.getSoup("http://meta.stackexchange.com/users/login?returnurl = %2f") \
-             .find('input', {"name": "fkey"})['value']
-        data = {
-            "fkey": fkey,
-            "oauth_version": "",
-            "oauth_server": "",
-            "openid_identifier": "https://openid.stackexchange.com/"
-        }
-        self.session.post(
-            "http://meta.stackexchange.com/users/authenticate",
-            data=data, allow_redirects=True)
-        self.chatroot = "http://chat.meta.stackexchange.com"
-        self.updateChatFkey()
+        """
+        Logs the browser into Stack Overflow.
+        """
+        self._post_with_fkey(
+            'http://stackoverflow.com/users/login?returnurl = %2f',
+            'http://stackoverflow.com/users/authenticate',
+            {
+                'oauth_version': '',
+                'oauth_server': '',
+                'openid_identifier': 'https://openid.stackexchange.com/'
+            })
 
-    def loginSO(self):
-        fkey = self.getSoup("http://stackoverflow.com/users/login?returnurl = %2f") \
-                         .find('input', {"name": "fkey"})['value']
-        data = {
-            "fkey": fkey,
-            "oauth_version": "",
-            "oauth_server": "",
-            "openid_identifier": "https://openid.stackexchange.com/"
-        }
-        self.session.post(
-            "http://stackoverflow.com/users/authenticate",
-            data=data, allow_redirects=True)
         self.chatroot = "http://chat.stackoverflow.com"
         self.updateChatFkey()
+
+    def _post_with_fkey(self, fkey_url, post_url, data=()):
+        """
+        POSTs the specified data to post_url, after retrieving an 'fkey'
+        value from an element named 'fkey' at fkey_url.
+        """
+        fkey_soup = self.getSoup(fkey_url)
+        fkey_input = fkey_soup.find('input', {'name': 'fkey'})
+        if fkey_input is None:
+            raise LoginError("fkey input not found")
+        fkey = fkey_input['value']
+
+        data = dict(data)
+        data['fkey'] = fkey
+
+        return self.session.post(
+            post_url, data=data, allow_redirects=True)
 
     def loginChatSE(self):
         chatlogin = self.getSoup("http://stackexchange.com/users/chat-login")
@@ -208,3 +214,7 @@ class SEChatBrowser(object):
         if rel[0] != "/":
             rel = "/"+rel
         return self.chatroot+rel
+
+
+class LoginError(Exception):
+    pass
