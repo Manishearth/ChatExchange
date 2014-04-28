@@ -58,7 +58,7 @@ class SEChatBrowser(object):
                                             data=data,
                                             allow_redirects=True)
         self.chatroot = "http://chat.meta.stackoverflow.com"
-        self.updateFkey()
+        self.updateChatFkey()
 
     def loginMSE(self):
         fkey = self.getSoup("http://meta.stackexchange.com/users/login?returnurl = %2f") \
@@ -73,7 +73,7 @@ class SEChatBrowser(object):
             "http://meta.stackexchange.com/users/authenticate",
             data=data, allow_redirects=True)
         self.chatroot = "http://chat.meta.stackexchange.com"
-        self.updateFkey()
+        self.updateChatFkey()
 
     def loginSO(self):
         fkey = self.getSoup("http://meta.stackexchange.com/users/login?returnurl = %2f") \
@@ -88,7 +88,7 @@ class SEChatBrowser(object):
             "http://meta.stackexchange.com/users/authenticate",
             data=data, allow_redirects=True)
         self.chatroot = "http://chat.meta.stackexchange.com"
-        self.updateFkey()
+        self.updateChatFkey()
 
     def loginSO(self):
         fkey = self.getSoup("http://stackoverflow.com/users/login?returnurl = %2f") \
@@ -103,7 +103,7 @@ class SEChatBrowser(object):
             "http://stackoverflow.com/users/authenticate",
             data=data, allow_redirects=True)
         self.chatroot = "http://chat.stackoverflow.com"
-        self.updateFkey()
+        self.updateChatFkey()
 
     def loginChatSE(self):
         chatlogin = self.getSoup("http://stackexchange.com/users/chat-login")
@@ -120,7 +120,7 @@ class SEChatBrowser(object):
         self.chatroot = "http://chat.stackexchange.com"
         return rdata
 
-    def updateFkey(self):
+    def updateChatFkey(self):
         try:
             fkey = self.getSoup(self.getURL("chats/join/favorite")) \
                              .find('input', {"name": "fkey"})['value']
