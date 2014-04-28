@@ -5,3 +5,7 @@ install:
   - 'pip install .'
 script:
   - 'py.test'
+branches:
+  only:
+    - master
+    - test
