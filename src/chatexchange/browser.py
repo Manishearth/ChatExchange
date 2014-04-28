@@ -22,6 +22,8 @@ class SEChatBrowser(object):
         """
         Logs the browser into Stack Exchange's OpenID provider.
         """
+        __tracebackhide__ = True
+
         self.userlogin = user
         self.userpass = password
 
