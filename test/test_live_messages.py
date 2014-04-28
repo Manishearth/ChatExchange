@@ -28,7 +28,7 @@ if live_testing.enabled:
             live_testing.password)
 
         test_message_code = uuid.uuid4().hex
-        test_message = "[ [ChatExchange@Travis](https://travis-ci.org/Manishearth/ChatExchange) ] `%s`" % (test_message_code,)
+        test_message = "[ [ChatExchange@Travis](https://travis-ci.org/Manishearth/ChatExchange/builds/%s) ] `%s`" % (os.environ.get('TRAVIS_BUILD_ID'), test_message_code)
 
         replied = [False]
 
