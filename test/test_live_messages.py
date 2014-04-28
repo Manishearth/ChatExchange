@@ -13,9 +13,21 @@ import live_testing
 logger = logging.getLogger(__name__)
 
 
+
 TEST_ROOMS = [
     ('SE', '11540'), # Charcoal HQ
 ]
+
+if (os.environ.get('TRAVIS_BUILD_ID') and
+    os.environ.get('TRAVIS_REPO_SLUG')):
+    TEST_MESSAGE_PREFIX = (
+        "[ [ChatExchange@Travis](https://travis-ci.org/"
+        "{0[TRAVIS_REPO_SLUG]}/builds/{0[TRAVIS_BUILD_ID]}) ] "
+    ).format(os.environ)
+else:
+    TEST_MESSAGE_PREFIX = (
+        "[ [ChatExchange@localhost](https://github.com/Manishearth/ChatExchange/) ] ")
+
 
 
 if live_testing.enabled:
@@ -32,7 +44,7 @@ if live_testing.enabled:
             live_testing.password)
 
         test_message_code = uuid.uuid4().hex
-        test_message = "[ [ChatExchange@Travis](https://travis-ci.org/Manishearth/ChatExchange/builds/%s) ] `%s`" % (os.environ.get('TRAVIS_BUILD_ID'), test_message_code)
+        test_message = "%s `%s`" % (TEST_MESSAGE_PREFIX, test_message_code)
 
         replied = [False]
 
