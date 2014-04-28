@@ -32,7 +32,9 @@ if live_testing.enabled:
         time.sleep(2)
 
         with pytest.raises(LoginError):
-            invalid_password = 'no' + 't' * len(live_testing.password)
+            invalid_password = 'invalid'
+            # We know there password can't actually be 'invalid' because
+            # that wouldn't satisfy the site's password requirements.
 
             browser.loginSEOpenID(
                 live_testing.username,
