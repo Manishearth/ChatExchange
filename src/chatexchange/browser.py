@@ -25,13 +25,17 @@ class SEChatBrowser(object):
         self.userlogin = user
         self.userpass = password
 
-        return self._post_with_fkey(
+        self._post_with_fkey(
             'https://openid.stackexchange.com/account/login',
             'https://openid.stackexchange.com/account/login/submit',
             {
                 'email': user,
                 'password': password,
             })
+
+        if not self.session.cookies.get('usr', None):
+            raise LoginError(
+                "failed to get `usr` cookie from Stack Exchange OpenID")
 
     def loginSECOM(self):
         """
@@ -108,8 +112,13 @@ class SEChatBrowser(object):
         data = dict(data)
         data['fkey'] = fkey
 
-        return self.session.post(
+        response = self.session.post(
             post_url, data=data, allow_redirects=True)
+
+        # treat HTTP errors as Python errors
+        response.raise_for_status()
+
+        return response
 
     def loginChatSE(self):
         chatlogin = self.getSoup("http://stackexchange.com/users/chat-login")
