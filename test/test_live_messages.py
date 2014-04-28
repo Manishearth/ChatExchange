@@ -19,8 +19,8 @@ if live_testing.enabled:
         within a reasonable amount of time, on Stack Exchange chat.
         """
 
-        host_id = 'SO'
-        room_id = '1'
+        host_id = 'SE'
+        room_id = '11540'
 
         wrapper = SEChatWrapper(host_id)
         wrapper.login(
