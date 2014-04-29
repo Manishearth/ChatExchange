@@ -18,15 +18,22 @@ TEST_ROOMS = [
     ('SE', '11540'), # Charcoal HQ
 ]
 
+
 if (os.environ.get('TRAVIS_BUILD_ID') and
-    os.environ.get('TRAVIS_REPO_SLUG')):
-    TEST_MESSAGE_PREFIX = (
+    os.environ.get('TRAVIS_REPO_SLUG') and
+    os.environ.get('TRAVIS_COMMIT')):
+    TEST_MESSAGE_FORMAT = (
         "[ [ChatExchange@Travis](https://travis-ci.org/"
-        "{0[TRAVIS_REPO_SLUG]}/builds/{0[TRAVIS_BUILD_ID]}) ] "
-    ).format(os.environ)
+        "{0[TRAVIS_REPO_SLUG]}/builds/{0[TRAVIS_BUILD_ID]} \"This is "
+        "a test message for ChatExchange using the nonce {{0}}.\") ] "
+        "This is a test of [{0[TRAVIS_REPO_SLUG]}@{short_commit}]("
+        "https://github.com/{0[TRAVIS_REPO_SLUG]}/commit/{0[TRAVIS_COMMIT]})."
+    ).format(os.environ, short_commit=os.environ['TRAVIS_COMMIT'][:8])
 else:
-    TEST_MESSAGE_PREFIX = (
-        "[ [ChatExchange@localhost](https://github.com/Manishearth/ChatExchange/) ] ")
+    TEST_MESSAGE_FORMAT = (
+        "[ [ChatExchange@localhost](https://github.com/Manishearth/"
+        "ChatExchange/ \"This is a test message for ChatExchange using "
+        "the nonce {0}.\") ] This is a test message for ChatExchange.")
 
 
 
@@ -44,11 +51,7 @@ if live_testing.enabled:
             live_testing.password)
 
         test_message_nonce = uuid.uuid4().hex
-        test_message = (
-            "%s This is a test message [for ChatExchange]("
-            "https://github.com/Manishearth/ChatExchange \"This is a "
-            "ChatExchange test message with the nonce %s.\")."
-            % (TEST_MESSAGE_PREFIX, test_message_nonce))
+        test_message = TEST_MESSAGE_FORMAT.format(test_message_nonce)
 
         replied = [False]
 
