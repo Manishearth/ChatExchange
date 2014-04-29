@@ -53,30 +53,38 @@ if live_testing.enabled:
         test_message_nonce = uuid.uuid4().hex
         test_message = TEST_MESSAGE_FORMAT.format(test_message_nonce)
 
-        replied = [False]
+        seen_message_with_socket = []
+        seen_message_with_polling = []
 
-        def on_message(message, wrapper):
-            if test_message_nonce in message['content']:
-                replied[0] = True
-                logger.debug("Saw expected echoed test chat message!")
-            else:
-                logger.debug(
-                    "Ignoring unexpected message: %s", message)
+        def on_socket_message(message, wrapper):
+            if (message['event_type'] == 1 and
+                test_message_nonce in message['content']):
+                seen_message_with_socket.append(message)
+                logger.debug("Saw test message in socket")
+
+        def on_polling_message(message, wrapper):
+            if (message['event_type'] == 1 and
+                test_message_nonce in message['content']):
+                seen_message_with_polling.append(message)
+                logger.debug("Saw test message in polling")
 
         logger.debug("Joining chat")
         wrapper.joinRoom(room_id)
 
-        wrapper.watchRoom(room_id, on_message, 1)
+        wrapper.watchRoom(room_id, on_polling_message, 1)
+        wrapper.watchRoomSocket(room_id, on_socket_message)
+
         time.sleep(2) # Avoid race conditions
         logger.debug("Sending test message")
         wrapper.sendMessage(room_id, test_message)
 
-        timeout_time = time.time() + 30
+        timeout_time = time.time() + 15.0
 
-        while time.time() < timeout_time and replied[0] == False:
+        while time.time() < timeout_time and not (
+            seen_message_with_socket and seen_message_with_polling):
             time.sleep(1)
 
-        if not replied[0]:
-            raise Exception("did not see expected chat reply in time")
+        assert seen_message_with_polling, "didn't see own message using HTTP polling"
+        assert seen_message_with_socket, "didn't see own message using WebSockets"
 
         wrapper.logout()
