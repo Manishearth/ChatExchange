@@ -43,13 +43,17 @@ if live_testing.enabled:
             live_testing.username,
             live_testing.password)
 
-        test_message_code = uuid.uuid4().hex
-        test_message = "%s `%s`" % (TEST_MESSAGE_PREFIX, test_message_code)
+        test_message_nonce = uuid.uuid4().hex
+        test_message = (
+            "%s This is a test message [for ChatExchange]("
+            "https://github.com/Manishearth/ChatExchange \"This is a "
+            "ChatExchange test message with the nonce %s.\")."
+            % (TEST_MESSAGE_PREFIX, test_message_nonce))
 
         replied = [False]
 
         def on_message(message, wrapper):
-            if test_message_code in message['content']:
+            if test_message_nonce in message['content']:
                 replied[0] = True
                 logger.debug("Saw expected echoed test chat message!")
             else:
