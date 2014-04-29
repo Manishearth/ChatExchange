@@ -6,7 +6,7 @@ import threading
 import time
 
 from BeautifulSoup import BeautifulSoup
-import requestse
+import requests
 try:
     import websocket
 except:
