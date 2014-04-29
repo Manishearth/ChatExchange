@@ -25,7 +25,7 @@ class SEChatBrowser(object):
         self.userlogin = user
         self.userpass = password
 
-        self._post_with_fkey(
+        self._se_openid_login_with_fkey(
             'https://openid.stackexchange.com/account/login',
             'https://openid.stackexchange.com/account/login/submit',
             {
@@ -41,7 +41,7 @@ class SEChatBrowser(object):
         """
         Logs the browser into StackExchange.com.
         """
-        return self._post_with_fkey(
+        return self._se_openid_login_with_fkey(
             'http://stackexchange.com/users/login?returnurl = %2f',
             'http://stackexchange.com/users/authenticate',
             {
@@ -54,7 +54,7 @@ class SEChatBrowser(object):
         """
         (OBSOLETE) Logs the browser into Meta Stack Overflow.
         """
-        self._post_with_fkey(
+        self._se_openid_login_with_fkey(
             'http://meta.stackoverflow.com/users/login?returnurl = %2f',
             'http://meta.stackoverflow.com/users/authenticate',
             {
@@ -70,7 +70,7 @@ class SEChatBrowser(object):
         """
         Logs the browser into Meta Stack Exchange.
         """
-        self._post_with_fkey(
+        self._se_openid_login_with_fkey(
             'http://meta.stackexchange.com/users/login?returnurl = %2f',
             'http://meta.stackexchange.com/users/authenticate',
             {
@@ -86,7 +86,7 @@ class SEChatBrowser(object):
         """
         Logs the browser into Stack Overflow.
         """
-        self._post_with_fkey(
+        self._se_openid_login_with_fkey(
             'http://stackoverflow.com/users/login?returnurl = %2f',
             'http://stackoverflow.com/users/authenticate',
             {
@@ -98,10 +98,12 @@ class SEChatBrowser(object):
         self.chatroot = "http://chat.stackoverflow.com"
         self.updateChatFkey()
 
-    def _post_with_fkey(self, fkey_url, post_url, data=()):
+    def _se_openid_login_with_fkey(self, fkey_url, post_url, data=()):
         """
-        POSTs the specified data to post_url, after retrieving an 'fkey'
-        value from an element named 'fkey' at fkey_url.
+        POSTs the specified login data to post_url, after retrieving an
+        'fkey' value from an element named 'fkey' at fkey_url.
+
+        Also handles SE OpenID prompts to allow login to a site.
         """
         fkey_soup = self.getSoup(fkey_url)
         fkey_input = fkey_soup.find('input', {'name': 'fkey'})
@@ -118,7 +120,28 @@ class SEChatBrowser(object):
         # treat HTTP errors as Python errors
         response.raise_for_status()
 
+        response = self._handle_se_openid_prompt_if_neccessary(response)
+
         return response
+
+    def _handle_se_openid_prompt_if_neccessary(self, prompt_response):
+        if not prompt_response.url.startswith('https://openid.stackexchange.com/account/prompt'):
+            return prompt_response
+
+        prompt_soup = BeautifulSoup(prompt_response.content)
+
+        data = {
+            'session': prompt_soup.find('input', {'name': 'session'})['value'],
+            'fkey': prompt_soup.find('input', {'name': 'fkey'})['value']
+        }
+
+        response = self.session.post(
+            'https://openid.stackexchange.com/account/prompt/submit',
+            data=data)
+        response.raise_for_status()
+
+        return response
+
 
     def loginChatSE(self):
         chatlogin = self.getSoup("http://stackexchange.com/users/chat-login")
