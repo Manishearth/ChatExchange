@@ -17,3 +17,6 @@ A Python API for talking to Stack Exchange chat.
 2. `make test` will run the tests
 3. `make run-example` will run the example script
 4. `make` will run the above three in order
+
+
+This project is licensed under [GPL](https://www.gnu.org/copyleft/gpl.html)
