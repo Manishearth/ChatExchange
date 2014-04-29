@@ -12,5 +12,4 @@ branches:
 env:
   global:
     - secure: "TcOCPDytGQpQgiP4w4LRdLXn+pUvhf5SjJF4J3TXjaPUCfomNfod2WTZn3v4WBR2kg3UCaeqFo2BmGUdwCdPbrAZ3cF2W749HLNU0Z2zxFWru5W+GAGgUi2FXIzzjF+U8Hb/2fLZ6GoUiSlNzVHKo/+kvLDAyuGnGFwfH7dpEb8="
-  matrix:
     - secure: "av9hxTZp/Dhe9xAOq6WlhTNDoWjjczN3lFanG6h/3h4kW7DsxhfXMRA96z6MambbC6c9ARFiwsQ24NeCAfPQ1m6r9uZwNkusqnRDOwZQeVQcmopnoNNG4Kd/9oclIVgsAlSG6WfhkyQPUG2p7PkOvxFV4/YjDSViYDR3eoih3JA="
