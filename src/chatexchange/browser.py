@@ -3,6 +3,7 @@ import logging
 import re
 import sys
 import threading
+import time
 
 from BeautifulSoup import BeautifulSoup
 import requests
@@ -17,6 +18,7 @@ class SEChatBrowser(object):
         self.session = requests.Session()
         self.rooms = {}
         self.sockets = {}
+        self.polls = {}
         self.chatfkey = ""
         self.chatroot = "http://chat.stackexchange.com"
         self.logger = logging.getLogger(str(self))
@@ -185,40 +187,37 @@ class SEChatBrowser(object):
     def getSoup(self, url):
         return BeautifulSoup(self.session.get(url).content)
 
-    def initSocket(self, roomno, func):
-        """
-        Experimental. Use polling of /events
-        """
-        socket_connection = SocketConnectionWatcher(self, roomno, func)
-        self.sockets[roomno] = socket_connection
-        socket_connection.start()
-
     def post(self, url, data):
         return self.session.post(url,data)
 
-    def joinRoom(self, roomid):
-        roomid = str(roomid)
-        self.rooms[roomid] = {}
+    def joinRoom(self, room_id):
+        room_id = str(room_id)
+        self.rooms[room_id] = {}
         result = self.postSomething(
-            "/chats/"+str(roomid)+"/events",
+            "/chats/"+str(room_id)+"/events",
             {"since": 0, "mode": "Messages", "msgCount": 100})
         eventtime = result['time']
-        self.rooms[roomid]["eventtime"] = eventtime
+        self.rooms[room_id]["eventtime"] = eventtime
 
-    def pokeRoom(self, roomid):
-        roomid = str(roomid)
-        if not self.rooms[roomid]:
-            return false
+    def watch_room_socket(self, room_id, on_activity):
+        """
+        Watches for raw activity in a room using WebSockets.
 
-        pokeresult = self.postSomething("/events",{"r"+roomid:self.rooms[roomid]['eventtime']})
+        This starts a new daemon thread.
+        """
+        socket_watcher = RoomSocketWatcher(self, room_id, on_activity)
+        self.sockets[room_id] = socket_watcher
+        socket_watcher.start()
 
-        try:
-            roomresult = pokeresult["r"+str(roomid)]
-            newtime = roomresult["t"]
-            self.rooms[roomid]["eventtime"]=newtime
-        except KeyError:
-            "NOP"
-        return pokeresult
+    def watch_room_http(self, room_id, on_activity, interval):
+        """
+        Watches for raw activity in a room using HTTP polling.
+
+        This starts a new daemon thread.
+        """
+        http_watcher = RoomPollingWatcher(self, room_id, on_activity, interval)
+        self.polls[room_id] = http_watcher
+        http_watcher.start()
 
     def getURL(self, rel):
         if rel[0] != "/":
@@ -226,17 +225,17 @@ class SEChatBrowser(object):
         return self.chatroot+rel
 
 
-class SocketConnectionWatcher(object):
-    def __init__(self, browser, roomno, func):
+class RoomSocketWatcher(object):
+    def __init__(self, browser, room_id, on_activity):
         self.browser = browser
-        self.roomno = roomno
+        self.room_id = str(room_id)
         self.thread = None
         self.logger = logging.getLogger(str(self))
-        self.func = func
+        self.on_activity = on_activity
 
     def start(self):
         events_data = self.browser.postSomething(
-            '/chats/%s/events' % (self.roomno,),
+            '/chats/%s/events' % (self.room_id,),
             {'since': 0, 'mode': 'Messages', 'msgCount': 100}
         )
         eventtime = events_data['events'][0]['time_stamp']
@@ -244,7 +243,7 @@ class SocketConnectionWatcher(object):
 
         ws_auth_data = self.browser.postSomething(
             '/ws-auth',
-            {'roomid': self.roomno}
+            {'roomid': self.room_id}
         )
         wsurl = ws_auth_data['url'] + '?l=%s' % (eventtime,)
         self.logger.debug('wsurl == %r', wsurl)
@@ -257,14 +256,47 @@ class SocketConnectionWatcher(object):
         self.thread.start()
 
     def _runner(self):
-        self.logger.debug('roomno == %r', self.roomno)
         #look at wsdump.py later to handle opcodes
         while True:
             a = self.ws.recv()
             self.logger.debug("a == %r", a)
 
             if a != None and a != "":
-                self.func(a)
+                self.on_activity(json.loads(a))
+
+
+class RoomPollingWatcher(object):
+    def __init__(self, browser, room_id, on_activity, interval):
+        self.browser = browser
+        self.room_id = str(room_id)
+        self.thread = None
+        self.logger = logging.getLogger(str(self))
+        self.on_activity = on_activity
+        self.interval = interval
+
+    def start(self):
+        self.thread = threading.Thread(target=self._runner)
+        self.thread.setDaemon(True)
+        self.thread.start()
+
+    def _runner(self):
+        while(True):
+            last_event_time = self.browser.rooms[self.room_id]['eventtime']
+
+            activity = self.browser.postSomething(
+                '/events',
+                {'r' + self.room_id: last_event_time})
+
+            try:
+                room_result = activity['r' + self.room_id]
+                eventtime = room_result['t']
+                self.browser.rooms[self.room_id]['eventtime'] = eventtime
+            except KeyError as ex:
+                pass # no updated time from room
+
+            self.on_activity(activity)
+
+            time.sleep(self.interval)
 
 
 class LoginError(Exception):
