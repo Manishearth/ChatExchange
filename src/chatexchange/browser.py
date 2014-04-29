@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 import sys
 
@@ -17,6 +18,7 @@ class SEChatBrowser(object):
         self.sockets = {}
         self.chatfkey = ""
         self.chatroot = "http://chat.stackexchange.com"
+        self.logger = logging.getLogger(str(self))
 
     def loginSEOpenID(self, user, password):
         """
@@ -142,7 +144,6 @@ class SEChatBrowser(object):
 
         return response
 
-
     def loginChatSE(self):
         chatlogin = self.getSoup("http://stackexchange.com/users/chat-login")
         authToken = chatlogin.find('input', {"name": "authToken"})['value']
@@ -166,7 +167,7 @@ class SEChatBrowser(object):
                 self.chatfkey = fkey
                 return True
         except Exception as e:
-                print "Error updating fkey:", e
+                self.logger.error("Error updating fkey: %s", e)
         return False
 
     def postSomething(self, relurl, data):
@@ -185,35 +186,10 @@ class SEChatBrowser(object):
 
     def initSocket(self, roomno, func):
         """
-        Experimenta. Use polling of /events
+        Experimental. Use polling of /events
         """
-        eventtime = self.postSomething(
-            "/chats/"+str(roomno)+"/events",
-            {"since": 0, "mode": "Messages", "msgCount": 100})['time']
-        print eventtime
-
-        wsurl = self.postSomething(
-            "/ws-auth",
-            {"roomid":roomno}
-        )['url']+"?l="+str(eventtime)
-        print wsurl
-
-        self.sockets[roomno] = {"url":wsurl}
-        self.sockets[roomno]['ws'] = websocket.create_connection(
-            wsurl, origin=self.chatroot)
-
-        def runner():
-            print roomno
-            #look at wsdump.py later to handle opcodes
-            while True:
-                a = self.sockets[roomno]['ws'].recv()
-                print "a", a
-                if a != None and a != "":
-                    func(a)
-
-        self.sockets[roomno]['thread']=threading.Thread(target=runner)
-        self.sockets[roomno]['thread'].setDaemon(True)
-        self.sockets[roomno]['thread'].start()
+        self.sockets[roomno] = SocketConnectionWatcher(self, roomno, func)
+        socket_connection.start()
 
     def post(self, url, data):
         return self.session.post(url,data)
@@ -246,6 +222,45 @@ class SEChatBrowser(object):
         if rel[0] != "/":
             rel = "/"+rel
         return self.chatroot+rel
+
+
+class SocketConnectionWatcher(object):
+    def __init__(self, browser, roomno, func):
+        self.browser = browser
+        self.roomno = roomno
+        self.thread = None
+        self.logger = logging.getLogger(str(self))
+        self.func = func
+
+    def start(self):
+        eventtime = self.browser.postSomething(
+            '/chats/%s/events' % (self.roomno,),
+            {'since': 0, 'mode': 'Messages', 'msgCount': 100}
+        )['time']
+        self.logger.debug('eventtime == %r', eventtime)
+
+        wsurl = self.browser.postSomething(
+            '/ws-auth',
+            {'roomid': roomno}
+        )['url'] + '?l=%s' % (eventtime,)
+        self.logger.debug('wsurl == %r', wsurl)
+
+        self.ws = websocket.create_connection(
+            self.url, origin=self.browser.chatroot)
+
+        self.thread = threading.Thread(target=self._runner)
+        self.thread.setDaemon(True)
+        self.thread.start()
+
+    def _runner(self):
+        logger.debug('roomno == %r', self.roomno)
+        #look at wsdump.py later to handle opcodes
+        while True:
+            a = self.ws.recv()
+            self.logger.debug("a == %r", a)
+
+            if a != None and a != "":
+                self.func(a)
 
 
 class LoginError(Exception):
