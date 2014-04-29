@@ -238,8 +238,12 @@ class RoomSocketWatcher(object):
             '/chats/%s/events' % (self.room_id,),
             {'since': 0, 'mode': 'Messages', 'msgCount': 100}
         )
-        eventtime = events_data['events'][0]['time_stamp']
-        self.logger.debug('eventtime == %r', eventtime)
+        if events_data['events']:
+            eventtime = events_data['events'][0]['time_stamp']
+            self.logger.debug('eventtime == %r', eventtime)
+        else:
+            self.logger.debug("No previous events in room %s", self.room_id)
+            eventtime = 0
 
         ws_auth_data = self.browser.postSomething(
             '/ws-auth',
