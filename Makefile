@@ -4,7 +4,7 @@ run-example: install-dependencies
 	PYTHONPATH="src/:$(PYTHONPATH)" python examples/example.py
 
 test: install-dependencies
-	PYTHONPATH="src/:$(PYTHONPATH)" python -m pytest
+	PYTHONPATH="src/:$(PYTHONPATH)" python -m pytest --cov src/
 
 install-dependencies:
 	rm -rf src/*.egg-info
