@@ -57,12 +57,14 @@ if live_testing.enabled:
         seen_message_with_polling = []
 
         def on_socket_message(message, wrapper):
-            if test_message_nonce in message['content']:
+            if (message['event_type'] == 1 and
+                test_message_nonce in message['content']):
                 seen_message_with_socket.append(message)
                 logger.debug("Saw test message in socket")
 
         def on_polling_message(message, wrapper):
-            if test_message_nonce in message['content']:
+            if (message['event_type'] == 1 and
+                test_message_nonce in message['content']):
                 seen_message_with_polling.append(message)
                 logger.debug("Saw test message in polling")
 
