@@ -66,9 +66,9 @@ class SEChatWrapper(object):
         self.logger.info("Logged out.")
         self.logged_in = False
 
-    def sendMessage(self, room, text):
-        self.message_queue.put((room, text))
-        self.logger.info("Queued message %r for room #%r.", text, room)
+    def sendMessage(self, room_id, text):
+        self.message_queue.put((room_id, text))
+        self.logger.info("Queued message %r for room_id #%r.", text, room_id)
         self.logger.info("Queue length: %d.", self.message_queue.qsize())
 
     def __del__(self):
@@ -89,11 +89,11 @@ class SEChatWrapper(object):
                 return
             else:
                 self.messages += 1
-                room, text = next
+                room_id, text = next
                 self.logger.info(
                     "Now serving customer %d, %r for room #%s.",
-                    self.messages, text, room)
-                self._actuallySendMessage(room, text) # also blocking.
+                    self.messages, text, room_id)
+                self._actuallySendMessage(room_id, text) # also blocking.
             self.message_queue.task_done()
 
     # Appeasing the rate limiter gods is hard.
@@ -102,8 +102,8 @@ class SEChatWrapper(object):
 
     # When told to wait n seconds, wait n * BACKOFF_MULTIPLIER + BACKOFF_ADDER
 
-    def _actuallySendMessage(self, room, text):
-        room = str(room)
+    def _actuallySendMessage(self, room_id, text):
+        room_id = str(room_id)
         sent = False
         attempt = 0
         if text == self._previous:
@@ -113,7 +113,7 @@ class SEChatWrapper(object):
             attempt += 1
             self.logger.debug("Attempt %d: start.", attempt)
             response = self.br.postSomething(
-                "/chats/"+room+"/messages/new",
+                "/chats/"+room_id+"/messages/new",
                 {"text": text})
             if isinstance(response, str):
                 match = re.match(TOO_FAST_RE, response)
@@ -148,25 +148,28 @@ class SEChatWrapper(object):
 
             time.sleep(wait)
 
-    def joinRoom(self, roomid):
-        self.br.joinRoom(roomid)
+    def joinRoom(self, room_id):
+        self.br.joinRoom(room_id)
 
-    def watchRoom(self, roomid, func, interval):
-        def pokeMe():
-            while(True):
-                try:
-                    pokeresult = self.br.pokeRoom(roomid)
-                    events = pokeresult["r"+str(roomid)]["e"]
-                    for event in events:
-                        func(event,self)
-                except KeyError:
-                    "NOP"
-                finally:
-                    time.sleep(interval)
-        thethread = threading.Thread(target=pokeMe)
-        thethread.setDaemon(True)
-        thethread.start()
-        return thethread
+    def _room_events(self, activity, room_id):
+        """
+        Returns a list of events associated with a particular room,
+        given an activity message from the server.
+        """
+        room_activity = activity.get('r' + room_id, {})
+        room_events = room_activity.get('e', [])
+        return room_events
 
-    def joinWatchSocket(self,roomid,func):
-        self.br.initSocket(roomid,func)
+    def watchRoom(self, room_id, on_event, interval):
+        def on_activity(activity):
+            for event in self._room_events(activity, room_id):
+                on_event(event, self)
+
+        self.br.watch_room_http(room_id, on_activity, interval)
+
+    def watchRoomSocket(self, room_id, on_event):
+        def on_activity(activity):
+            for event in self._room_events(activity, room_id):
+                on_event(event, self)
+
+        self.br.watch_room_socket(room_id, on_activity)
