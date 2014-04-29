@@ -3,6 +3,7 @@ import getpass
 import logging
 import os
 import random
+import sys
 import threading
 import time
 
@@ -13,40 +14,43 @@ logging.basicConfig(level=logging.INFO)
 
 #Run `. setp.sh` to set the below testing environment variables
 
-host = "MSO"
-room = "651"
+host_id = "SE"
+room_id = "11540"
+
 if "ChatExchangeU" in os.environ:
     username = os.environ["ChatExchangeU"]
 else:
-    print "Username: "
+    sys.stderr.write("Username: ")
+    sys.stderr.flush()
     username = raw_input()
 if "ChatExchangeP" in os.environ:
     password = os.environ["ChatExchangeP"]
 else:
     password = getpass.getpass("Password: ")
 
-a = chatexchange.wrapper.SEChatWrapper(host)
-a.login(username,password)
+wrapper = chatexchange.wrapper.SEChatWrapper(host_id)
+wrapper.login(username,password)
 
-def omsg(msg,wrap):
+def on_message(msg, wrapper):
     print ""
     print ">> ("+msg['user_name']+") ",msg['content']
     print ""
-    if(msg['content'].startswith("!!/random")):
+    if msg['content'].startswith('!!/random'):
         print msg
         ret = "@"+msg['user_name']+" "+str(random.random())
         print "Spawning thread"
-        wrap.sendMessage(msg["room_id"],ret)
+        wrapper.sendMessage(msg['room_id'],ret)
 
 
-a.joinRoom(room)
-#def omsg2(msg):
-#  print msg
-a.watchRoom(room,omsg,1)
-#print a.sendMessage("11540","Manish is still testing the wrapper --the wrapper, ca 15 milliseconds ago")
-#a.br.initSocket("651",omsg2)
-print "Ready"
-while(True):
-    b=raw_input("<< ")
-    a.sendMessage(room,b)
-a.logout()
+wrapper.joinRoom(room_id)
+wrapper.watchRoom(room_id, on_message, 1)
+
+# If WebSockets are available, one could instead use:
+#     wrapper.watchRoomSocket(room, on_message)
+
+print "(You are now in room #%s on %s.)" % (room_id, host_id)
+while True:
+    message = raw_input("<< ")
+    wrapper.sendMessage(room_id, message)
+
+wrapper.logout()

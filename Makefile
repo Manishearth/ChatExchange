@@ -1,7 +1,7 @@
 default: test run-example
 
 run-example: install-dependencies
-	python examples/example.py
+	python examples/chat.py
 
 test: install-dependencies
 	python -m pytest
