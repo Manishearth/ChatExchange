@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import sys
+import threading
 
 from BeautifulSoup import BeautifulSoup
 import requests
@@ -188,7 +189,8 @@ class SEChatBrowser(object):
         """
         Experimental. Use polling of /events
         """
-        self.sockets[roomno] = SocketConnectionWatcher(self, roomno, func)
+        socket_connection = SocketConnectionWatcher(self, roomno, func)
+        self.sockets[roomno] = socket_connection
         socket_connection.start()
 
     def post(self, url, data):
@@ -233,27 +235,29 @@ class SocketConnectionWatcher(object):
         self.func = func
 
     def start(self):
-        eventtime = self.browser.postSomething(
+        events_data = self.browser.postSomething(
             '/chats/%s/events' % (self.roomno,),
             {'since': 0, 'mode': 'Messages', 'msgCount': 100}
-        )['time']
+        )
+        eventtime = events_data['events'][0]['time_stamp']
         self.logger.debug('eventtime == %r', eventtime)
 
-        wsurl = self.browser.postSomething(
+        ws_auth_data = self.browser.postSomething(
             '/ws-auth',
-            {'roomid': roomno}
-        )['url'] + '?l=%s' % (eventtime,)
+            {'roomid': self.roomno}
+        )
+        wsurl = ws_auth_data['url'] + '?l=%s' % (eventtime,)
         self.logger.debug('wsurl == %r', wsurl)
 
         self.ws = websocket.create_connection(
-            self.url, origin=self.browser.chatroot)
+            wsurl, origin=self.browser.chatroot)
 
         self.thread = threading.Thread(target=self._runner)
         self.thread.setDaemon(True)
         self.thread.start()
 
     def _runner(self):
-        logger.debug('roomno == %r', self.roomno)
+        self.logger.debug('roomno == %r', self.roomno)
         #look at wsdump.py later to handle opcodes
         while True:
             a = self.ws.recv()
