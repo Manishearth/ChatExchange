@@ -238,7 +238,10 @@ class RoomSocketWatcher(object):
             '/chats/%s/events' % (self.room_id,),
             {'since': 0, 'mode': 'Messages', 'msgCount': 100}
         )
-        eventtime = events_data['events'][0]['time_stamp']
+        try:
+            eventtime = events_data['events'][0]['time_stamp']
+        except:
+            eventtime = 0
         self.logger.debug('eventtime == %r', eventtime)
 
         ws_auth_data = self.browser.postSomething(
