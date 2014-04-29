@@ -6,7 +6,7 @@ import threading
 import time
 
 from BeautifulSoup import BeautifulSoup
-import requests
+import requestse
 try:
     import websocket
 except:
@@ -238,11 +238,12 @@ class RoomSocketWatcher(object):
             '/chats/%s/events' % (self.room_id,),
             {'since': 0, 'mode': 'Messages', 'msgCount': 100}
         )
-        try:
+        if events_data['events']:
             eventtime = events_data['events'][0]['time_stamp']
-        except:
+            self.logger.debug('eventtime == %r', eventtime)
+        else:
+            self.logger.debug("No previous events in room %s", self.room_id)
             eventtime = 0
-        self.logger.debug('eventtime == %r', eventtime)
 
         ws_auth_data = self.browser.postSomething(
             '/ws-auth',
