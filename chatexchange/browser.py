@@ -14,8 +14,14 @@ except:
 
 
 class SEChatBrowser(object):
+    user_agent = ('ChatExchange/0.dev '
+                  '(+https://github.com/Manishearth/ChatExchange)')
+
     def __init__(self):
         self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': self.user_agent
+        })
         self.rooms = {}
         self.sockets = {}
         self.polls = {}

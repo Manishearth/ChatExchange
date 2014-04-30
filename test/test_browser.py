@@ -1,3 +1,5 @@
+import httmock
+
 from chatexchange.browser import SEChatBrowser
 
 from mock_responses import (
@@ -16,3 +18,27 @@ def test_update_fkey():
         assert browser.updateChatFkey(), "fkey update failed"
 
         assert browser.chatfkey == TEST_FKEY
+
+
+def test_user_agent():
+    """
+    Tests that HTTP requests made from a SEChatBrowser use the intended
+    User-Agent.
+
+    WebSocket connections are not tested.
+    """
+    good_requests = []
+
+    @httmock.all_requests
+    def verify_user_agent(url, request):
+        assert request.headers['user-agent'] == SEChatBrowser.user_agent
+        good_requests.append(request)
+        return '<!doctype html><html><head><title>Hello<body>World'
+
+    with only_httmock(verify_user_agent):
+        browser = SEChatBrowser()
+
+        browser.getSomething('http://example.com/')
+        browser.getSoup('http://example.com/')
+
+        assert len(good_requests) == 2, "Unexpected number of requests"
