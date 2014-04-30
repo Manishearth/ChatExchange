@@ -7,10 +7,7 @@ import time
 
 from BeautifulSoup import BeautifulSoup
 import requests
-try:
-    import websocket
-except:
-    "Websockets not available. Please don't use initSocket()"
+import websocket
 
 
 class SEChatBrowser(object):
