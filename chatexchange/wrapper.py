@@ -5,6 +5,8 @@ import threading
 import logging
 import logging.handlers
 
+import enum
+
 from . import browser
 
 
@@ -153,11 +155,13 @@ class SEChatWrapper(object):
 
     def _room_events(self, activity, room_id):
         """
-        Returns a list of events associated with a particular room,
+        Returns a list of Events associated with a particular room,
         given an activity message from the server.
         """
         room_activity = activity.get('r' + room_id, {})
-        room_events = room_activity.get('e', [])
+        room_events_data = room_activity.get('e', [])
+        room_events = [
+            Event(self, data) for data in room_events_data if data]
         return room_events
 
     def watchRoom(self, room_id, on_event, interval):
@@ -173,3 +177,72 @@ class SEChatWrapper(object):
                 on_event(event, self)
 
         self.br.watch_room_socket(room_id, on_activity)
+
+
+class Event(object):
+    @enum.unique
+    class Types(enum.IntEnum):
+        message_posted = 1
+        message_edited = 2
+        user_entered = 3
+        user_left = 4
+        room_name_changed = 5
+        message_starred = 6
+        debug_message = 7
+        user_mentioned = 8
+        message_flagged = 9
+        message_deleted = 10
+        file_added = 11
+        moderator_flag = 12
+        user_settings_changed = 13
+        global_notification = 14
+        access_level_changed = 15
+        user_notification = 16
+        invitation = 17
+        message_reply = 18
+        message_moved_out = 19
+        message_moved_in = 20
+        time_break = 21
+        feed_ticker = 22
+        user_suspended = 29
+        user_merged = 30
+
+        @classmethod
+        def by_value(self):
+            enums_by_value = {}
+            for enum_value in self:
+                enums_by_value[enum_value.value] = enum_value
+            return enums_by_value
+
+    def __init__(self, wrapper, data):
+        assert data, "empty data passed to Event()!"
+
+        self._data = data
+        # Many users will still need to access the raw ._data until
+        # this class is more fleshed-out.
+
+        self.wrapper = wrapper
+
+        self.type = data['event_type']
+        self.event_id = data['id']
+        self.room_id = data['room_id']
+        self.room_name = data['room_name']
+        self.time_stamp = data['time_stamp']
+
+        self.logger = logging.getLogger(str(self))
+
+        try:
+            # try to use a Types int enum value instead of a plain int
+            self.type = self.Types.by_value()[self.type]
+        except KeyError:
+            self.logger.info("Unrecognized event type: %s", self.type)
+
+        if self.type == self.Types.message_posted:
+            self.content = self._data['content']
+            self.user_name = self._data['user_name']
+            self.user_id = self._data['user_id']
+            self.message_id = self._data['message_id']
+
+    def __str__(self):
+        return "<chatexchange.wrapper.Event type=%s at %s>" % (
+            id(self), self.type)

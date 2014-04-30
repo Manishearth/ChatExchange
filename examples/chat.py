@@ -32,14 +32,17 @@ wrapper = chatexchange.wrapper.SEChatWrapper(host_id)
 wrapper.login(username,password)
 
 def on_message(msg, wrapper):
+    if msg.type != msg.Types.message_posted:
+        return
+
     print ""
-    print ">> ("+msg['user_name']+") ",msg['content']
+    print ">> ("+msg.user_name+")", msg.content
     print ""
-    if msg['content'].startswith('!!/random'):
+    if msg.content.startswith('!!/random'):
         print msg
-        ret = "@"+msg['user_name']+" "+str(random.random())
+        ret = "@%s %s" % (msg.user_name, random.random())
         print "Spawning thread"
-        wrapper.sendMessage(msg['room_id'],ret)
+        wrapper.sendMessage(msg.room_id, ret)
 
 
 wrapper.joinRoom(room_id)
