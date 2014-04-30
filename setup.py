@@ -3,13 +3,14 @@ import setuptools
 
 setuptools.setup(
     name='ChatExchange',
-    version='0.0.0dev7',
+    version='0.0.0dev8',
     url='https://github.com/Manishearth/ChatExchange',
     packages=[
         'chatexchange'
     ],
     install_requires=[
         'BeautifulSoup==3.2.1',
+        'enum34==0.9.23',
         'httmock==1.2.2',
         'pytest-capturelog==0.7',
         'pytest==2.5.2',
