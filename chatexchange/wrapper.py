@@ -210,8 +210,8 @@ class Event(object):
         @classmethod
         def by_value(self):
             enums_by_value = {}
-            for name in self:
-                enums_by_value[self[name].value] = self[name]
+            for enum_value in self:
+                enums_by_value[enum_value.value] = enum_value
             return enums_by_value
 
     def __init__(self, wrapper, data):
