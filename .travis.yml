@@ -9,6 +9,8 @@ branches:
   only:
     - master
     - test
+    - test-manish
+    - test-jeremy
 env:
   global:
     - secure: "TcOCPDytGQpQgiP4w4LRdLXn+pUvhf5SjJF4J3TXjaPUCfomNfod2WTZn3v4WBR2kg3UCaeqFo2BmGUdwCdPbrAZ3cF2W749HLNU0Z2zxFWru5W+GAGgUi2FXIzzjF+U8Hb/2fLZ6GoUiSlNzVHKo/+kvLDAyuGnGFwfH7dpEb8="
