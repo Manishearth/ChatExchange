@@ -8,7 +8,8 @@ def test_message_posted_event_initialization():
     wrapper = SEChatWrapper()
 
     room_name = "Charcoal Chatbot Sandbox"
-    content = "hello world"
+    content = 'hello <b>world</b>'
+    intended_text_content = 'hello world'
     event_type = 1
     event_id = 28258802
     message_id = 15249005
@@ -40,6 +41,7 @@ def test_message_posted_event_initialization():
     assert event.room_name == room_name
 
     assert event.content == content
+    assert event.text_content == intended_text_content
     assert event.message_id == message_id
     assert event.user_id == user_id
     assert event.user_name == user_name
