@@ -10,29 +10,48 @@ import time
 import chatexchange.wrapper
 
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-#Run `. setp.sh` to set the below testing environment variables
 
-host_id = "SE"
-room_id = "11540"
+def main():
+    setup_logging()
 
-if "ChatExchangeU" in os.environ:
-    username = os.environ["ChatExchangeU"]
-else:
-    sys.stderr.write("Username: ")
-    sys.stderr.flush()
-    username = raw_input()
-if "ChatExchangeP" in os.environ:
-    password = os.environ["ChatExchangeP"]
-else:
-    password = getpass.getpass("Password: ")
+    # Run `. setp.sh` to set the below testing environment variables
 
-wrapper = chatexchange.wrapper.SEChatWrapper(host_id)
-wrapper.login(username,password)
+    host_id = 'SE'
+    room_id = '14219' # Charcoal Chatbot Sandbox
+
+    if 'ChatExchangeU' in os.environ:
+        username = os.environ['ChatExchangeU']
+    else:
+        sys.stderr.write("Username: ")
+        sys.stderr.flush()
+        username = raw_input()
+    if 'ChatExchangeP' in os.environ:
+        password = os.environ['ChatExchangeP']
+    else:
+        password = getpass.getpass("Password: ")
+
+    wrapper = chatexchange.wrapper.SEChatWrapper(host_id)
+    wrapper.login(username,password)
+
+    wrapper.joinRoom(room_id)
+    wrapper.watchRoom(room_id, on_message, 1)
+
+    # If WebSockets are available, one could instead use:
+    #     wrapper.watchRoomSocket(room, on_message)
+
+    print "(You are now in room #%s on %s.)" % (room_id, host_id)
+    while True:
+        message = raw_input("<< ")
+        wrapper.sendMessage(room_id, message)
+
+    wrapper.logout()
+
 
 def on_message(msg, wrapper):
     if msg.type != msg.Types.message_posted:
+        # Ignore non-message_posted events.
         return
 
     print ""
@@ -45,15 +64,22 @@ def on_message(msg, wrapper):
         wrapper.sendMessage(msg.room_id, ret)
 
 
-wrapper.joinRoom(room_id)
-wrapper.watchRoom(room_id, on_message, 1)
+def setup_logging():
+    logging.basicConfig(level=logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
-# If WebSockets are available, one could instead use:
-#     wrapper.watchRoomSocket(room, on_message)
+    # In addition to the basic stderr logging configured globally
+    # above, we'll use a log file for chatexchange.wrapper.
+    wrapper_logger = logging.getLogger('chatexchange.wrapper')
+    wrapper_handler = logging.handlers.TimedRotatingFileHandler(
+        filename='wrapper.log',
+        when='midnight', delay=True, utc=True, backupCount=7,
+    )
+    wrapper_handler.setFormatter(logging.Formatter(
+        "%(asctime)s: %(levelname)s: %(threadName)s: %(message)s"
+    ))
+    wrapper_logger.addHandler(wrapper_handler)
 
-print "(You are now in room #%s on %s.)" % (room_id, host_id)
-while True:
-    message = raw_input("<< ")
-    wrapper.sendMessage(room_id, message)
 
-wrapper.logout()
+if __name__ == '__main__':
+    main(*sys.argv[1:])

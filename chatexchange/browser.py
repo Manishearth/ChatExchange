@@ -10,11 +10,15 @@ import requests
 import websocket
 
 
+logger = logging.getLogger(__name__)
+
+
 class SEChatBrowser(object):
     user_agent = ('ChatExchange/0.dev '
                   '(+https://github.com/Manishearth/ChatExchange)')
 
     def __init__(self):
+        self.logger = logger.getChild('SEChatBrowser')
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': self.user_agent
@@ -24,7 +28,6 @@ class SEChatBrowser(object):
         self.polls = {}
         self.chatfkey = ""
         self.chatroot = "http://chat.stackexchange.com"
-        self.logger = logging.getLogger(str(self))
 
     def loginSEOpenID(self, user, password):
         """
@@ -230,10 +233,10 @@ class SEChatBrowser(object):
 
 class RoomSocketWatcher(object):
     def __init__(self, browser, room_id, on_activity):
+        self.logger = logger.getChild('RoomSocketWatcher')
         self.browser = browser
         self.room_id = str(room_id)
         self.thread = None
-        self.logger = logging.getLogger(str(self))
         self.on_activity = on_activity
 
     def start(self):
@@ -274,10 +277,10 @@ class RoomSocketWatcher(object):
 
 class RoomPollingWatcher(object):
     def __init__(self, browser, room_id, on_activity, interval):
+        self.logger = logger.getChild('RoomPollingWatcher')
         self.browser = browser
         self.room_id = str(room_id)
         self.thread = None
-        self.logger = logging.getLogger(str(self))
         self.on_activity = on_activity
         self.interval = interval
 

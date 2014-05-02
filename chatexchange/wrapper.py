@@ -13,23 +13,13 @@ from . import browser
 TOO_FAST_RE = "You can perform this action again in (\d+) seconds"
 
 
-def _getLogger():
-    logHandler = logging.handlers.TimedRotatingFileHandler(
-        filename='async-wrapper.log',
-        when="midnight", delay=True, utc=True, backupCount=7,
-    )
-    logHandler.setFormatter(logging.Formatter(
-        "%(asctime)s: %(levelname)s: %(threadName)s: %(message)s"
-    ))
-    logger = logging.Logger(__name__)
-    logger.addHandler(logHandler)
-    logger.setLevel(logging.DEBUG)
-    return logger
+logger = logging.getLogger(__name__)
 
 
 class SEChatWrapper(object):
     def __init__(self, site="SE"):
-        self.logger = _getLogger()
+        self.logger = logger.getChild('SEChatWraper')
+
         if site == 'MSO':
             self.logger.warn("'MSO' should no longer be used, use 'MSE' instead.")
             site = 'MSE'
@@ -215,6 +205,8 @@ class Event(object):
             return enums_by_value
 
     def __init__(self, wrapper, data):
+        self.logger = logger.getChild('Event')
+
         assert data, "empty data passed to Event()!"
 
         self._data = data
@@ -228,8 +220,6 @@ class Event(object):
         self.room_id = data['room_id']
         self.room_name = data['room_name']
         self.time_stamp = data['time_stamp']
-
-        self.logger = logging.getLogger(str(self))
 
         try:
             # try to use a Types int enum value instead of a plain int

@@ -15,23 +15,12 @@ warnings.warn("Deprecated class, use SEChatWrapper", DeprecationWarning)
 TOO_FAST_RE = "You can perform this action again in (\d+) seconds"
 
 
-def _getLogger():
-    logHandler = logging.handlers.TimedRotatingFileHandler(
-        filename='async-wrapper.log',
-        when="midnight", delay=True, utc=True, backupCount=7,
-    )
-    logHandler.setFormatter(logging.Formatter(
-        "%(asctime)s: %(levelname)s: %(threadName)s: %(message)s"
-    ))
-    logger = logging.Logger(__name__)
-    logger.addHandler(logHandler)
-    logger.setLevel(logging.DEBUG)
-    return logger
+logger = logging.getLogger(__name__)
 
 
 class SEChatAsyncWrapper(object):
     def __init__(self, site="SE"):
-        self.logger = _getLogger()
+        self.logger = logger
         self.br = browser.SEChatBrowser()
         self.site = site
         self._previous = None
