@@ -5,9 +5,10 @@ import threading
 import logging
 import logging.handlers
 
+import BeautifulSoup
 import enum
 
-from . import browser
+from . import browser, _utils
 
 
 TOO_FAST_RE = "You can perform this action again in (\d+) seconds"
@@ -242,6 +243,14 @@ class Event(object):
             self.user_name = self._data['user_name']
             self.user_id = self._data['user_id']
             self.message_id = self._data['message_id']
+
+    @property
+    def text_content(self):
+        """
+        Returns a plain-text copy of .content, with HTML tags stripped
+        and entities parsed.
+        """
+        return _utils.html_to_text(self.content)
 
     def __str__(self):
         return "<chatexchange.wrapper.Event type=%s at %s>" % (
