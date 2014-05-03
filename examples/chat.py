@@ -8,6 +8,7 @@ import threading
 import time
 
 import chatexchange.wrapper
+import chatexchange.events
 
 
 logger = logging.getLogger(__name__)
@@ -49,19 +50,18 @@ def main():
     wrapper.logout()
 
 
-def on_message(msg, wrapper):
-    if msg.type != msg.Types.message_posted:
+def on_message(message, wrapper):
+    if not isinstance(message, chatexchange.events.MessagePosted):
         # Ignore non-message_posted events.
+        logger.debug("event: %r", message)
         return
 
     print ""
-    print ">> ("+msg.user_name+")", msg.content
-    print ""
-    if msg.content.startswith('!!/random'):
-        print msg
-        ret = "@%s %s" % (msg.user_name, random.random())
+    print ">> (%s) %s" % (message.user_name, message.text_content)
+    if message.content.startswith('!!/random'):
+        print message
         print "Spawning thread"
-        wrapper.sendMessage(msg.room_id, ret)
+        message.reply(str(random.random()))
 
 
 def setup_logging():

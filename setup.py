@@ -10,7 +10,6 @@ setuptools.setup(
     ],
     install_requires=[
         'BeautifulSoup==3.2.1',
-        'enum34==0.9.23',
         'httmock==1.2.2',
         'pytest-capturelog==0.7',
         'pytest==2.5.2',

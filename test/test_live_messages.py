@@ -2,10 +2,12 @@ import logging
 import time
 import uuid
 import os
+import Queue
 
 import pytest
 
-from chatexchange.wrapper import SEChatWrapper, Event
+from chatexchange.wrapper import SEChatWrapper
+from chatexchange import events
 
 import live_testing
 
@@ -41,8 +43,12 @@ if live_testing.enabled:
     @pytest.mark.parametrize('host_id,room_id', TEST_ROOMS)
     def test_se_message_echo(host_id, room_id):
         """
-        Tests that we are able to send a message, and recieve it back
-        within a reasonable amount of time, on Stack Exchange chat.
+        Tests that we are able to send a message, and recieve it back,
+        send a reply, and recieve that back, within a reasonable amount
+        of time.
+
+        This is a lot of complexity for a single test, but we don't want
+        to flood Stack Exchange with more test messages than necessary.
         """
 
         wrapper = SEChatWrapper(host_id)
@@ -50,41 +56,93 @@ if live_testing.enabled:
             live_testing.username,
             live_testing.password)
 
-        test_message_nonce = uuid.uuid4().hex
-        test_message = TEST_MESSAGE_FORMAT.format(test_message_nonce)
+        timeout_duration = 10
 
-        seen_message_with_socket = []
-        seen_message_with_polling = []
+        pending_events = Queue.Queue()
 
-        def on_socket_message(message, wrapper):
-            if (message.type == Event.Types.message_posted and
-                test_message_nonce in message.content):
-                seen_message_with_socket.append(message)
-                logger.debug("Saw test message in socket: %s", message)
+        def get_event(predicate):
+            """
+            Waits until it has seen a message passing the specified
+            predicate from both polling and sockets.
 
-        def on_polling_message(message, wrapper):
-            if (message.type == Event.Types.message_posted and
-                test_message_nonce in message.content):
-                seen_message_with_polling.append(message)
-                logger.debug("Saw test message in polling: %s", message)
+            Asserts that it has not waited longer than the specified
+            timeout, and asserts that the events from difference sources
+            have the same ID.
+
+            This may dequeue any number of additional unrelated events
+            while it is running, so it's not appropriate if you are
+            trying to wait for multiple events at once.
+            """
+
+            socket_event = None
+            polling_event = None
+
+            timeout = time.time() + timeout_duration
+
+            while (not (socket_event and polling_event)
+                   and time.time() < timeout):
+                try:
+                    is_socket, event = pending_events.get(timeout=1)
+                except Queue.Empty:
+                    continue
+
+                if predicate(event):
+                    logger.info(
+                        "Expected event (is_socket==%r): %r",
+                        is_socket, event)
+                    if is_socket:
+                        assert socket_event is None
+                        socket_event = event
+                    else:
+                        assert polling_event is None
+                        polling_event = event
+                else:
+                    logger.debug("Unexpected events: %r", event)
+
+            assert socket_event and polling_event
+            assert type(socket_event) is type(polling_event)
+            assert socket_event.event_id == polling_event.event_id
+
+            return socket_event
 
         logger.debug("Joining chat")
         wrapper.joinRoom(room_id)
 
-        wrapper.watchRoom(room_id, on_polling_message, 1)
-        wrapper.watchRoomSocket(room_id, on_socket_message)
+        wrapper.watchRoom(room_id, lambda event, _:
+            pending_events.put((False, event)), 1)
+        wrapper.watchRoomSocket(room_id, lambda event, _:
+            pending_events.put((True, event)))
 
         time.sleep(2) # Avoid race conditions
+
+        test_message_nonce = uuid.uuid4().hex
+        test_message_content = TEST_MESSAGE_FORMAT.format(test_message_nonce)
+
         logger.debug("Sending test message")
-        wrapper.sendMessage(room_id, test_message)
+        wrapper.sendMessage(room_id, test_message_content)
 
-        timeout_time = time.time() + 15.0
+        @get_event
+        def test_message(event):
+            return (
+                isinstance(event, events.MessagePosted)
+                and test_message_nonce in event.content
+            )
 
-        while time.time() < timeout_time and not (
-            seen_message_with_socket and seen_message_with_polling):
-            time.sleep(1)
+        test_reply_nonce = uuid.uuid4().hex
+        test_reply_content = TEST_MESSAGE_FORMAT.format(test_reply_nonce)
 
-        assert seen_message_with_polling, "didn't see own message using HTTP polling"
-        assert seen_message_with_socket, "didn't see own message using WebSockets"
+        logger.debug("Sending test reply")
+        test_message.reply(test_reply_content)
+
+        # XXX: The limitations of get_event don't allow us to also
+        # XXX: look for the corresponding MessagePosted event.
+        @get_event
+        def test_reply(event):
+            return (
+                isinstance(event, events.MessageReply)
+                and test_reply_nonce in event.content
+            )
+
+        assert test_reply.parent_message_id == test_message.message_id
 
         wrapper.logout()
