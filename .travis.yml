@@ -4,7 +4,7 @@ python:
 install:
   - 'pip install .'
 script:
-  - 'py.test --tb short'
+  - 'py.test -W default::Warning --tb short'
 branches:
   only:
     - master

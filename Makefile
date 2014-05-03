@@ -1,10 +1,12 @@
 default: test run-example
 
+WARGS = -W default::Warning
+
 run-example: install-dependencies
-	python examples/chat.py
+	python $(WARGS) examples/chat.py
 
 test: install-dependencies
-	python -m pytest
+	python $(WARGS) -m pytest
 
 install-dependencies:
 	# This also creates a link to `chatexchange/` in the Python
@@ -17,4 +19,3 @@ clean:
 	rm -rf src/*.egg-info
 	find . -type f -name '*.pyc' -delete
 	find . -type d -name '__pycache__' -delete
-

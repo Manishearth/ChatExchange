@@ -4,6 +4,7 @@ import Queue
 import threading
 import logging
 import logging.handlers
+import warnings
 
 import BeautifulSoup
 import enum
@@ -18,14 +19,22 @@ logger = logging.getLogger(__name__)
 
 
 class SEChatWrapper(object):
-    def __init__(self, site="SE"):
+    def __init__(self, host='stackexchange.com'):
         self.logger = logger.getChild('SEChatWraper')
 
-        if site == 'MSO':
-            self.logger.warn("'MSO' should no longer be used, use 'MSE' instead.")
-            site = 'MSE'
+        if host in self._deprecated_hosts:
+            replacement = self._deprecated_hosts[host]
+            warnings.warn(
+                "host value %r is deprecated, use %r instead" % (
+                    host, replacement)
+                , DeprecationWarning, stacklevel=2)
+            host = replacement
+
+        if host not in self.valid_hosts:
+            raise ValueError("invalid host: %r" % (host,))
+
         self.br = browser.SEChatBrowser()
-        self.site = site
+        self.host = host
         self._previous = None
         self.message_queue = Queue.Queue()
         self.logged_in = False
@@ -33,21 +42,29 @@ class SEChatWrapper(object):
         self.thread = threading.Thread(target=self._worker, name="message_sender")
         self.thread.setDaemon(True)
 
+    valid_hosts = {
+        'stackexchange.com',
+        'meta.stackexchange.com',
+        'stackoverflow.com'
+    }
+
+    _deprecated_hosts = {
+        'SE': 'stackexchange.com',
+        'MSO': 'meta.stackexchange.com',
+        'MSE': 'meta.stackexchange.com',
+        'SO': 'stackexchange.com'
+    }
+
     def login(self, username, password):
         assert not self.logged_in
         self.logger.info("Logging in.")
 
         self.br.loginSEOpenID(username, password)
-        if self.site == "SE":
-            self.br.loginSECOM()
-            self.br.loginChatSE()
-        elif self.site == "SO":
-            self.br.loginSO()
-        elif self.site == "MSE":
-            self.br.loginMSE()
-        else:
-            raise ValueError("Unable to login to site: %r" % (self.site,))
 
+        self.br.loginSite(self.host)
+
+        if self.host == 'stackexchange.com':
+            self.br.loginChatSE()
 
         self.logged_in = True
         self.logger.info("Logged in.")
