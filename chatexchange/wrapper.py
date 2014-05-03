@@ -6,7 +6,6 @@ import logging
 import logging.handlers
 
 import BeautifulSoup
-import enum
 
 from . import browser, events
 
