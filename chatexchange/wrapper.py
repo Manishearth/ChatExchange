@@ -59,6 +59,9 @@ class SEChatWrapper(object):
         self.logged_in = False
 
     def sendMessage(self, room_id, text):
+        """
+        Queues a message for sending to a given room.
+        """
         self.message_queue.put((room_id, text))
         self.logger.info("Queued message %r for room_id #%r.", text, room_id)
         self.logger.info("Queue length: %d.", self.message_queue.qsize())

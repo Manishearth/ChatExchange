@@ -269,7 +269,6 @@ class RoomSocketWatcher(object):
         #look at wsdump.py later to handle opcodes
         while True:
             a = self.ws.recv()
-            self.logger.debug("a == %r", a)
 
             if a != None and a != "":
                 self.on_activity(json.loads(a))

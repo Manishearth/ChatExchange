@@ -1,4 +1,3 @@
-from chatexchange.wrapper import SEChatWrapper
 from chatexchange import events
 
 

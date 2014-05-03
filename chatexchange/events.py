@@ -71,6 +71,12 @@ class MessageEvent(Event):
         self.user_id = self.data['user_id']
         self.message_id = self.data['message_id']
 
+    def reply(self, message):
+        assert self.wrapper
+        self.wrapper.sendMessage(
+            self.room_id,
+            ":%s %s" % (self.message_id, message))
+
 
 @register_type
 class MessagePosted(MessageEvent):
@@ -115,8 +121,15 @@ class DebugMessage(Event):
     type_id = 7
 
 
+class MentioningMessageEvent(MessageEvent):
+    def _init_from_data(self):
+        super(MentioningMessageEvent, self)._init_from_data()
+        self.target_user_id = self.data['target_user_id']
+        self.parent_message_id = self.data['parent_id']
+
+
 @register_type
-class UserMentioned(Event):
+class UserMentioned(MentioningMessageEvent):
     type_id = 8
 
 
@@ -166,8 +179,12 @@ class Invitation(Event):
 
 
 @register_type
-class MessageReply(Event):
+class MessageReply(MentioningMessageEvent):
     type_id = 18
+
+    def _init_from_data(self):
+        super(MessageReply, self)._init_from_data()
+        self.show_parent = self.data['show_parent']
 
 
 @register_type

@@ -50,20 +50,18 @@ def main():
     wrapper.logout()
 
 
-def on_message(msg, wrapper):
-    if not isinstance(msg, chatexchange.events.MessagePosted):
+def on_message(message, wrapper):
+    if not isinstance(message, chatexchange.events.MessagePosted):
         # Ignore non-message_posted events.
-        logger.debug("event: %r", msg)
+        logger.debug("event: %r", message)
         return
 
     print ""
-    print ">> (%s) %s" % (msg.user_name, msg.text_content)
-    print ""
-    if msg.content.startswith('!!/random'):
-        print msg
-        ret = "@%s %s" % (msg.user_name, random.random())
+    print ">> (%s) %s" % (message.user_name, message.text_content)
+    if message.content.startswith('!!/random'):
+        print message
         print "Spawning thread"
-        wrapper.sendMessage(msg.room_id, ret)
+        message.reply(str(random.random()))
 
 
 def setup_logging():
