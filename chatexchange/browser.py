@@ -148,7 +148,7 @@ class SEChatBrowser(object):
         return False
 
     def postSomething(self, relurl, data):
-        data['fkey'] = self.chat_fkey
+        data['fkey'] = self.chat_fkey()
         req = self.post(self.getURL(relurl), data)
         try:
             return req.json()

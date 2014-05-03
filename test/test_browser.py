@@ -13,11 +13,9 @@ def test_update_fkey():
     """
     with only_httmock(favorite_with_test_fkey):
         browser = SEChatBrowser()
-        browser.chatroot = "http://chat.stackexchange.com"
+        browser.host = 'stackexchange.com'
 
-        assert browser.updateChatFkey(), "fkey update failed"
-
-        assert browser.chatfkey == TEST_FKEY
+        assert browser.chat_fkey() == TEST_FKEY
 
 
 def test_user_agent():
