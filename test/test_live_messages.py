@@ -68,9 +68,11 @@ if live_testing.enabled:
             Asserts that it has not waited longer than the specified
             timeout, and asserts that the events from difference sources
             have the same ID.
+
+            This may dequeue any number of additional unrelated events
+            while it is running, so it's not appropriate if you are
+            trying to wait for multiple events at once.
             """
-            # XXX: This is no good when we're not sure of the order
-            # XXX: that we'll recieve events.
 
             socket_event = None
             polling_event = None
@@ -98,7 +100,6 @@ if live_testing.enabled:
                     logger.debug("Unexpected events: %r", event)
 
             assert socket_event and polling_event
-
             assert type(socket_event) is type(polling_event)
             assert socket_event.event_id == polling_event.event_id
 
@@ -133,16 +134,8 @@ if live_testing.enabled:
         logger.debug("Sending test reply")
         test_message.reply(test_reply_content)
 
-        @get_event
-        def test_reply_message(event):
-            return (
-                isinstance(event, events.MessagePosted)
-                and test_reply_nonce in event.content
-            )
-
-        # XXX: This implies an ordering between the events,
-        # XXX: which seems stable for now but may break in the future.
-
+        # XXX: The limitations of get_event don't allow us to also
+        # XXX: look for the corresponding MessagePosted event.
         @get_event
         def test_reply(event):
             return (
