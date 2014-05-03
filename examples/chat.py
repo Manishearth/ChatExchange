@@ -8,6 +8,7 @@ import threading
 import time
 
 import chatexchange.wrapper
+import chatexchange.events
 
 
 logger = logging.getLogger(__name__)
@@ -50,12 +51,13 @@ def main():
 
 
 def on_message(msg, wrapper):
-    if msg.type != msg.Types.message_posted:
+    if not isinstance(msg, chatexchange.events.MessagePosted):
         # Ignore non-message_posted events.
+        logger.debug("event: %r", msg)
         return
 
     print ""
-    print ">> ("+msg.user_name+")", msg.content
+    print ">> (%s) %s" % (msg.user_name, msg.text_content)
     print ""
     if msg.content.startswith('!!/random'):
         print msg

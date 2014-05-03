@@ -5,7 +5,8 @@ import os
 
 import pytest
 
-from chatexchange.wrapper import SEChatWrapper, Event
+from chatexchange.wrapper import SEChatWrapper
+from chatexchange import events
 
 import live_testing
 
@@ -57,13 +58,13 @@ if live_testing.enabled:
         seen_message_with_polling = []
 
         def on_socket_message(message, wrapper):
-            if (message.type == Event.Types.message_posted and
+            if (isinstance(message, events.MessagePosted) and
                 test_message_nonce in message.content):
                 seen_message_with_socket.append(message)
                 logger.debug("Saw test message in socket: %s", message)
 
         def on_polling_message(message, wrapper):
-            if (message.type == Event.Types.message_posted and
+            if (isinstance(message, events.MessagePosted) and
                 test_message_nonce in message.content):
                 seen_message_with_polling.append(message)
                 logger.debug("Saw test message in polling: %s", message)
