@@ -6,6 +6,10 @@ run-example: install-dependencies
 test: install-dependencies
 	python -m pytest
 
+test-coverage: install-dependencies
+	python -m coverage run --branch -m pytest
+	python -m coverage report --include 'chatexchange/*'
+
 install-dependencies:
 	# This also creates a link to `chatexchange/` in the Python
 	# environment, which is neccessary for the other files to be
