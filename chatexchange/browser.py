@@ -26,8 +26,12 @@ class SEChatBrowser(object):
         self.rooms = {}
         self.sockets = {}
         self.polls = {}
-        self.chatfkey = ""
-        self.chatroot = "http://chat.stackexchange.com"
+        self._chat_fkey = None
+        self.host = None
+
+    @property
+    def chatroot(self):
+        return 'http://chat.%s' % (self.host,)
 
     def loginSEOpenID(self, user, password):
         """
@@ -48,66 +52,28 @@ class SEChatBrowser(object):
             raise LoginError(
                 "failed to get `usr` cookie from Stack Exchange OpenID")
 
-    def loginSECOM(self):
+    def loginSite(self, host):
         """
-        Logs the browser into StackExchange.com.
+        Logs the browser into a Stack Exchange site.
         """
-        return self._se_openid_login_with_fkey(
-            'http://stackexchange.com/users/login?returnurl = %2f',
-            'http://stackexchange.com/users/authenticate',
-            {
-                'oauth_version': '',
-                'oauth_server': '',
-                'openid_identifier': 'https://openid.stackexchange.com/'
-            })
+        assert self.host is None or self.host is host
 
-    def loginMSOOld(self):
-        """
-        (OBSOLETE) Logs the browser into Meta Stack Overflow.
-        """
         self._se_openid_login_with_fkey(
-            'http://meta.stackoverflow.com/users/login?returnurl = %2f',
-            'http://meta.stackoverflow.com/users/authenticate',
+            'http://%s/users/login?returnurl = %%2f' % (host,),
+            'http://%s/users/authenticate' % (host,),
             {
                 'oauth_version': '',
                 'oauth_server': '',
                 'openid_identifier': 'https://openid.stackexchange.com/'
             })
 
-        self.chatroot = "http://chat.meta.stackoverflow.com"
-        self.updateChatFkey()
+        self.host = host
 
-    def loginMSE(self):
-        """
-        Logs the browser into Meta Stack Exchange.
-        """
-        self._se_openid_login_with_fkey(
-            'http://meta.stackexchange.com/users/login?returnurl = %2f',
-            'http://meta.stackexchange.com/users/authenticate',
-            {
-                'oauth_version': '',
-                'oauth_server': '',
-                'openid_identifier': 'https://openid.stackexchange.com/'
-            })
+    def chat_fkey(self):
+        if self._chat_fkey is None:
+            self.update_chat_fkey()
 
-        self.chatroot = "http://chat.meta.stackexchange.com"
-        self.updateChatFkey()
-
-    def loginSO(self):
-        """
-        Logs the browser into Stack Overflow.
-        """
-        self._se_openid_login_with_fkey(
-            'http://stackoverflow.com/users/login?returnurl = %2f',
-            'http://stackoverflow.com/users/authenticate',
-            {
-                'oauth_version': '',
-                'oauth_server': '',
-                'openid_identifier': 'https://openid.stackexchange.com/'
-            })
-
-        self.chatroot = "http://chat.stackoverflow.com"
-        self.updateChatFkey()
+        return self._chat_fkey
 
     def _se_openid_login_with_fkey(self, fkey_url, post_url, data=()):
         """
@@ -163,24 +129,26 @@ class SEChatBrowser(object):
             "http://chat.stackexchange.com/login/global-fallback",
             data=data, allow_redirects=True, headers=referer_header
         ).content
+
+        # the fkey is available here, without any addiitonal request
         fkey = BeautifulSoup(rdata).find('input', {"name": "fkey"})['value']
-        self.chatfkey = fkey
-        self.chatroot = "http://chat.stackexchange.com"
+        self._chat_fkey = fkey
+
         return rdata
 
-    def updateChatFkey(self):
+    def update_chat_fkey(self):
         try:
             fkey = self.getSoup(self.getURL("chats/join/favorite")) \
                              .find('input', {"name": "fkey"})['value']
             if fkey is not None and fkey != "":
-                self.chatfkey = fkey
+                self._chat_fkey = fkey
                 return True
         except Exception as e:
                 self.logger.error("Error updating fkey: %s", e)
         return False
 
     def postSomething(self, relurl, data):
-        data['fkey'] = self.chatfkey
+        data['fkey'] = self.chat_fkey()
         req = self.post(self.getURL(relurl), data)
         try:
             return req.json()

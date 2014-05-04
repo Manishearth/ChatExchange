@@ -4,7 +4,7 @@ python:
 install:
   - pip install .
 script:
-  - python -m coverage run --branch -m pytest --tb short
+  - python -W default::Warning -m coverage run --branch -m pytest --tb short
   - python -m coverage report --include 'chatexchange/*'
 branches:
   only:
