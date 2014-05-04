@@ -4,6 +4,7 @@ import Queue
 import threading
 import logging
 import logging.handlers
+import warnings
 
 import BeautifulSoup
 
@@ -26,9 +27,9 @@ class SEChatWrapper(object):
         self.br = browser.SEChatBrowser()
         self.site = site
         self._previous = None
-        self.message_queue = Queue.Queue()
+        self.request_queue = Queue.Queue()
         self.logged_in = False
-        self.messages = 0
+        self._requests_served = 0
         self.thread = threading.Thread(target=self._worker, name="message_sender")
         self.thread.setDaemon(True)
 
@@ -54,21 +55,35 @@ class SEChatWrapper(object):
 
     def logout(self):
         assert self.logged_in
-        self.message_queue.put(SystemExit)
+        self.request_queue.put(SystemExit)
         self.logger.info("Logged out.")
         self.logged_in = False
 
     def sendMessage(self, room_id, text):
+        warnings.warn(
+            "Use send_message instead of sendMessage",
+            DeprecationWarning, stacklevel=1)
+        return self.send_message(room_id, text)
+
+    def send_message(self, room_id, text):
         """
         Queues a message for sending to a given room.
         """
-        self.message_queue.put((room_id, text))
+        self.request_queue.put(('send', room_id, text))
         self.logger.info("Queued message %r for room_id #%r.", text, room_id)
-        self.logger.info("Queue length: %d.", self.message_queue.qsize())
+        self.logger.info("Queue length: %d.", self.request_queue.qsize())
+
+    def edit_message(self, message_id, text):
+        """
+        Queues an edit to be made to a message.
+        """
+        self.request_queue.put(('edit', message_id, text))
+        self.logger.info("Queued edit %r for message_id #%r.", text, message_id)
+        self.logger.info("Queue length: %d.", self.request_queue.qsize())
 
     def __del__(self):
         if self.logged_in:
-            self.message_queue.put(SystemExit)
+            self.request_queue.put(SystemExit)
             # todo: underscore everything used by
             # the thread so this is guaranteed
             # to work.
@@ -78,18 +93,22 @@ class SEChatWrapper(object):
         assert self.logged_in
         self.logger.info("Worker thread reporting for duty.")
         while True:
-            next = self.message_queue.get() # blocking
-            if next == SystemExit:
+            next_action = self.request_queue.get() # blocking
+            if next_action == SystemExit:
                 self.logger.info("Worker thread exits.")
                 return
             else:
-                self.messages += 1
-                room_id, text = next
+                action_type = next_action[0]
+
+                self._requests_served += 1
                 self.logger.info(
-                    "Now serving customer %d, %r for room #%s.",
-                    self.messages, text, room_id)
-                self._actuallySendMessage(room_id, text) # also blocking.
-            self.message_queue.task_done()
+                    "Now serving customer %d, %r",
+                    self._requests_served, next_action)
+
+                self._do_action_despite_throttling(next_action)
+
+            self.request_queue.task_done()
+
 
     # Appeasing the rate limiter gods is hard.
     BACKOFF_MULTIPLIER = 2
@@ -97,8 +116,14 @@ class SEChatWrapper(object):
 
     # When told to wait n seconds, wait n * BACKOFF_MULTIPLIER + BACKOFF_ADDER
 
-    def _actuallySendMessage(self, room_id, text):
-        room_id = str(room_id)
+    def _do_action_despite_throttling(self, action):
+        action_type = action[0]
+        if action_type == 'send':
+            action_type, room_id, text = action
+        else:
+            assert action_type == 'edit'
+            action_type, message_id, text = action
+
         sent = False
         attempt = 0
         if text == self._previous:
@@ -107,9 +132,17 @@ class SEChatWrapper(object):
             wait = 0
             attempt += 1
             self.logger.debug("Attempt %d: start.", attempt)
-            response = self.br.postSomething(
-                "/chats/"+room_id+"/messages/new",
-                {"text": text})
+
+            if action_type == 'send':
+                response = self.br.postSomething(
+                    '/chats/%s/messages/new' % (room_id,),
+                    {'text': text})
+            else:
+                assert action_type == 'edit'
+                response = self.br.postSomething(
+                    '/messages/%s' % (message_id,),
+                    {'text': text})
+
             if isinstance(response, str):
                 match = re.match(TOO_FAST_RE, response)
                 if match: # Whoops, too fast.

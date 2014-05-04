@@ -84,11 +84,14 @@ class MessageEvent(Event):
             self.text_content = None
             self.deleted = True
 
-    def reply(self, message):
+    def reply(self, text):
         assert self.wrapper
-        self.wrapper.sendMessage(
+        self.wrapper.send_message(
             self.room_id,
-            ":%s %s" % (self.message_id, message))
+            ":%s %s" % (self.message_id, text))
+
+    def edit(self, text):
+        self.wrapper.edit_message(self.message_id, text)
 
 
 @register_type
