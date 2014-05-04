@@ -140,7 +140,7 @@ class MessageFlagged(Event):
 
 
 @register_type
-class MessageDeleted(Event):
+class MessageDeleted(MessageEvent):
     type_id = 10
 
 
@@ -185,12 +185,12 @@ class MessageReply(MessageEvent):
 
 
 @register_type
-class MessageMovedIn(Event):
+class MessageMovedOut(MessageEvent):
     type_id = 19
 
 
 @register_type
-class MessagedMovedOut(Event):
+class MessagedMovedIn(MessageEvent):
     type_id = 20
 
 
