@@ -8,20 +8,6 @@ import live_testing
 
 
 if live_testing.enabled:
-    def test_openid_login():
-        """
-        Tests login to the Stack Exchange OpenID provider.
-        """
-        browser = SEChatBrowser()
-
-        # avoid hitting the SE servers too frequently
-        time.sleep(2)
-
-        # This will raise an error if login fails.
-        browser.loginSEOpenID(
-            live_testing.username,
-            live_testing.password)
-
     def test_openid_login_recognizes_failure():
         """
         Tests that failed SE OpenID logins raise errors.
