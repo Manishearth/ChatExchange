@@ -99,7 +99,8 @@ if live_testing.enabled:
                 else:
                     logger.debug("Unexpected events: %r", event)
 
-            assert socket_event and polling_event
+            assert socket_event
+            assert polling_event
             assert type(socket_event) is type(polling_event)
             assert socket_event.event_id == polling_event.event_id
 
@@ -175,5 +176,11 @@ if live_testing.enabled:
 
         assert test_edit.message_id == test_message.message_id
         assert test_edit.message_edits == 4
+
+        # it should be safe to assume that there isn't so much activity
+        # that these events will have been flushed out of recent_events.
+        assert test_message in wrapper.recent_events
+        assert test_reply in wrapper.recent_events
+        assert test_edit in wrapper.recent_events
 
         wrapper.logout()

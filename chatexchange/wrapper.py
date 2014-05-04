@@ -1,3 +1,4 @@
+import collections
 import re
 import time
 import Queue
@@ -18,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class SEChatWrapper(object):
+    max_recent_events = 1000
+
     def __init__(self, site="SE"):
         self.logger = logger.getChild('SEChatWraper')
 
@@ -29,6 +32,7 @@ class SEChatWrapper(object):
         self._previous = None
         self.request_queue = Queue.Queue()
         self.logged_in = False
+        self.recent_events = collections.deque(maxlen=self.max_recent_events)
         self._requests_served = 0
         self.thread = threading.Thread(target=self._worker, name="message_sender")
         self.thread.setDaemon(True)
@@ -186,9 +190,11 @@ class SEChatWrapper(object):
         """
         room_activity = activity.get('r' + room_id, {})
         room_events_data = room_activity.get('e', [])
-        room_events = [
-            events.make(data, self) for data in room_events_data if data]
-        return room_events
+        for room_event_data in room_events_data:
+            if room_event_data:
+                event = events.make(room_event_data, self)
+                self.recent_events.appendleft(event)
+                yield event
 
     def watchRoom(self, room_id, on_event, interval):
         def on_activity(activity):
