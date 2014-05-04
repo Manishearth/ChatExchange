@@ -63,13 +63,26 @@ class Event(object):
 
 
 class MessageEvent(Event):
-    # common initialization for MessagePosted and MessageEdited
+    """
+    Base class for events about Messages.
+    """
     def _init_from_data(self):
-        self.content = self.data['content']
-        self.text_content = _utils.html_to_text(self.content)
-        self.user_name = self.data['user_name']
         self.user_id = self.data['user_id']
+        self.user_name = self.data['user_name']
+        self.content = self.data.get('content', None)
         self.message_id = self.data['message_id']
+        self.message_edits = self.data.get('message_edits', 0)
+        self.show_parent = self.data.get('show_parent', False)
+        self.message_stars = self.data.get('message_stars', 0)
+        self.target_user_id = self.data.get('target_user_id', None)
+        self.parent_message_id = self.data.get('parent_id', None)
+
+        if self.content is not None:
+            self.text_content = _utils.html_to_text(self.content)
+            self.deleted = False
+        else:
+            self.text_content = None
+            self.deleted = True
 
     def reply(self, message):
         assert self.wrapper
@@ -86,10 +99,6 @@ class MessagePosted(MessageEvent):
 @register_type
 class MessageEdited(MessageEvent):
     type_id = 2
-
-    def _init_from_data(self):
-        super(MessageEdited, self)._init_from_data()
-        self.message_edits = self.data['message_edits']
 
 
 @register_type
@@ -111,25 +120,14 @@ class RoomNameChanged(Event):
 class MessageStarred(MessageEvent):
     type_id = 6
 
-    def _init_from_data(self):
-        super(MessageStarred, self)._init_from_data()
-        self.message_stars = self.data['message_stars']
-
 
 @register_type
 class DebugMessage(Event):
     type_id = 7
 
 
-class MentioningMessageEvent(MessageEvent):
-    def _init_from_data(self):
-        super(MentioningMessageEvent, self)._init_from_data()
-        self.target_user_id = self.data['target_user_id']
-        self.parent_message_id = self.data['parent_id']
-
-
 @register_type
-class UserMentioned(MentioningMessageEvent):
+class UserMentioned(MessageEvent):
     type_id = 8
 
 
@@ -179,12 +177,8 @@ class Invitation(Event):
 
 
 @register_type
-class MessageReply(MentioningMessageEvent):
+class MessageReply(MessageEvent):
     type_id = 18
-
-    def _init_from_data(self):
-        super(MessageReply, self)._init_from_data()
-        self.show_parent = self.data['show_parent']
 
 
 @register_type
