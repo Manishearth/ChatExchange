@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import BaseHTTPServer
+import collections
 import json
 import logging
 import os
@@ -25,7 +26,6 @@ def main(port='8462'):
 
     logging.basicConfig(level=logging.INFO)
 
-    host_id = 'SE'
     room_id = 14219 # Charcoal Chatbot Sandbox
 
     if 'ChatExchangeU' in os.environ:
@@ -39,7 +39,7 @@ def main(port='8462'):
     else:
         password = getpass.getpass("Password: ")
 
-    chat = wrapper.SEChatWrapper(host_id)
+    chat = wrapper.SEChatWrapper('stackexchange.com')
     chat.login(username, password)
 
     httpd = Server(
@@ -53,7 +53,7 @@ class Server(BaseHTTPServer.HTTPServer, object):
         self.chat = kw.pop('chat')
         self.room_id = kw.pop('room_id')
         self.room_name = "Chat Room"
-        self.messages = []
+        self.messages = collections.deque(maxlen=25)
 
         self.chat.joinRoom(self.room_id)
         self.chat.watchRoomSocket(self.room_id, self.on_chat_event)
@@ -64,12 +64,14 @@ class Server(BaseHTTPServer.HTTPServer, object):
 
     def get_state(self):
         return {
+            'host': self.chat.host,
             'room': {
                 'id': self.room_id,
                 'name': self.room_name
             },
             'messages': [{
-                'owner': message.owner_user_name,
+                'owner_user_id': message.owner_user_id,
+                'owner_user_name': message.owner_user_name,
                 'text_content': message.text_content,
                 'stars': message.stars,
                 'edits': message.edits,
@@ -96,6 +98,22 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
 
         self.wfile.close()
 
+    def do_POST(self):
+        assert self.path == '/new'
+
+        length = int(self.headers.getheader('content-length'))
+        json_data = self.rfile.read(length)
+        data = json.loads(json_data)
+
+        self.server.chat.send_message(
+            self.server.room_id,
+            data['text'])
+
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write("queued!")
+        self.wfile.close()
+
     def send_state(self):
         chat = self.server.chat
         body = json.dumps(self.server.get_state())
@@ -108,12 +126,15 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
         self.end_headers()
-        self.wfile.write('''<!doctype html>
+        self.wfile.write('''<!doctype html ng-cloak>
         <html ng-app ng-controller="WebViewerPageController">
         <head>
         <title>ChatExchange Web Viewer Example</title>
         </head>
         <body>
+        <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.js"></script>
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
         <script>
             'use strict';
 
@@ -122,7 +143,18 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
                 $interval,
                 $http
             ) {
+                $scope.room = {
+                    name: "Loading room...",
+                    id: "???"
+                };
+
+                $scope.sendNewMessage = function() {
+                    $http.post('/new', {text: $scope.newMessage});
+                    $scope.newMessage = "";
+                }
+
                 $interval(update, 500);
+                update();
 
                 function update() {
                     $http.get('/state').then(function(response) {
@@ -133,21 +165,41 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
         </script>
         <div class="container">
             <h1>
-                {{room.name}} <small>#{{room.id}}</small>
+                <a href="http://chat.{{host}}/rooms/{{room.id}}">
+                    {{room.name}} <small>#{{room.id}}</small>
+                </a>
             </h1>
-            <div ng-repeat="message in messages">
-                <strong>{{message.owner}}:</strong> {{message.text_content}}
-                <em ng-if="message.edits">
-                    (edited {{message.edits}} times)
-                </em>
-                <em ng-if="message.stars">
-                    (starred {{message.stars}} times)
-                </em>
+            <div ng-hide="messages.length">
+                <em>There have been no new messages.</em>
             </div>
+
+            <div ng-repeat="message in messages">
+                <strong>
+                    <a href="http://chat.{{host}}/users/{{message.owner_user_id}}/"
+                    >{{message.owner_user_name}}</a>:
+                </strong>
+
+                <span>
+                    {{message.text_content}}
+                </span>
+
+                <span class="label label-info" ng-if="message.edits">
+                    edited
+                    <span ng-if="message.edits > 1">x{{message.edits}}</span>
+                </span>
+
+                <span class="label label-primary" ng-if="message.stars">
+                    starred
+                    <span ng-if="message.stars > 1">x{{message.stars}}</span>
+                </span>
+            </div>
+
+            <form ng-submit="sendNewMessage()" style="margin-top: 1em;">
+                <input ng-model="newMessage" style="width: 30em;" />
+                <button type="submit">Send</button>
+            </form>
+            <script>document.querySelector('input').focus()</script>
         </div>
-        <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.js"></script>
-        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
         </body>
         </html>''')
 

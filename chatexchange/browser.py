@@ -168,10 +168,14 @@ class SEChatBrowser(object):
         room_id = str(room_id)
         self.rooms[room_id] = {}
         result = self.postSomething(
-            "/chats/"+str(room_id)+"/events",
-            {"since": 0, "mode": "Messages", "msgCount": 100})
+            '/chats/%s/events' % (room_id),
+            {
+                'since': 0, 
+                'mode': 'Messages',
+                'msgCount': 100
+            })
         eventtime = result['time']
-        self.rooms[room_id]["eventtime"] = eventtime
+        self.rooms[room_id]['eventtime'] = eventtime
 
     def watch_room_socket(self, room_id, on_activity):
         """
@@ -209,22 +213,13 @@ class RoomSocketWatcher(object):
         self.killed = False
 
     def start(self):
-        events_data = self.browser.postSomething(
-            '/chats/%s/events' % (self.room_id,),
-            {'since': 0, 'mode': 'Messages', 'msgCount': 100}
-        )
-        if events_data['events']:
-            eventtime = events_data['events'][0]['time_stamp']
-            self.logger.debug('eventtime == %r', eventtime)
-        else:
-            self.logger.debug("No previous events in room %s", self.room_id)
-            eventtime = 0
+        last_event_time = self.browser.rooms[self.room_id]['eventtime']
 
         ws_auth_data = self.browser.postSomething(
             '/ws-auth',
             {'roomid': self.room_id}
         )
-        wsurl = ws_auth_data['url'] + '?l=%s' % (eventtime,)
+        wsurl = ws_auth_data['url'] + '?l=%s' % (last_event_time,)
         self.logger.debug('wsurl == %r', wsurl)
 
         self.ws = websocket.create_connection(
