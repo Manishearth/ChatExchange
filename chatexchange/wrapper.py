@@ -10,7 +10,7 @@ import weakref
 
 import BeautifulSoup
 
-from . import browser, events, message
+from . import browser, events, messages
 
 
 TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class SEChatWrapper(object):
     max_recent_events = 1000
+    max_recently_accessed_messages = 1000
 
     def __init__(self, host='stackexchange.com'):
         self.logger = logger.getChild('SEChatWraper')
@@ -45,13 +46,23 @@ class SEChatWrapper(object):
         self.request_queue = Queue.Queue()
         self.logged_in = False
         self.recent_events = collections.deque(maxlen=self.max_recent_events)
+        self._recently_accessed_messages = collections.deque(maxlen=self.max_recently_accessed_messages)
         self._requests_served = 0
         self.thread = threading.Thread(target=self._worker, name="message_sender")
         self.thread.setDaemon(True)
 
     def get_message(self, message_id):
-        return self._messages.setdefault(
-            message_id, message.Message(message_id, self))
+        message = self._messages.setdefault(
+            message_id, messages.Message(message_id, self))
+
+        # We want to keep some recently-accessed messages in memory even
+        # if they weren't directly referred-to by recent events. For
+        # example, if we keep accessing the .parent of a particular
+        # message, we'll want to keep the parent's data around.
+        self._recently_accessed_messages.appendleft(message)
+
+        return message
+
 
     valid_hosts = {
         'stackexchange.com',
