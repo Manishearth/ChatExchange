@@ -8,13 +8,13 @@ class Message(object):
 
         self.room_id = None
         self.room_name = None
-        self.deleted = None
         self.content = None
-        self.owner_name = None
         self.owner_user_id = None
+        self.owner_user_name = None
         self.target_user_id = None
         self.edits = None
         self.stars = None
+        self.owner_stars = None
         self._parent_message_id = None
 
     @property

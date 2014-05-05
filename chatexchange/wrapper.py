@@ -223,7 +223,7 @@ class SEChatWrapper(object):
         Returns a list of Events associated with a particular room,
         given an activity message from the server.
         """
-        room_activity = activity.get('r' + room_id, {})
+        room_activity = activity.get('r%s' % (room_id,), {})
         room_events_data = room_activity.get('e', [])
         for room_event_data in room_events_data:
             if room_event_data:
