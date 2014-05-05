@@ -1,6 +1,9 @@
 Unofficial documentation of the private HTTP APIs used by Stack Exchange
 chat.
 
+All POST methods require an `fkey` POST form data argument. It won't be
+specifically listed for each of them.
+
 ## Event JSON Objects
 
 Chat events are represented by JSON objects with at least the following
@@ -26,6 +29,7 @@ they refer to:
 - `content` - string or missing if the user deleted the message
 - `message_edits` - integer or missing if message hasn't been edited.
 - `message_stars` - integer or missing if message has no stars.
+- `message_owner_stars` - integer or missing if message not pinned.
 - `target_user_id` - integer or missing
 - `show_parent` - boolean or missing
 
@@ -37,29 +41,7 @@ others may refer to the user taking the action triggering the event
 - `user_id` - integer
 - `user_name` - string
 
-## HTTP Methods
-
-All POST methods require an `fkey` POST form data argument.
-
-### POST `/chats/ROOM_ID/messages/new`
-
-Attempts to post a message to the specified chat room.
-
-#### POST form data arguments
-
-##### `text`
-
-The content of the message.
-
-### POST `/messages/MESSAGE_ID`
-
-Attempts to edit a message.
-
-#### POST form data arguments
-
-##### `text`
-
-The new content of the message.
+## Reading
 
 ### POST `/chats/ROOM_ID/events?mode=Messages`
 
@@ -84,21 +66,31 @@ Optional. Number of events to return.
 Maximum: 500  
 Default: 100
 
-### POST `/messages/MESSAGE_ID/star`
+### POST `/events`
 
-Stars or unstars the specified message. You can't specify whether you
-want to have starred the message or not, you can just toggle whether
-you have.
+Returns a list of recent events for a room.
 
-### POST `/messages/MESSAGE_ID/owner-star`
+#### POST form data arguments
 
-Pins or unpins the specified message. This is a toggle, like starring.
+##### `rROOM_ID`
 
-### POST `/messages/15338982/delete`
+The name specifies the room we are interested in (e.g. `'r14219'`), and
+the value specifies the `time_stamp` we would like to see messages
+since.
 
-Removes `content` of the specified message.
+### POST `/ws-auth`
 
-### GET /rooms/thumbs/14219`
+Authenticates a websocket connection to listen for events in a given
+room. This returns a JSON Object with a `url` field, identifying the URL
+to be used for the websocket connection. The `l` query string paramter
+should be used with websocket URL to specify the time_stamp after which
+we are interested in events.
+
+#### POST form data arguments
+
+##### `roomid`
+
+### GET `/rooms/thumbs/ROOM_ID`
 
 Returns a JSON object with information about the specified room.
 Includes the following fields:
@@ -117,6 +109,42 @@ Includes the following fields:
 Optional Whether the `usage` field should be populated, else null.  
 Default: false
 
+## Writing
+
+### POST `/chats/ROOM_ID/messages/new`
+
+Attempts to post a message to the specified chat room.
+
+#### POST form data arguments
+
+##### `text`
+
+The content of the message.
+
+### POST `/messages/MESSAGE_ID`
+
+Attempts to edit a message.
+
+#### POST form data arguments
+
+##### `text`
+
+The new content of the message.
+
+### POST `/messages/MESSAGE_ID/star`
+
+Stars or unstars the specified message. You can't specify whether you
+want to have starred the message or not, you can just toggle whether
+you have.
+
+### POST `/messages/MESSAGE_ID/owner-star`
+
+Pins or unpins the specified message. This is a toggle, like starring.
+
+### POST `/messages/MESSAGE_ID/delete`
+
+Removes `content` of the specified message.
+
 ### POST `/admin/movePosts/ROOM_ID`
 
 Moves posts from the specified room to another room.
@@ -125,15 +153,3 @@ Moves posts from the specified room to another room.
 
 - `ids` - comma-seperated list of message_ids
 - `to` - room_id of room the messages should be moved to
-
-### POST `/ws-auth`
-
-Authenticates a websocket connection to listen for events in a given
-room. This returns a JSON Object with a `url` field, identifying the URL
-to be used for the websocket connection. The `l` query string paramter
-should be used with websocket URL to specify the time_stamp after which
-we are interested in events.
-
-#### POST form data arguments
-
-##### `roomid`

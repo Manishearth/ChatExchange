@@ -74,6 +74,7 @@ class MessageEvent(Event):
         self.message_edits = self.data.get('message_edits', 0)
         self.show_parent = self.data.get('show_parent', False)
         self.message_stars = self.data.get('message_stars', 0)
+        self.message_owner_stars = self.data.get('message_owner_stars', 0)
         self.target_user_id = self.data.get('target_user_id', None)
         self.parent_message_id = self.data.get('parent_id', None)
 
