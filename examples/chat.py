@@ -57,7 +57,7 @@ def on_message(message, wrapper):
         return
 
     print ""
-    print ">> (%s) %s" % (message.user_name, message.text_content)
+    print ">> (%s) %s" % (message.user_name, message.content)
     if message.content.startswith('!!/random'):
         print message
         print "Spawning thread"
