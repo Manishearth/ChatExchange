@@ -1,16 +1,15 @@
-# Stack Exchange Chat API
-
-Unofficial documentation of the private HTTP APIs used by Stack Exchange chat.
+Unofficial documentation of the private HTTP APIs used by Stack Exchange
+chat.
 
 ## Event JSON Objects
 
-Chat events are represented by JSON objects.
+Chat events are represented by JSON objects with at least the following
+fields:
 
-- `room_id`
-- `room_name`
-- `event_type` - possible values enumerated below
-- `time_stamp` - UTC time stamp
-
+- `room_id` - integer
+- `room_name` - string
+- `event_type` - integer, possible values enumerated below
+- `time_stamp` - integer
 
 ### `event_type` values
 
@@ -71,17 +70,61 @@ for the given ROOM_ID.
 
 ##### `before`
 
-Optional. Limits results to events with a `message_id` less than `before`.
+Optional. Limits results to events with a `message_id` less than
+`before`.
 
 ##### `after`
 
-Optional. Limits results to events with a `message_id` greater than or equal to `after`.
+Optional. Limits results to events with a `message_id` greater than or
+equal to `after`.
 
 ##### `msgCount`
 
-Optional. Number of events to return.
-Maximum: 500
+Optional. Number of events to return.  
+Maximum: 500  
 Default: 100
+
+### POST `/messages/MESSAGE_ID/star`
+
+Stars or unstars the specified message. You can't specify whether you
+want to have starred the message or not, you can just toggle whether
+you have.
+
+### POST `/messages/MESSAGE_ID/owner-star`
+
+Pins or unpins the specified message. This is a toggle, like starring.
+
+### POST `/messages/15338982/delete`
+
+Removes `content` of the specified message.
+
+### GET /rooms/thumbs/14219`
+
+Returns a JSON object with information about the specified room.
+Includes the following fields:
+
+- `id` - integer
+- `name` - string
+- `description` - string
+- `isFavorite` - boolean
+- `usage` - null or string with HTML displaying graph of room activity
+- `tags` - string with HTML displays tags associated with room
+
+#### URL Query String Arguments
+
+##### `showUsage`
+
+Optional Whether the `usage` field should be populated, else null.  
+Default: false
+
+### POST `/admin/movePosts/ROOM_ID`
+
+Moves posts from the specified room to another room.
+
+#### POST form data arguments
+
+- `ids` - comma-seperated list of message_ids
+- `to` - room_id of room the messages should be moved to
 
 ### POST `/ws-auth`
 
