@@ -94,6 +94,13 @@ class SEChatWrapper(object):
 
     def logout(self):
         assert self.logged_in
+
+        for watcher in self.br.sockets.values():
+            watcher.killed = True
+
+        for watcher in self.br.polls.values():
+            watcher.killed = True
+
         self.request_queue.put(SystemExit)
         self.logger.info("Logged out.")
         self.logged_in = False

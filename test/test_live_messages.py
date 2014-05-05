@@ -110,7 +110,7 @@ if live_testing.enabled:
         wrapper.joinRoom(room_id)
 
         wrapper.watchRoom(room_id, lambda event, _:
-            pending_events.put((False, event)), 1)
+            pending_events.put((False, event)), 5)
         wrapper.watchRoomSocket(room_id, lambda event, _:
             pending_events.put((True, event)))
 
