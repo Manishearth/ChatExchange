@@ -79,10 +79,8 @@ class MessageEvent(Event):
 
         if self.content is not None:
             self.text_content = _utils.html_to_text(self.content)
-            self.deleted = False
         else:
             self.text_content = None
-            self.deleted = True
 
     def reply(self, text):
         assert self.wrapper
@@ -122,11 +120,6 @@ class RoomNameChanged(Event):
 @register_type
 class MessageStarred(MessageEvent):
     type_id = 6
-
-
-@register_type
-class DebugMessage(Event):
-    type_id = 7
 
 
 @register_type
