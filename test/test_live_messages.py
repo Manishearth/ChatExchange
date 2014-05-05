@@ -123,7 +123,7 @@ if live_testing.enabled:
         wrapper.sendMessage(room_id, test_message_content)
 
         @get_event
-        def test_message(event):
+        def test_message_posted(event):
             return (
                 isinstance(event, events.MessagePosted)
                 and test_message_nonce in event.content
@@ -135,7 +135,7 @@ if live_testing.enabled:
         test_reply_content = TEST_MESSAGE_FORMAT.format(test_reply_nonce)
 
         logger.debug("Sending test reply")
-        test_message.reply(test_reply_content)
+        test_message_posted.message.reply(test_reply_content)
 
         # XXX: The limitations of get_event don't allow us to also
         # XXX: look for the corresponding MessagePosted event.
@@ -148,7 +148,11 @@ if live_testing.enabled:
 
         logger.debug("Observed test reply")
 
-        assert test_reply.parent_message_id == test_message.message_id
+        assert test_reply.parent_message_id == test_message_posted.message_id
+        assert test_reply.message.parent.message_id == test_reply.parent_message_id
+        assert test_reply.message.parent.content == test_message_posted.content
+        assert test_message_posted.message_id == test_message_posted.message.message_id
+        assert test_reply.message.parent is test_message_posted.message
 
         test_edit_nonce = uuid.uuid4().hex
         test_edit_content = TEST_MESSAGE_FORMAT.format(test_edit_nonce)
@@ -157,13 +161,13 @@ if live_testing.enabled:
 
         # Send a lot of edits in a row, to ensure we don't lose any
         # from throttling being ignored.
-        test_message.edit(
+        test_message_posted.message.edit(
             "**this is a** test edit and should be edited again")
-        test_message.edit(
+        test_message_posted.message.edit(
             "this is **another test edit** and should be edited again")
-        test_message.edit(
+        test_message_posted.message.edit(
             "this is **yet** another test edit and **should be edited again**")
-        test_message.edit(test_edit_content)
+        test_message_posted.message.edit(test_edit_content)
 
         @get_event
         def test_edit(event):
@@ -174,12 +178,13 @@ if live_testing.enabled:
 
         logger.debug("Observed final test edit")
 
-        assert test_edit.message_id == test_message.message_id
+        assert test_message_posted.message is test_edit.message
+        assert test_edit.message_id == test_message_posted.message_id
         assert test_edit.message_edits == 4
 
         # it should be safe to assume that there isn't so much activity
         # that these events will have been flushed out of recent_events.
-        assert test_message in wrapper.recent_events
+        assert test_message_posted in wrapper.recent_events
         assert test_reply in wrapper.recent_events
         assert test_edit in wrapper.recent_events
 

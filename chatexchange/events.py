@@ -1,19 +1,19 @@
 import logging
 
-from . import _utils
+from . import message
 
 
 logger = logging.getLogger(__name__)
 
 
-def make(data, wrapper=None, **kwargs):
+def make(data, wrapper):
     """
     Instantiates an instance of Event or a subclass, for the given
     event data and (optional) wrapper.
     """
     type_id = data['event_type']
     cls = types.get(type_id, Event)
-    return cls(data, wrapper, **kwargs)
+    return cls(data, wrapper)
 
 
 # Event subclasses by type_id
@@ -31,7 +31,7 @@ def register_type(event_type):
 
 
 class Event(object):
-    def __init__(self, data, wrapper=None):
+    def __init__(self, data, wrapper):
         self.logger = logger.getChild(type(self).__name__)
 
         assert data, "empty data passed to Event constructor"
@@ -77,31 +77,46 @@ class MessageEvent(Event):
         self.target_user_id = self.data.get('target_user_id', None)
         self.parent_message_id = self.data.get('parent_id', None)
 
-        if self.content is not None:
-            self.text_content = _utils.html_to_text(self.content)
-            self.deleted = False
-        else:
-            self.text_content = None
-            self.deleted = True
+        self.message = self.wrapper.get_message(self.message_id)
 
-    def reply(self, text):
-        assert self.wrapper
-        self.wrapper.send_message(
-            self.room_id,
-            ":%s %s" % (self.message_id, text))
+        self._update_message()
 
-    def edit(self, text):
-        self.wrapper.edit_message(self.message_id, text)
+    def _update_message(self):
+        # XXX: assuming Event has newer information than Message.
+        message = self.message
+        message.content = self.content
+        message.deleted = self.content is None
+        message.edits = self.message_edits
+        message.target_user_id = self.target_user_id
+        message._parent_message_id = self.parent_message_id
+
+        # this is ugly
+        if not isinstance(self, MessageMovedOut):
+            message.room_id = self.room_id
+            message.room_name = self.room_name
 
 
 @register_type
 class MessagePosted(MessageEvent):
     type_id = 1
 
+    def _update_message(self):
+        super(MessagePosted, self)._update_message()
+        self.message.owner_user_id = self.user_id
+        self.message.owner_user_name = self.user_name
+
 
 @register_type
 class MessageEdited(MessageEvent):
     type_id = 2
+
+    def _update_message(self):
+        super(MessageEdited, self)._update_message()
+        # XXX: I need to test with a moderator to determine whether the
+        # XXX: user information associate with an edit is the owner
+        # XXX: of the post or the user doing the editing. If it's the
+        # XXX: user doing the editing, then we should add a new
+        # XXX: editor field to Message. For now, we'll ignore the user.
 
 
 @register_type

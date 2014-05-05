@@ -1,4 +1,4 @@
-from chatexchange import events
+from chatexchange import events, wrapper
 
 
 def test_message_posted_event_initialization():
@@ -25,7 +25,7 @@ def test_message_posted_event_initialization():
         "user_name": user_name
     }
 
-    event = events.make(event_data)
+    event = events.make(event_data, wrapper.SEChatWrapper())
 
     assert isinstance(event, events.MessagePosted)
     assert type(event) == events.MessagePosted
@@ -36,7 +36,7 @@ def test_message_posted_event_initialization():
     assert event.room_name == room_name
 
     assert event.content == content
-    assert event.text_content == intended_text_content
+    assert event.message.text_content == intended_text_content
     assert event.message_id == message_id
     assert event.user_id == user_id
     assert event.user_name == user_name
@@ -68,7 +68,7 @@ def test_message_edited_event_initialization():
         "user_name": user_name
     }
 
-    event = events.make(event_data)
+    event = events.make(event_data, wrapper.SEChatWrapper())
 
     assert isinstance(event, events.MessageEdited)
     assert type(event) == events.MessageEdited
@@ -79,7 +79,7 @@ def test_message_edited_event_initialization():
     assert event.room_name == room_name
 
     assert event.content == content
-    assert event.text_content == intended_text_content
+    assert event.message.text_content == intended_text_content
     assert event.message_id == message_id
     assert event.message_edits == message_edits
     assert event.user_id == user_id
@@ -112,7 +112,7 @@ def test_message_starred_event_initialization():
         "user_name": user_name
     }
 
-    event = events.make(event_data)
+    event = events.make(event_data, wrapper.SEChatWrapper())
 
     assert isinstance(event, events.MessageStarred)
     assert type(event) == events.MessageStarred
@@ -123,7 +123,7 @@ def test_message_starred_event_initialization():
     assert event.room_name == room_name
 
     assert event.content == content
-    assert event.text_content == intended_text_content
+    assert event.message.text_content == intended_text_content
     assert event.message_id == message_id
     assert event.message_stars == message_stars
     assert event.user_id == user_id

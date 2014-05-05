@@ -6,10 +6,11 @@ import threading
 import logging
 import logging.handlers
 import warnings
+import weakref
 
 import BeautifulSoup
 
-from . import browser, events
+from . import browser, events, message
 
 
 TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"
@@ -23,6 +24,9 @@ class SEChatWrapper(object):
 
     def __init__(self, host='stackexchange.com'):
         self.logger = logger.getChild('SEChatWraper')
+
+        # any known Message instances
+        self._messages = weakref.WeakValueDictionary()
 
         if host in self._deprecated_hosts:
             replacement = self._deprecated_hosts[host]
@@ -44,6 +48,10 @@ class SEChatWrapper(object):
         self._requests_served = 0
         self.thread = threading.Thread(target=self._worker, name="message_sender")
         self.thread.setDaemon(True)
+
+    def get_message(self, message_id):
+        return self._messages.setdefault(
+            message_id, message.Message(message_id, self))
 
     valid_hosts = {
         'stackexchange.com',
