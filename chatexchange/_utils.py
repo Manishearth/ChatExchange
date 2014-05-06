@@ -66,4 +66,5 @@ class LazyFrom(object):
         self.values[obj] = value
 
     def __delete__(self, obj):
-        del self.values[obj]
+        if obj in self.values:
+            del self.values[obj]

@@ -147,7 +147,9 @@ class SEChatBrowser(object):
                 self.logger.error("Error updating fkey: %s", e)
         return False
 
-    def postSomething(self, relurl, data):
+    def postSomething(self, relurl, data=None):
+        if data is None:
+            data = {}
         data['fkey'] = self.chat_fkey()
         req = self.post(self.getURL(relurl), data)
         try:

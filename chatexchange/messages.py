@@ -12,14 +12,16 @@ class Message(object):
     owner_user_id = _utils.LazyFrom('scrape_transcript')
     owner_user_name = _utils.LazyFrom('scrape_transcript')
     _parent_message_id = _utils.LazyFrom('scrape_transcript')
+    stars = _utils.LazyFrom('scrape_transcript')
+    starred_by_you = _utils.LazyFrom('scrape_transcript')
+    pinned = _utils.LazyFrom('scrape_transcript')
 
     editor_user_id = _utils.LazyFrom('scrape_history')
     editor_user_name = _utils.LazyFrom('scrape_history')
     content_source = _utils.LazyFrom('scrape_history')
     edits = _utils.LazyFrom('scrape_history')
-    stars = _utils.LazyFrom('scrape_history')
-    pins = _utils.LazyFrom('scrape_history')
-    pinner = _utils.LazyFrom('scrape_history')
+    pinner_user_id = _utils.LazyFrom('scrape_history')
+    pinner_user_name = _utils.LazyFrom('scrape_history')
     time_stamp = _utils.LazyFrom('scrape_history')
 
     def scrape_history(self):
@@ -43,13 +45,18 @@ class Message(object):
 
         self.content_source = (
             history[0].select('.content b')[0].next_sibling.strip())
+
         # self.edits = ...
         # self.stars = ...
-        # self.pins = ...
+        # self.pinned = ...
         # self.editor_user_id = ...
         # self.editor_user_name = ...
-        # self.pinner = ...
+        # self.pinner_user_id = ...
+        # self.pinner_user_name = ...
         # self.time_stamp = ...
+        # http://chat.stackexchange.com/messages/15358991/history
+        # http://chat.stackexchange.com/messages/15359293/history
+        # http://chat.stackexchange.com/messages/15359292/history
 
     def scrape_transcript(self):
         # TODO: move request logic to Browser or Wrapper
@@ -82,6 +89,26 @@ class Message(object):
                     message_soup.select('.content')[0]
                 ).partition('>')[2].rpartition('<')[0].strip()
 
+                stars_soup = message_soup.select('.stars')
+                if stars_soup:
+                    times_soup = message_soup.select('.times')
+                    if times_soup and times_soup[0].text:
+                        message.stars = int(times_soup[0].text)
+                    else:
+                        message.stars = 1
+
+                    message.starred_by_you = bool(
+                        message_soup.select('.stars.user-star'))
+                    message.pinned = bool(
+                        message_soup.select('.stars.owner-star'))
+                else:
+                    message.stars = 0
+                    message.starred_by_you = False
+                    message.pinned = False
+                    message.pinner_user_id = None
+
+                # TODO: message.time_stamp = ...
+
                 parent_info_soups = message_soup.select('.reply-info')
 
                 if parent_info_soups:
@@ -90,7 +117,6 @@ class Message(object):
                         parent_info_soup['href'].partition('#')[2])
                 else:
                     message._parent_message_id = None
-
 
     @property
     def parent(self):
@@ -109,3 +135,39 @@ class Message(object):
 
     def edit(self, text):
         self.wrapper.edit_message(self.id, text)
+
+    def star(self, value=True):
+        del self.starred_by_you # don't use cached value
+        if self.starred_by_you != value:
+            self._toggle_starring()
+
+            self.starred_by_you = value # assumed valid
+
+            # bust staled cache
+            del self.stars
+        else:
+            self.logger.info(".starred_by_you is already %r", value)
+
+    def pin(self, value=True):
+        del self.pinned # don't used cached value
+        if self.pinned != value:
+            self._toggle_pinning()
+
+            # bust staled cache
+            del self.pinned 
+            del self.pinner_user_id
+            del self.pinner_user_name
+        else:
+            self.logger.info(".pinned is already %r", value)
+
+    def _toggle_starring(self):
+        # TODO: move request logic to Browser or Wrapper
+        self.wrapper.br.postSomething(
+            '/messages/%s/star' % (self.id,))
+
+    def _toggle_pinning(self):
+        # TODO: move request logic to Browser or Wrapper
+        self.wrapper.br.postSomething(
+            '/messages/%s/owner-star' % (self.id,))
+
+

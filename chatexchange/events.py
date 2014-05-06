@@ -87,7 +87,12 @@ class MessageEvent(Event):
         message.deleted = self.content is None
         message.edits = self.message_edits
         message.stars = self.message_stars
-        message.pins = self.message_owner_stars
+        if message.stars == 0:
+            message.starred_by_you = False
+        message.pinned = self.message_owner_stars > 0
+        if not message.pinned:
+            message.pinner_user_id = None
+            message.pinner_user_name = None
         message.target_user_id = self.target_user_id
         message._parent_message_id = self.parent_message_id
 
