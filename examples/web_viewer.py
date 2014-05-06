@@ -70,7 +70,7 @@ class Server(BaseHTTPServer.HTTPServer, object):
                 'name': self.room_name
             },
             'messages': [{
-                'id': message.message_id,
+                'id': message.id,
                 'owner_user_id': message.owner_user_id,
                 'owner_user_name': message.owner_user_name,
                 'text_content': message.text_content,

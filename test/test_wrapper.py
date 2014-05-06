@@ -149,9 +149,9 @@ if live_testing.enabled:
         logger.debug("Observed test reply")
 
         assert test_reply.parent_message_id == test_message_posted.message_id
-        assert test_reply.message.parent.message_id == test_reply.parent_message_id
+        assert test_reply.message.parent.id == test_reply.parent_message_id
         assert test_reply.message.parent.content == test_message_posted.content
-        assert test_message_posted.message_id == test_message_posted.message.message_id
+        assert test_message_posted.message_id == test_message_posted.message.id
         assert test_reply.message.parent is test_message_posted.message
 
         test_edit_nonce = uuid.uuid4().hex
@@ -187,5 +187,6 @@ if live_testing.enabled:
         assert test_message_posted in wrapper.recent_events
         assert test_reply in wrapper.recent_events
         assert test_edit in wrapper.recent_events
+        assert test_edit.message.content_source == test_edit_content
 
         wrapper.logout()

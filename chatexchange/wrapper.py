@@ -8,8 +8,6 @@ import logging.handlers
 import warnings
 import weakref
 
-import BeautifulSoup
-
 from . import browser, events, messages
 
 
@@ -41,6 +39,7 @@ class SEChatWrapper(object):
             raise ValueError("invalid host: %r" % (host,))
 
         self.br = browser.SEChatBrowser()
+        self.br.host = host
         self.host = host
         self._previous = None
         self.request_queue = Queue.Queue()
