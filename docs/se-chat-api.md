@@ -78,6 +78,17 @@ The name specifies the room we are interested in (e.g. `'r14219'`), and
 the value specifies the `time_stamp` we would like to see messages
 since.
 
+### GET `/message/MESSAGE_ID`
+
+Returns the text of the specified message.
+
+#### URL Query String Arguments
+
+##### `plain`
+
+Optional. If false or missing, the rendered HTML of the message will be
+returned. If true, the original markdown source of the message will be.
+
 ### POST `/ws-auth`
 
 Authenticates a websocket connection to listen for events in a given
@@ -108,6 +119,31 @@ Includes the following fields:
 
 Optional Whether the `usage` field should be populated, else null.  
 Default: false
+
+### POST `/user/info/`
+
+Returns information about users in the context of a given room.
+
+The result is a JSON object with a single field, `users`, a list of
+objects each of which has the following keys:
+
+- `id` - integer
+- `name` - string
+- `reputation` - integer
+- `is_moderator` - boolean
+- `is_owner` - boolean
+- `email_hash` - an hex MD5 hash digest used to identify a gravatar,
+  or a `!`-prefixed avatar URL.
+
+#### POST form data arguments
+
+##### `ids`
+
+The ID (comma-seperated list of IDs?) of the users in question.
+
+##### `roomId`
+
+The ID of the room in question.
 
 ## Writing
 
