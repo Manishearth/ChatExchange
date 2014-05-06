@@ -6,25 +6,52 @@ class Message(object):
         self.id = id
         self.wrapper = wrapper
 
-    room_id = _utils.LazyFrom('_scrape_transcript')
-    room_name = _utils.LazyFrom('_scrape_transcript')
-    content = _utils.LazyFrom('_scrape_transcript')
-    owner_user_id = _utils.LazyFrom('_scrape_transcript')
-    owner_user_name = _utils.LazyFrom('_scrape_transcript')
-    _parent_message_id = _utils.LazyFrom('_scrape_transcript')
+    room_id = _utils.LazyFrom('scrape_transcript')
+    room_name = _utils.LazyFrom('scrape_transcript')
+    content = _utils.LazyFrom('scrape_transcript')
+    owner_user_id = _utils.LazyFrom('scrape_transcript')
+    owner_user_name = _utils.LazyFrom('scrape_transcript')
+    _parent_message_id = _utils.LazyFrom('scrape_transcript')
 
-    content_source = _utils.LazyFrom('_scrape_source')
+    editor_user_id = _utils.LazyFrom('scrape_history')
+    editor_user_name = _utils.LazyFrom('scrape_history')
+    content_source = _utils.LazyFrom('scrape_history')
+    edits = _utils.LazyFrom('scrape_history')
+    stars = _utils.LazyFrom('scrape_history')
+    pins = _utils.LazyFrom('scrape_history')
+    pinner = _utils.LazyFrom('scrape_history')
+    time_stamp = _utils.LazyFrom('scrape_history')
 
-    edits = _utils.LazyFrom(NotImplemented)
-    stars = _utils.LazyFrom(NotImplemented)
-    owner_stars = _utils.LazyFrom(NotImplemented)
-
-    def _scrape_source(self):
+    def scrape_history(self):
         # TODO: move request logic to Browser or Wrapper
-        self.content_source = self.wrapper.br.getSomething(
-            '/message/%s?plain=true' % (self.id,))
+        history_soup = self.wrapper.br.getSoup(
+            self.wrapper.br.getURL(
+                '/messages/%s/history' % (self.id)))
 
-    def _scrape_transcript(self):
+        latest = history_soup.select('.monologue')[0]
+        history = history_soup.select('.monologue')[1:]
+
+        message_id = int(latest.select('.message a')[0]['name'])
+        assert message_id == self.id
+
+        self.room_id = int(latest.select('.message a')[0]['href']
+                              .rpartition('/')[2].partition('?')[0])
+
+        self.content = str(
+            latest.select('.content')[0]
+        ).partition('>')[2].rpartition('<')[0].strip()
+
+        self.content_source = (
+            history[0].select('.content b')[0].next_sibling.strip())
+        # self.edits = ...
+        # self.stars = ...
+        # self.pins = ...
+        # self.editor_user_id = ...
+        # self.editor_user_name = ...
+        # self.pinner = ...
+        # self.time_stamp = ...
+
+    def scrape_transcript(self):
         # TODO: move request logic to Browser or Wrapper
         transcript_soup = self.wrapper.br.getSoup(
             self.wrapper.br.getURL(

@@ -87,7 +87,7 @@ class MessageEvent(Event):
         message.deleted = self.content is None
         message.edits = self.message_edits
         message.stars = self.message_stars
-        message.owner_stars = self.message_owner_stars
+        message.pins = self.message_owner_stars
         message.target_user_id = self.target_user_id
         message._parent_message_id = self.parent_message_id
 
@@ -105,6 +105,7 @@ class MessagePosted(MessageEvent):
         super(MessagePosted, self)._update_message()
         self.message.owner_user_id = self.user_id
         self.message.owner_user_name = self.user_name
+        self.message.time_stamp = self.time_stamp
 
 
 @register_type
