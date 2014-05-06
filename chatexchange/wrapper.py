@@ -6,10 +6,9 @@ import threading
 import logging
 import logging.handlers
 import warnings
+import weakref
 
-import BeautifulSoup
-
-from . import browser, events
+from . import browser, events, messages
 
 
 TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"
@@ -20,9 +19,13 @@ logger = logging.getLogger(__name__)
 
 class SEChatWrapper(object):
     max_recent_events = 1000
+    max_recently_accessed_messages = 1000
 
     def __init__(self, host='stackexchange.com'):
         self.logger = logger.getChild('SEChatWraper')
+
+        # any known Message instances
+        self._messages = weakref.WeakValueDictionary()
 
         if host in self._deprecated_hosts:
             replacement = self._deprecated_hosts[host]
@@ -36,14 +39,29 @@ class SEChatWrapper(object):
             raise ValueError("invalid host: %r" % (host,))
 
         self.br = browser.SEChatBrowser()
+        self.br.host = host
         self.host = host
         self._previous = None
         self.request_queue = Queue.Queue()
         self.logged_in = False
         self.recent_events = collections.deque(maxlen=self.max_recent_events)
+        self._recently_accessed_messages = collections.deque(maxlen=self.max_recently_accessed_messages)
         self._requests_served = 0
         self.thread = threading.Thread(target=self._worker, name="message_sender")
         self.thread.setDaemon(True)
+
+    def get_message(self, message_id):
+        message = self._messages.setdefault(
+            message_id, messages.Message(message_id, self))
+
+        # We want to keep some recently-accessed messages in memory even
+        # if they weren't directly referred-to by recent events. For
+        # example, if we keep accessing the .parent of a particular
+        # message, we'll want to keep the parent's data around.
+        self._recently_accessed_messages.appendleft(message)
+
+        return message
+
 
     valid_hosts = {
         'stackexchange.com',
@@ -75,6 +93,13 @@ class SEChatWrapper(object):
 
     def logout(self):
         assert self.logged_in
+
+        for watcher in self.br.sockets.values():
+            watcher.killed = True
+
+        for watcher in self.br.polls.values():
+            watcher.killed = True
+
         self.request_queue.put(SystemExit)
         self.logger.info("Logged out.")
         self.logged_in = False
@@ -204,7 +229,7 @@ class SEChatWrapper(object):
         Returns a list of Events associated with a particular room,
         given an activity message from the server.
         """
-        room_activity = activity.get('r' + room_id, {})
+        room_activity = activity.get('r%s' % (room_id,), {})
         room_events_data = room_activity.get('e', [])
         for room_event_data in room_events_data:
             if room_event_data:

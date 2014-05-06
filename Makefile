@@ -5,6 +5,9 @@ WARGS = -W default::Warning
 run-example: install-dependencies
 	python $(WARGS) examples/chat.py
 
+run-web-example: install-dependencies
+	python $(WARGS) examples/web_viewer.py
+
 test: install-dependencies
 	python $(WARGS) -m pytest
 
