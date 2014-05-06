@@ -70,10 +70,12 @@ class Server(BaseHTTPServer.HTTPServer, object):
                 'name': self.room_name
             },
             'messages': [{
+                'id': message.message_id,
                 'owner_user_id': message.owner_user_id,
                 'owner_user_name': message.owner_user_name,
                 'text_content': message.text_content,
                 'stars': message.stars,
+                'owner_stars': message.owner_stars,
                 'edits': message.edits,
             } for message in self.messages]
         }
@@ -99,15 +101,30 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
         self.wfile.close()
 
     def do_POST(self):
-        assert self.path == '/new'
+        assert self.path == '/action'
 
         length = int(self.headers.getheader('content-length'))
         json_data = self.rfile.read(length)
         data = json.loads(json_data)
 
-        self.server.chat.send_message(
-            self.server.room_id,
-            data['text'])
+        if data['action'] == 'create':
+            self.server.chat.send_message(
+                self.server.room_id,
+                data['text'])
+        elif data['action'] == 'edit':
+            message = self.server.chat.get_message(data['target'])
+            message.edit(data['text'])
+        elif data['action'] == 'reply':
+            message = self.server.chat.get_message(data['target'])
+            message.reply(data['text'])
+        elif data['action'] == 'set-starring':
+            message = self.server.chat.get_message(data['target'])
+            message.star(data['value'])
+        elif data['action'] == 'set-pinning':
+            message = self.server.chat.get_message(data['target'])
+            message.pin(data['value'])
+        else:
+            assert False
 
         self.send_response(200)
         self.end_headers()
@@ -134,7 +151,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
         <body>
         <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.js"></script>
         <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
         <script>
             'use strict';
 
@@ -143,14 +159,57 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
                 $interval,
                 $http
             ) {
+                var input = document.querySelector('input');
+                input.focus();
+
+                $scope.action = 'create';
+                $scope.target = null;
+                $scope.text = "";
+
                 $scope.room = {
                     name: "Loading room...",
                     id: "???"
                 };
 
-                $scope.sendNewMessage = function() {
-                    $http.post('/new', {text: $scope.newMessage});
-                    $scope.newMessage = "";
+                $scope.sendAction = function() {
+                    $http.post('/action', {
+                        action: $scope.action,
+                        text: $scope.text,
+                        target: $scope.target
+                    });
+                    
+                    $scope.text = "";
+                    $scope.action = 'create';
+                    $scope.target = '';
+                }
+
+                $scope.prepareToReply = function(id) {
+                    $scope.action = 'reply';
+                    $scope.target = id;
+                    input.focus();
+                }
+
+                $scope.prepareToEdit = function(message) {
+                    $scope.action = 'edit';
+                    $scope.target = message.id;
+                    $scope.text = message.text_content;
+                    input.focus();
+                }
+
+                $scope.setMessageStarred = function(id, value) {
+                    $http.post('/action', {
+                        action: 'set-starring',
+                        target: id,
+                        value: value
+                    });
+                }
+
+                $scope.setMessagePinned = function(id, value) {
+                    $http.post('/action', {
+                        action: 'set-pinning',
+                        target: id,
+                        value: value
+                    });
                 }
 
                 $interval(update, 500);
@@ -164,7 +223,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
             }
         </script>
         <div class="container">
-            <h1>
+            <h1 class="text-center">
                 <a href="http://chat.{{host}}/rooms/{{room.id}}">
                     {{room.name}} <small>#{{room.id}}</small>
                 </a>
@@ -173,32 +232,104 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
                 <em>There have been no new messages.</em>
             </div>
 
-            <div ng-repeat="message in messages">
-                <strong>
+            <div class="messages"><div class="row" ng-repeat="message in messages">
+                <div class="col-xs-2 text-right">
                     <a href="http://chat.{{host}}/users/{{message.owner_user_id}}/"
                     >{{message.owner_user_name}}</a>:
-                </strong>
+                </div>
 
-                <span>
-                    {{message.text_content}}
-                </span>
+                <div class="col-xs-5">
+                    <span>
+                        {{message.text_content}}
+                    </span>
+                </div>
 
-                <span class="label label-info" ng-if="message.edits">
-                    edited
-                    <span ng-if="message.edits > 1">x{{message.edits}}</span>
-                </span>
+                <div class="col-xs-5">
+                    <button
+                        type="button" class="btn btn-default btn-xs"
+                        ng-click="prepareToReply(message.id)"
+                    >
+                        Reply
+                    </button>
 
-                <span class="label label-primary" ng-if="message.stars">
-                    starred
-                    <span ng-if="message.stars > 1">x{{message.stars}}</span>
-                </span>
-            </div>
+                    <button
+                        type="button" class="btn btn-default btn-xs"
+                        ng-click="prepareToEdit(message)"
+                    >
+                        Edit
+                    </button>
 
-            <form ng-submit="sendNewMessage()" style="margin-top: 1em;">
-                <input ng-model="newMessage" style="width: 30em;" />
-                <button type="submit">Send</button>
+                    <button
+                        type="button" class="btn btn-default btn-xs"
+                        ng-click="setMessageStarred(message.id, true)"
+                    >
+                        Star
+                    </button>
+
+                    <button
+                        type="button" class="btn btn-default btn-xs"
+                        ng-click="setMessageStarred(message.id, false)"
+                    >
+                        Unstar
+                    </button>
+
+                    <button
+                        type="button" class="btn btn-default btn-xs"
+                        ng-click="setMessagePinned(message.id, true)"
+                    >
+                        Pin
+                    </button>
+
+                    <button
+                        type="button" class="btn btn-default btn-xs"
+                        ng-click="setMessagePinned(message.id, false)"
+                    >
+                        Unpin
+                    </button>
+
+                    <span class="label label-info" ng-if="message.edits">
+                        edited
+                        <span ng-if="message.edits > 1">x{{message.edits}}</span>
+                    </span>
+
+                    <span class="label label-primary" ng-if="message.stars">
+                        starred
+                        <span ng-if="message.stars > 1">x{{message.stars}}</span>
+                    </span>
+
+                    <span class="label label-primary" ng-if="message.owner_stars">
+                        pinned
+                    </span>
+                </div>
+            </div></div>
+
+            <form ng-submit="sendAction()" class="row">
+                <div class="col-xs-2 text-right">
+                    <code>{{action}}</code>
+                </div>
+                <div class="col-xs-5">
+                    <input ng-model="text" class="form-control" />
+                </div>
+                <div class="col-xs-5">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Submit
+                    </button>
+                </div>
             </form>
-            <script>document.querySelector('input').focus()</script>
+            <style>
+            .row { margin-top: .5em; }
+            .label { vertical-align: middle; }
+            body { background: #BBB; }
+            .messages {
+                min-height: 10em;
+            }
+            .container {
+                border: 1px solid #888;
+                background: white;
+                border-top: none;
+                padding: 1em;
+            }
+            </style>
         </div>
         </body>
         </html>''')
