@@ -10,7 +10,6 @@ import time
 import chatexchange.wrapper
 import chatexchange.events
 
-
 logger = logging.getLogger(__name__)
 
 
