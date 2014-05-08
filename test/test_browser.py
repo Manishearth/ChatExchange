@@ -1,6 +1,6 @@
 import httmock
 
-from chatexchange.browser import SEChatBrowser
+from chatexchange import Browser
 
 from mock_responses import (
     only_httmock, favorite_with_test_fkey, TEST_FKEY)
@@ -12,7 +12,7 @@ def test_update_fkey():
     with a copy of a real response from /chats/join/favorite
     """
     with only_httmock(favorite_with_test_fkey):
-        browser = SEChatBrowser()
+        browser = Browser()
         browser.host = 'stackexchange.com'
 
         assert browser.chat_fkey() == TEST_FKEY
@@ -20,7 +20,7 @@ def test_update_fkey():
 
 def test_user_agent():
     """
-    Tests that HTTP requests made from a SEChatBrowser use the intended
+    Tests that HTTP requests made from a Browser use the intended
     User-Agent.
 
     WebSocket connections are not tested.
@@ -29,12 +29,12 @@ def test_user_agent():
 
     @httmock.all_requests
     def verify_user_agent(url, request):
-        assert request.headers['user-agent'] == SEChatBrowser.user_agent
+        assert request.headers['user-agent'] == Browser.user_agent
         good_requests.append(request)
         return '<!doctype html><html><head><title>Hello<body>World'
 
     with only_httmock(verify_user_agent):
-        browser = SEChatBrowser()
+        browser = Browser()
 
         browser.getSomething('http://example.com/')
         browser.getSoup('http://example.com/')
