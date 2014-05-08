@@ -1,6 +1,6 @@
 import logging
 
-from chatexchange import events, wrapper
+from chatexchange import events, Wrapper
 
 import live_testing
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 if live_testing.enabled:
     def test_specific_messages():
-        chat = wrapper.SEChatWrapper('stackexchange.com')
+        chat = Wrapper('stackexchange.com')
         # it shouldn't be necessary to log in for this test
 
         message1 = chat.get_message(15359027)
