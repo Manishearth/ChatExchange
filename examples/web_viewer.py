@@ -27,7 +27,7 @@ def main(port='8462'):
 
     logging.basicConfig(level=logging.INFO)
 
-    room_id = 14219 # Charcoal Chatbot Sandbox
+    room_id = 14219  # Charcoal Chatbot Sandbox
 
     if 'ChatExchangeU' in os.environ:
         username = os.environ['ChatExchangeU']
@@ -143,7 +143,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
         self.wfile.close()
 
     def send_state(self):
-        chat = self.server.chat
         body = json.dumps(self.server.get_state())
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')

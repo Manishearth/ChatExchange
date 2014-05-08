@@ -1,6 +1,6 @@
 import logging
 
-from chatexchange import events, Wrapper
+from chatexchange import Wrapper
 
 import live_testing
 

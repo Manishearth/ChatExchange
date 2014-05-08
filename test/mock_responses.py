@@ -1,6 +1,4 @@
 # encoding: utf-8
-import json
-
 import httmock
 
 
@@ -155,4 +153,3 @@ def favorite_with_test_fkey(url, request):
 @httmock.urlmatch(netloc=r'.*')
 def fail_everything_else(url, request):
     raise Exception("unexpected request; no mock available", request)
-

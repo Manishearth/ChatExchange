@@ -1,8 +1,14 @@
+import logging
+
 from . import _utils
+
+
+logger = logging.getLogger(__name__)
 
 
 class Message(object):
     def __init__(self, id, wrapper):
+        self.logger = logger.getChild('Message')
         self.id = id
         self.wrapper = wrapper
 
@@ -25,10 +31,11 @@ class Message(object):
     time_stamp = _utils.LazyFrom('scrape_history')
 
     def scrape_history(self):
+
         # TODO: move request logic to Browser or Wrapper
         history_soup = self.wrapper.br.getSoup(
             self.wrapper.br.getURL(
-                '/messages/%s/history' % (self.id)))
+                '/messages/%s/history' % (self.id,)))
 
         latest = history_soup.select('.monologue')[0]
         history = history_soup.select('.monologue')[1:]
@@ -37,7 +44,7 @@ class Message(object):
         assert message_id == self.id
 
         self.room_id = int(latest.select('.message a')[0]['href']
-                              .rpartition('/')[2].partition('?')[0])
+                           .rpartition('/')[2].partition('?')[0])
 
         self.content = str(
             latest.select('.content')[0]
@@ -62,7 +69,7 @@ class Message(object):
         # TODO: move request logic to Browser or Wrapper
         transcript_soup = self.wrapper.br.getSoup(
             self.wrapper.br.getURL(
-                '/transcript/message/%s' % (self.id)))
+                '/transcript/message/%s' % (self.id,)))
 
         room_soup, = transcript_soup.select('.room-name a')
         room_id = int(room_soup['href'].split('/')[2])
@@ -137,11 +144,11 @@ class Message(object):
         self.wrapper.edit_message(self.id, text)
 
     def star(self, value=True):
-        del self.starred_by_you # don't use cached value
+        del self.starred_by_you  # don't use cached value
         if self.starred_by_you != value:
             self._toggle_starring()
 
-            self.starred_by_you = value # assumed valid
+            self.starred_by_you = value  # assumed valid
 
             # bust staled cache
             del self.stars
@@ -149,7 +156,7 @@ class Message(object):
             self.logger.info(".starred_by_you is already %r", value)
 
     def pin(self, value=True):
-        del self.pinned # don't used cached value
+        del self.pinned  # don't used cached value
         if self.pinned != value:
             self._toggle_pinning()
 
@@ -169,5 +176,3 @@ class Message(object):
         # TODO: move request logic to Browser or Wrapper
         self.wrapper.br.postSomething(
             '/messages/%s/owner-star' % (self.id,))
-
-
