@@ -61,7 +61,7 @@ def on_message(message, wrapper):
     if message.content.startswith('!!/random'):
         print message
         print "Spawning thread"
-        message.reply(str(random.random()))
+        message.message.reply(str(random.random()))
 
 
 def setup_logging():
