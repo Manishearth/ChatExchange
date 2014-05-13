@@ -25,9 +25,11 @@ class Message(object):
     editor_user_id = _utils.LazyFrom('scrape_history')
     editor_user_name = _utils.LazyFrom('scrape_history')
     content_source = _utils.LazyFrom('scrape_history')
+    edited = _utils.LazyFrom('scrape_history')
     edits = _utils.LazyFrom('scrape_history')
-    pinner_user_id = _utils.LazyFrom('scrape_history')
-    pinner_user_name = _utils.LazyFrom('scrape_history')
+    pins = _utils.LazyFrom('scrape_history')
+    pinner_user_ids = _utils.LazyFrom('scrape_history')
+    pinner_user_names = _utils.LazyFrom('scrape_history')
     time_stamp = _utils.LazyFrom('scrape_history')
 
     def scrape_history(self):
@@ -58,7 +60,7 @@ class Message(object):
         for item in history:
             if item.select('b')[0].text != 'edited:':
                 continue
-                
+
             edits += 1
 
             if not has_editor_name:
@@ -69,14 +71,33 @@ class Message(object):
 
         assert (edits > 0) == has_editor_name
 
+        if not edits:
+            self.editor_user_id = None
+            self.editor_user_name = None
+
         self.edits = edits
+        self.edited = bool(self.edits)
 
         self._scrape_stars(history_soup, scrape_starred_by_you=False)
 
         if self.pinned:
-            pinner_soup = history_soup.select('#content p a')[0]
-            self.pinner_user_name = pinner_soup.text
-            self.pinner_user_id = self._user_id_from_user_link(pinner_soup)
+            pins = 0
+            pinner_user_ids = []
+            pinner_user_names = []
+
+            for p_soup in history_soup.select('#content p'):
+                if not p_soup.select('.stars.owner-star'):
+                    break
+
+                a_soup = p_soup.select('a')[0]
+
+                pins += 1
+                pinner_user_ids.append(self._user_id_from_user_link(a_soup))
+                pinner_user_names.append(a_soup.text)
+
+            self.pins = pins
+            self.pinner_user_ids = pinner_user_ids
+            self.pinner_user_names = pinner_user_names
 
         # TODO: self.time_stamp = ...
 
@@ -106,6 +127,23 @@ class Message(object):
                 message.room_name = room_name
                 message.owner_user_id = user_id
                 message.owner_user_name = user_name
+
+                edited = bool(message_soup.select('.edits'))
+                if edited:
+                    if not Message.edited.values.get(self):
+                        # XXX: generalize all instances of this?
+                        # if its state was previously edited, then we don't
+                        # need to worry about deleting stale `None` values. We
+                        # preserve the possibly-existing values.
+                        del self.editor_user_id
+                        del self.editor_user_name
+                        del self.edits
+                else:
+                    self.editor_user_id = None
+                    self.editor_user_name = None
+                    self.edits = 0
+
+                self.edited = edited
 
                 message.content = str(
                     message_soup.select('.content')[0]
@@ -141,13 +179,33 @@ class Message(object):
                 # some pages never show user-star, so we have to skip
                 self.starred_by_you = bool(
                     soup.select('.stars.user-star'))
-            self.pinned = bool(
+
+            pinned = bool(
                 soup.select('.stars.owner-star'))
+
+            if pinned:
+                if not Message.pinned.values.get(self):
+                    # XXX: generalize all instances of this?
+                    # if its state was already pinned, then we don't need
+                    # to worry about deleting stale `[]` values. We preserve
+                    # the possibly-existing values.
+                    del self.pinner_user_ids
+                    del self.pinner_user_names
+                    del self.pins
+            else:
+                self.pinner_user_ids = []
+                self.pinner_user_names = []
+                self.pins = 0
+
+            self.pinned = pinned
         else:
             self.stars = 0
-            self.starred_by_you = False
+            if scrape_starred_by_you:
+                self.starred_by_you = False
             self.pinned = False
-            self.pinner_user_id = None
+            self.pins = 0
+            self.pinner_user_ids = []
+            self.pinner_user_names = []
 
     @property
     def parent(self):
@@ -185,9 +243,10 @@ class Message(object):
             self._toggle_pinning()
 
             # bust staled cache
-            del self.pinned 
-            del self.pinner_user_id
-            del self.pinner_user_name
+            del self.pinned
+            del self.pins
+            del self.pinner_user_ids
+            del self.pinner_user_names
         else:
             self.logger.info(".pinned is already %r", value)
 
