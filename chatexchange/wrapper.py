@@ -4,7 +4,6 @@ import time
 import Queue
 import threading
 import logging
-import logging.handlers
 import warnings
 import weakref
 
@@ -31,8 +30,8 @@ class SEChatWrapper(object):
             replacement = self._deprecated_hosts[host]
             warnings.warn(
                 "host value %r is deprecated, use %r instead" % (
-                    host, replacement)
-                , DeprecationWarning, stacklevel=2)
+                    host, replacement
+                ), DeprecationWarning, stacklevel=2)
             host = replacement
 
         if host not in self.valid_hosts:
@@ -61,7 +60,6 @@ class SEChatWrapper(object):
         self._recently_accessed_messages.appendleft(message)
 
         return message
-
 
     valid_hosts = {
         'stackexchange.com',
@@ -138,7 +136,7 @@ class SEChatWrapper(object):
         assert self.logged_in
         self.logger.info("Worker thread reporting for duty.")
         while True:
-            next_action = self.request_queue.get() # blocking
+            next_action = self.request_queue.get()  # blocking
             if next_action == SystemExit:
                 self.logger.info("Worker thread exits.")
                 return
@@ -153,7 +151,6 @@ class SEChatWrapper(object):
                 self._do_action_despite_throttling(next_action)
 
             self.request_queue.task_done()
-
 
     # Appeasing the rate limiter gods is hard.
     BACKOFF_MULTIPLIER = 2
@@ -190,7 +187,7 @@ class SEChatWrapper(object):
 
             if isinstance(response, str):
                 match = re.match(TOO_FAST_RE, response)
-                if match: # Whoops, too fast.
+                if match:  # Whoops, too fast.
                     wait = int(match.group(1))
                     self.logger.debug(
                         "Attempt %d: denied: throttled, must wait %.1f seconds",
@@ -198,14 +195,14 @@ class SEChatWrapper(object):
                     # Wait more than that, though.
                     wait *= self.BACKOFF_MULTIPLIER
                     wait += self.BACKOFF_ADDER
-                else: # Something went wrong. I guess that happens.
+                else:  # Something went wrong. I guess that happens.
                     wait = self.BACKOFF_ADDER
                     logging.error(
                         "Attempt %d: denied: unknown reason %r",
                         attempt, response)
             elif isinstance(response, dict):
-                if response["id"] is None: # Duplicate message?
-                    text = text + " " # Append because markdown
+                if response["id"] is None:  # Duplicate message?
+                    text += " "  # Append because markdown
                     wait = self.BACKOFF_ADDER
                     self.logger.debug(
                         "Attempt %d: denied: duplicate, waiting %.1f seconds.",

@@ -15,9 +15,8 @@ import live_testing
 logger = logging.getLogger(__name__)
 
 
-
 TEST_ROOMS = [
-    ('stackexchange.com', '14219'), # Charcoal Sandbox
+    ('stackexchange.com', '14219'),  # Charcoal Sandbox
 ]
 
 
@@ -36,7 +35,6 @@ else:
         "[ [ChatExchange@localhost](https://github.com/Manishearth/"
         "ChatExchange/ \"This is a test message for ChatExchange using "
         "the nonce {0}.\") ] This is a test message for ChatExchange.")
-
 
 
 if live_testing.enabled:
@@ -114,7 +112,7 @@ if live_testing.enabled:
         wrapper.watchRoomSocket(room_id, lambda event, _:
             pending_events.put((True, event)))
 
-        time.sleep(2) # Avoid race conditions
+        time.sleep(2)  # Avoid race conditions
 
         test_message_nonce = uuid.uuid4().hex
         test_message_content = TEST_MESSAGE_FORMAT.format(test_message_nonce)

@@ -1,7 +1,5 @@
 import json
 import logging
-import re
-import sys
 import threading
 import time
 
@@ -147,7 +145,9 @@ class SEChatBrowser(object):
                 self.logger.error("Error updating fkey: %s", e)
         return False
 
-    def postSomething(self, relurl, data):
+    def postSomething(self, relurl, data=None):
+        if data is None:
+            data = {}
         data['fkey'] = self.chat_fkey()
         req = self.post(self.getURL(relurl), data)
         try:
@@ -162,13 +162,13 @@ class SEChatBrowser(object):
         return BeautifulSoup(self.session.get(url).content)
 
     def post(self, url, data):
-        return self.session.post(url,data)
+        return self.session.post(url, data)
 
     def joinRoom(self, room_id):
         room_id = str(room_id)
         self.rooms[room_id] = {}
         result = self.postSomething(
-            '/chats/%s/events' % (room_id),
+            '/chats/%s/events' % (room_id,),
             {
                 'since': 0, 
                 'mode': 'Messages',
@@ -234,7 +234,7 @@ class RoomSocketWatcher(object):
         while not self.killed:
             a = self.ws.recv()
 
-            if a != None and a != "":
+            if a is not None and a != "":
                 self.on_activity(json.loads(a))
 
 
@@ -266,7 +266,7 @@ class RoomPollingWatcher(object):
                 eventtime = room_result['t']
                 self.browser.rooms[self.room_id]['eventtime'] = eventtime
             except KeyError as ex:
-                pass # no updated time from room
+                pass  # no updated time from room
 
             self.on_activity(activity)
 

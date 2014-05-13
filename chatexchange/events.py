@@ -87,7 +87,22 @@ class MessageEvent(Event):
         message.deleted = self.content is None
         message.edits = self.message_edits
         message.stars = self.message_stars
-        message.pins = self.message_owner_stars
+        if message.stars == 0:
+            message.starred_by_you = False
+        message.pinned = self.message_owner_stars > 0
+        if not message.pinned:
+            message.pinner_user_ids = []
+            message.pinner_user_names = []
+            message.pins = 0
+        else:
+            # XXX: generalize all instances of this?
+            # if its state was already pinned, then we don't need
+            # to worry about deleting stale `[]` values. We preserve
+            # the possibly-existing values.
+            del message.pinner_user_ids
+            del message.pinner_user_names
+            del message.pins
+
         message.target_user_id = self.target_user_id
         message._parent_message_id = self.parent_message_id
 

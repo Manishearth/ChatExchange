@@ -4,8 +4,6 @@ import logging
 import os
 import random
 import sys
-import threading
-import time
 
 import chatexchange.wrapper
 import chatexchange.events
@@ -20,7 +18,7 @@ def main():
     # Run `. setp.sh` to set the below testing environment variables
 
     host_id = 'SE'
-    room_id = '14219' # Charcoal Chatbot Sandbox
+    room_id = '14219'  # Charcoal Chatbot Sandbox
 
     if 'ChatExchangeU' in os.environ:
         username = os.environ['ChatExchangeU']
@@ -34,7 +32,7 @@ def main():
         password = getpass.getpass("Password: ")
 
     wrapper = chatexchange.wrapper.SEChatWrapper(host_id)
-    wrapper.login(username,password)
+    wrapper.login(username, password)
 
     wrapper.joinRoom(room_id)
     wrapper.watchRoom(room_id, on_message, 1)
