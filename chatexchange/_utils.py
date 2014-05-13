@@ -52,7 +52,7 @@ class LazyFrom(object):
 
     def __get__(self, obj, cls):
         if obj is None:
-            raise AttributeError()
+            return self
 
         if obj not in self.values:
             method = getattr(obj, self.method_name)

@@ -80,7 +80,8 @@ class Server(BaseHTTPServer.HTTPServer, object):
                 'stars': message.stars,
                 'starred_by_you': message.starred_by_you,
                 'pinned': message.pinned,
-                # 'pinner_user_name': message.pinner_user_name,
+                'pinner_user_name': message.pinner_user_names and message.pinner_user_names[0],
+                'pinner_user_id': message.pinner_user_ids and message.pinner_user_ids[0],
                 'edits': message.edits,
             } for message in self.messages]
         }
@@ -341,7 +342,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
                     </span>
 
                     <span class="label label-primary" ng-show="message.pinned">
-                        pinned by {{message.pinner_user_name}}
+                        pinned by {{message.pinner_user_name}} (#{{message.pinner_user_id}})
                     </span>
                 </div>
             </div></div>
