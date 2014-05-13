@@ -31,8 +31,7 @@ class Message(object):
     time_stamp = _utils.LazyFrom('scrape_history')
 
     def scrape_history(self):
-
-        # TODO: move request logic to Browser or Wrapper
+        # TODO: move request and soup logic to Browser
         history_soup = self.wrapper.br.getSoup(
             self.wrapper.br.getURL(
                 '/messages/%s/history' % (self.id,)))
@@ -53,20 +52,36 @@ class Message(object):
         self.content_source = (
             history[0].select('.content b')[0].next_sibling.strip())
 
-        # self.edits = ...
-        # self.stars = ...
-        # self.pinned = ...
-        # self.editor_user_id = ...
-        # self.editor_user_name = ...
-        # self.pinner_user_id = ...
-        # self.pinner_user_name = ...
-        # self.time_stamp = ...
-        # http://chat.stackexchange.com/messages/15358991/history
-        # http://chat.stackexchange.com/messages/15359293/history
-        # http://chat.stackexchange.com/messages/15359292/history
+        edits = 0
+        has_editor_name = False
+
+        for item in history:
+            if item.select('b')[0].text != 'edited:':
+                continue
+                
+            edits += 1
+
+            if not has_editor_name:
+                has_editor_name = True
+                user_soup = item.select('.username a')[0]
+                self.editor_user_id = self._user_id_from_user_link(user_soup)
+                self.editor_user_name = user_soup.text
+
+        assert (edits > 0) == has_editor_name
+
+        self.edits = edits
+
+        self._scrape_stars(history_soup, scrape_starred_by_you=False)
+
+        if self.pinned:
+            pinner_soup = history_soup.select('#content p a')[0]
+            self.pinner_user_name = pinner_soup.text
+            self.pinner_user_id = self._user_id_from_user_link(pinner_soup)
+
+        # TODO: self.time_stamp = ...
 
     def scrape_transcript(self):
-        # TODO: move request logic to Browser or Wrapper
+        # TODO: move request and soup logic to Browser
         transcript_soup = self.wrapper.br.getSoup(
             self.wrapper.br.getURL(
                 '/transcript/message/%s' % (self.id,)))
@@ -79,7 +94,7 @@ class Message(object):
             '#transcript .monologue')
         for monologue_soup in monologues_soups:
             user_link, = monologue_soup.select('.signature .username a')
-            user_id = int(user_link['href'].split('/')[2])
+            user_id = self._user_id_from_user_link(user_link)
             user_name = user_link.text
 
             message_soups = monologue_soup.select('.message')
@@ -96,23 +111,7 @@ class Message(object):
                     message_soup.select('.content')[0]
                 ).partition('>')[2].rpartition('<')[0].strip()
 
-                stars_soup = message_soup.select('.stars')
-                if stars_soup:
-                    times_soup = message_soup.select('.times')
-                    if times_soup and times_soup[0].text:
-                        message.stars = int(times_soup[0].text)
-                    else:
-                        message.stars = 1
-
-                    message.starred_by_you = bool(
-                        message_soup.select('.stars.user-star'))
-                    message.pinned = bool(
-                        message_soup.select('.stars.owner-star'))
-                else:
-                    message.stars = 0
-                    message.starred_by_you = False
-                    message.pinned = False
-                    message.pinner_user_id = None
+                message._scrape_stars(message_soup, scrape_starred_by_you=True)
 
                 # TODO: message.time_stamp = ...
 
@@ -124,6 +123,31 @@ class Message(object):
                         parent_info_soup['href'].partition('#')[2])
                 else:
                     message._parent_message_id = None
+
+    def _user_id_from_user_link(self, user_link):
+        return int(user_link['href'].split('/')[2])
+
+    def _scrape_stars(self, soup, scrape_starred_by_you):
+        stars_soup = soup.select('.stars')
+
+        if stars_soup:
+            times_soup = soup.select('.times')
+            if times_soup and times_soup[0].text:
+                self.stars = int(times_soup[0].text)
+            else:
+                self.stars = 1
+
+            if scrape_starred_by_you:
+                # some pages never show user-star, so we have to skip
+                self.starred_by_you = bool(
+                    soup.select('.stars.user-star'))
+            self.pinned = bool(
+                soup.select('.stars.owner-star'))
+        else:
+            self.stars = 0
+            self.starred_by_you = False
+            self.pinned = False
+            self.pinner_user_id = None
 
     @property
     def parent(self):

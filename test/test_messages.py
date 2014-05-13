@@ -1,6 +1,7 @@
 import logging
 
 from chatexchange import Wrapper
+import chatexchange
 
 import live_testing
 
@@ -40,3 +41,10 @@ if live_testing.enabled:
         assert message4.owner_user_id == 97938
         assert message4.text_content == "and again!"
         assert message4.parent is None
+
+        message5 = chat.get_message(15359293)
+        message5.scrape_transcript = "should not be used"
+
+        assert message5.edits == 1
+        assert message5.pinner_user_id == 1251
+        assert message5.editor_user_id == 97938
