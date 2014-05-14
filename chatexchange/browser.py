@@ -28,10 +28,10 @@ class Browser(object):
         self.host = None
 
     @property
-    def chatroot(self):
+    def chat_root(self):
         return 'http://chat.%s' % (self.host,)
 
-    def loginSEOpenID(self, user, password):
+    def login_se_openid(self, user, password):
         """
         Logs the browser into Stack Exchange's OpenID provider.
         """
@@ -50,7 +50,7 @@ class Browser(object):
             raise LoginError(
                 "failed to get `usr` cookie from Stack Exchange OpenID")
 
-    def loginSite(self, host):
+    def login_site(self, host):
         """
         Logs the browser into a Stack Exchange site.
         """
@@ -80,7 +80,7 @@ class Browser(object):
 
         Also handles SE OpenID prompts to allow login to a site.
         """
-        fkey_soup = self.getSoup(fkey_url)
+        fkey_soup = self._get_soup(fkey_url)
         fkey_input = fkey_soup.find('input', {'name': 'fkey'})
         if fkey_input is None:
             raise LoginError("fkey input not found")
@@ -117,8 +117,8 @@ class Browser(object):
 
         return response
 
-    def loginChatSE(self):
-        chatlogin = self.getSoup("http://stackexchange.com/users/chat-login")
+    def login_se_chat(self):
+        chatlogin = self._get_soup("http://stackexchange.com/users/chat-login")
         authToken = chatlogin.find('input', {"name": "authToken"})['value']
         nonce = chatlogin.find('input', {"name": "nonce"})['value']
         data = {"authToken": authToken, "nonce": nonce}
@@ -136,8 +136,9 @@ class Browser(object):
 
     def update_chat_fkey(self):
         try:
-            fkey = self.getSoup(self.getURL("chats/join/favorite")) \
-                             .find('input', {"name": "fkey"})['value']
+            fkey = self._get_soup(
+                self._url("chats/join/favorite")
+            ).find('input', {"name": "fkey"})['value']
             if fkey is not None and fkey != "":
                 self._chat_fkey = fkey
                 return True
@@ -145,29 +146,26 @@ class Browser(object):
                 self.logger.error("Error updating fkey: %s", e)
         return False
 
-    def postSomething(self, relurl, data=None):
+    def _post_something(self, relurl, data=None):
         if data is None:
             data = {}
         data['fkey'] = self.chat_fkey()
-        req = self.post(self.getURL(relurl), data)
+        req = self.session.post(self._url(relurl), data)
         try:
             return req.json()
-        except Exception:
+        except ValueError:
             return req.content
 
-    def getSomething(self, relurl):
-        return self.session.get(self.getURL(relurl)).content
+    def _get_something(self, relurl):
+        return self.session.get(self._url(relurl)).content
 
-    def getSoup(self, url):
+    def _get_soup(self, url):
         return BeautifulSoup(self.session.get(url).content)
 
-    def post(self, url, data):
-        return self.session.post(url, data)
-
-    def joinRoom(self, room_id):
+    def join_room(self, room_id):
         room_id = str(room_id)
         self.rooms[room_id] = {}
-        result = self.postSomething(
+        result = self._post_something(
             '/chats/%s/events' % (room_id,),
             {
                 'since': 0, 
@@ -197,10 +195,28 @@ class Browser(object):
         self.polls[room_id] = http_watcher
         http_watcher.start()
 
-    def getURL(self, rel):
-        if rel[0] != "/":
-            rel = "/"+rel
-        return self.chatroot+rel
+    def _url(self, rel):
+        if rel[0] != '/':
+            rel = '/' + rel
+        return self.chat_root + rel
+
+    def toggle_starring(self, message_id):
+        self._post_something(
+            '/messages/%s/star' % (message_id,))
+
+    def toggle_pinning(self, message_id):
+        self._post_something(
+            '/messages/%s/owner-star' % (message_id,))
+
+    def send_message(self, room_id, text):
+        return self._post_something(
+            '/chats/%s/messages/new' % (room_id,),
+            {'text': text})
+
+    def edit_message(self, message_id, text):
+        return self._post_something(
+            '/messages/%s' % (message_id,),
+            {'text': text})
 
 
 class RoomSocketWatcher(object):
@@ -215,7 +231,7 @@ class RoomSocketWatcher(object):
     def start(self):
         last_event_time = self.browser.rooms[self.room_id]['eventtime']
 
-        ws_auth_data = self.browser.postSomething(
+        ws_auth_data = self.browser._post_something(
             '/ws-auth',
             {'roomid': self.room_id}
         )
@@ -223,7 +239,7 @@ class RoomSocketWatcher(object):
         self.logger.debug('wsurl == %r', wsurl)
 
         self.ws = websocket.create_connection(
-            wsurl, origin=self.browser.chatroot)
+            wsurl, origin=self.browser.chat_root)
 
         self.thread = threading.Thread(target=self._runner)
         self.thread.setDaemon(True)
@@ -257,7 +273,7 @@ class RoomPollingWatcher(object):
         while not self.killed:
             last_event_time = self.browser.rooms[self.room_id]['eventtime']
 
-            activity = self.browser.postSomething(
+            activity = self.browser._post_something(
                 '/events',
                 {'r' + self.room_id: last_event_time})
 

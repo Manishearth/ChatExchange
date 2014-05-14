@@ -1,9 +1,10 @@
-import os
-
 """
 This module looks for live testing configuration in environment
 variables, and exports them for test use if found.
 """
+
+import os
+
 
 enabled = False
 

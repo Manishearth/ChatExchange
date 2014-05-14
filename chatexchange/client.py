@@ -85,12 +85,12 @@ class Client(object):
         assert not self.logged_in
         self.logger.info("Logging in.")
 
-        self.br.loginSEOpenID(email, password)
+        self.br.login_se_openid(email, password)
 
-        self.br.loginSite(self.host)
+        self.br.login_site(self.host)
 
         if self.host == 'stackexchange.com':
-            self.br.loginChatSE()
+            self.br.login_se_chat()
 
         self.logged_in = True
         self.logger.info("Logged in.")
@@ -108,12 +108,6 @@ class Client(object):
         self.request_queue.put(SystemExit)
         self.logger.info("Logged out.")
         self.logged_in = False
-
-    def sendMessage(self, room_id, text):
-        warnings.warn(
-            "Use send_message instead of sendMessage",
-            DeprecationWarning, stacklevel=1)
-        return self.send_message(room_id, text)
 
     def send_message(self, room_id, text):
         """
@@ -183,14 +177,10 @@ class Client(object):
             self.logger.debug("Attempt %d: start.", attempt)
 
             if action_type == 'send':
-                response = self.br.postSomething(
-                    '/chats/%s/messages/new' % (room_id,),
-                    {'text': text})
+                response = self.br.send_message(room_id, text)
             else:
                 assert action_type == 'edit'
-                response = self.br.postSomething(
-                    '/messages/%s' % (message_id,),
-                    {'text': text})
+                response = self.br.edit_message(room_id, text)
 
             if isinstance(response, str):
                 match = re.match(TOO_FAST_RE, response)
@@ -226,7 +216,7 @@ class Client(object):
             time.sleep(wait)
 
     def joinRoom(self, room_id):
-        self.br.joinRoom(room_id)
+        self.br.join_room(room_id)
 
     def _room_events(self, activity, room_id):
         """

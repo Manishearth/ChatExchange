@@ -118,7 +118,7 @@ if live_testing.enabled:
         test_message_content = TEST_MESSAGE_FORMAT.format(test_message_nonce)
 
         logger.debug("Sending test message")
-        client.sendMessage(room_id, test_message_content)
+        client.send_message(room_id, test_message_content)
 
         @get_event
         def test_message_posted(event):

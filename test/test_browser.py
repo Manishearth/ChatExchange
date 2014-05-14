@@ -36,7 +36,7 @@ def test_user_agent():
     with only_httmock(verify_user_agent):
         browser = Browser()
 
-        browser.getSomething('http://example.com/')
-        browser.getSoup('http://example.com/')
+        browser._get_something('http://example.com/')
+        browser._get_soup('http://example.com/')
 
         assert len(good_requests) == 2, "Unexpected number of requests"

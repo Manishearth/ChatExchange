@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+"""
+Opens a web page displaying a simple updating view of a chat room.
+
+This is not meant for unauthenticated, remote, or multi-client use.
+"""
+
 import BaseHTTPServer
 import collections
 import getpass
@@ -10,13 +16,6 @@ import webbrowser
 
 
 from chatexchange import client, events
-
-
-"""
-Opens a web page displaying a simple updating view of a chat room.
-
-This is not meant for unauthenticated, remote, or multi-client use.
-"""
 
 
 logger = logging.getLogger(__name__)
@@ -56,7 +55,7 @@ class Server(BaseHTTPServer.HTTPServer, object):
         self.room_name = "Chat Room"
         self.messages = collections.deque(maxlen=25)
 
-        self.chat.joinRoom(self.room_id)
+        self.chat.join_room(self.room_id)
         self.chat.watchRoomSocket(self.room_id, self.on_chat_event)
 
         self.chat.sendMessage(self.room_id, "Hello, world!")

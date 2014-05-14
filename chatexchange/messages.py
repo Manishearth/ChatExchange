@@ -34,8 +34,8 @@ class Message(object):
 
     def scrape_history(self):
         # TODO: move request and soup logic to Browser
-        history_soup = self.client.br.getSoup(
-            self.client.br.getURL(
+        history_soup = self.client.br._get_soup(
+            self.client.br._url(
                 '/messages/%s/history' % (self.id,)))
 
         latest = history_soup.select('.monologue')[0]
@@ -103,8 +103,8 @@ class Message(object):
 
     def scrape_transcript(self):
         # TODO: move request and soup logic to Browser
-        transcript_soup = self.client.br.getSoup(
-            self.client.br.getURL(
+        transcript_soup = self.client.br._get_soup(
+            self.client.br._url(
                 '/transcript/message/%s' % (self.id,)))
 
         room_soup, = transcript_soup.select('.room-name a')
@@ -228,7 +228,7 @@ class Message(object):
     def star(self, value=True):
         del self.starred_by_you  # don't use cached value
         if self.starred_by_you != value:
-            self._toggle_starring()
+            self.client.br.toggle_starring()
 
             self.starred_by_you = value  # assumed valid
 
@@ -240,7 +240,7 @@ class Message(object):
     def pin(self, value=True):
         del self.pinned  # don't used cached value
         if self.pinned != value:
-            self._toggle_pinning()
+            self.client.br.toggle_pinning()
 
             # bust staled cache
             del self.pinned
@@ -249,13 +249,3 @@ class Message(object):
             del self.pinner_user_names
         else:
             self.logger.info(".pinned is already %r", value)
-
-    def _toggle_starring(self):
-        # TODO: move request logic to Browser or Client
-        self.client.br.postSomething(
-            '/messages/%s/star' % (self.id,))
-
-    def _toggle_pinning(self):
-        # TODO: move request logic to Browser or Client
-        self.client.br.postSomething(
-            '/messages/%s/owner-star' % (self.id,))
