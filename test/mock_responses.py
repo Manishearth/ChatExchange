@@ -1,6 +1,4 @@
 # encoding: utf-8
-import json
-
 import httmock
 
 
@@ -50,7 +48,7 @@ def favorite_with_test_fkey(url, request):
 
 <link rel="stylesheet" type="text/css" href="http://cdn.sstatic.net/skins/topbar/topbar.css"/>
 <div class="topbar">
-    <div class="topbar-wrapper">
+    <div class="topbar-client">
 
         <div class="js-topbar-dialog-corral">
         </div>
@@ -155,4 +153,3 @@ def favorite_with_test_fkey(url, request):
 @httmock.urlmatch(netloc=r'.*')
 def fail_everything_else(url, request):
     raise Exception("unexpected request; no mock available", request)
-

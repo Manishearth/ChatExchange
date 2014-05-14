@@ -4,14 +4,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def make(data, wrapper):
+def make(data, client):
     """
     Instantiates an instance of Event or a subclass, for the given
-    event data and (optional) wrapper.
+    event data and (optional) client.
     """
     type_id = data['event_type']
     cls = types.get(type_id, Event)
-    return cls(data, wrapper)
+    return cls(data, client)
 
 
 # Event subclasses by type_id
@@ -29,12 +29,12 @@ def register_type(event_type):
 
 
 class Event(object):
-    def __init__(self, data, wrapper):
+    def __init__(self, data, client):
         self.logger = logger.getChild(type(self).__name__)
 
         assert data, "empty data passed to Event constructor"
 
-        self.wrapper = wrapper
+        self.client = client
         self.data = data
 
         if hasattr(self, 'type_id'):
@@ -57,7 +57,7 @@ class Event(object):
 
     def __repr__(self):
         return '{0!s}({1!r}, {2!r})'.format(
-            type(self).__name__, self.data, self.wrapper)
+            type(self).__name__, self.data, self.client)
 
 
 class MessageEvent(Event):
@@ -76,7 +76,7 @@ class MessageEvent(Event):
         self.target_user_id = self.data.get('target_user_id', None)
         self.parent_message_id = self.data.get('parent_id', None)
 
-        self.message = self.wrapper.get_message(self.message_id)
+        self.message = self.client.get_message(self.message_id)
 
         self._update_message()
 
@@ -87,7 +87,22 @@ class MessageEvent(Event):
         message.deleted = self.content is None
         message.edits = self.message_edits
         message.stars = self.message_stars
-        message.pins = self.message_owner_stars
+        if message.stars == 0:
+            message.starred_by_you = False
+        message.pinned = self.message_owner_stars > 0
+        if not message.pinned:
+            message.pinner_user_ids = []
+            message.pinner_user_names = []
+            message.pins = 0
+        else:
+            # XXX: generalize all instances of this?
+            # if its state was already pinned, then we don't need
+            # to worry about deleting stale `[]` values. We preserve
+            # the possibly-existing values.
+            del message.pinner_user_ids
+            del message.pinner_user_names
+            del message.pins
+
         message.target_user_id = self.target_user_id
         message._parent_message_id = self.parent_message_id
 

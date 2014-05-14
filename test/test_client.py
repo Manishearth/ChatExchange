@@ -6,7 +6,7 @@ import Queue
 
 import pytest
 
-from chatexchange.wrapper import SEChatWrapper
+from chatexchange.client import Client
 from chatexchange import events
 
 import live_testing
@@ -15,9 +15,8 @@ import live_testing
 logger = logging.getLogger(__name__)
 
 
-
 TEST_ROOMS = [
-    ('stackexchange.com', '14219'), # Charcoal Sandbox
+    ('stackexchange.com', '14219'),  # Charcoal Sandbox
 ]
 
 
@@ -38,7 +37,6 @@ else:
         "the nonce {0}.\") ] This is a test message for ChatExchange.")
 
 
-
 if live_testing.enabled:
     @pytest.mark.parametrize('host_id,room_id', TEST_ROOMS)
     def test_se_message_echo(host_id, room_id):
@@ -51,8 +49,8 @@ if live_testing.enabled:
         to flood Stack Exchange with more test messages than necessary.
         """
 
-        wrapper = SEChatWrapper(host_id)
-        wrapper.login(
+        client = Client(host_id)
+        client.login(
             live_testing.username,
             live_testing.password)
 
@@ -107,20 +105,20 @@ if live_testing.enabled:
             return socket_event
 
         logger.debug("Joining chat")
-        wrapper.joinRoom(room_id)
+        client.joinRoom(room_id)
 
-        wrapper.watchRoom(room_id, lambda event, _:
+        client.watchRoom(room_id, lambda event, _:
             pending_events.put((False, event)), 5)
-        wrapper.watchRoomSocket(room_id, lambda event, _:
+        client.watchRoomSocket(room_id, lambda event, _:
             pending_events.put((True, event)))
 
-        time.sleep(2) # Avoid race conditions
+        time.sleep(2)  # Avoid race conditions
 
         test_message_nonce = uuid.uuid4().hex
         test_message_content = TEST_MESSAGE_FORMAT.format(test_message_nonce)
 
         logger.debug("Sending test message")
-        wrapper.sendMessage(room_id, test_message_content)
+        client.sendMessage(room_id, test_message_content)
 
         @get_event
         def test_message_posted(event):
@@ -184,9 +182,9 @@ if live_testing.enabled:
 
         # it should be safe to assume that there isn't so much activity
         # that these events will have been flushed out of recent_events.
-        assert test_message_posted in wrapper.recent_events
-        assert test_reply in wrapper.recent_events
-        assert test_edit in wrapper.recent_events
+        assert test_message_posted in client.recent_events
+        assert test_reply in client.recent_events
+        assert test_edit in client.recent_events
         assert test_edit.message.content_source == test_edit_content
 
-        wrapper.logout()
+        client.logout()

@@ -1,8 +1,8 @@
 from . import browser
 from . import messages
 from . import events
-from . import wrapper
+from . import client
 
 
-Browser = browser.SEChatBrowser
-Wrapper = wrapper.SEChatWrapper
+Browser = browser.Browser
+Client = client.Client

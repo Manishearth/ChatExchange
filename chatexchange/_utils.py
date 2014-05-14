@@ -10,7 +10,7 @@ class HTMLTextExtractor(HTMLParser):
 
     def __init__(self):
         HTMLParser.__init__(self)
-        self.result = [ ]
+        self.result = []
 
     def handle_data(self, d):
         self.result.append(d)
@@ -52,7 +52,7 @@ class LazyFrom(object):
 
     def __get__(self, obj, cls):
         if obj is None:
-            raise AttributeError()
+            return self
 
         if obj not in self.values:
             method = getattr(obj, self.method_name)
@@ -66,4 +66,5 @@ class LazyFrom(object):
         self.values[obj] = value
 
     def __delete__(self, obj):
-        del self.values[obj]
+        if obj in self.values:
+            del self.values[obj]
