@@ -30,18 +30,18 @@ def main(port='8462'):
     room_id = 14219  # Charcoal Chatbot Sandbox
 
     if 'ChatExchangeU' in os.environ:
-        username = os.environ['ChatExchangeU']
+        email = os.environ['ChatExchangeU']
     else:
         sys.stderr.write("Username: ")
         sys.stderr.flush()
-        username = raw_input()
+        email = raw_input()
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:
         password = getpass.getpass("Password: ")
 
     chat = client.Client('stackexchange.com')
-    chat.login(username, password)
+    chat.login(email, password)
 
     httpd = Server(
         ('127.0.0.1', 8462), Handler, chat=chat, room_id=room_id)

@@ -51,7 +51,7 @@ if live_testing.enabled:
 
         client = Client(host_id)
         client.login(
-            live_testing.username,
+            live_testing.email,
             live_testing.password)
 
         timeout_duration = 60

@@ -65,7 +65,7 @@ class Message(object):
 
             if not has_editor_name:
                 has_editor_name = True
-                user_soup = item.select('.username a')[0]
+                user_soup = item.select('.email a')[0]
                 self.editor_user_id = self._user_id_from_user_link(user_soup)
                 self.editor_user_name = user_soup.text
 
@@ -114,7 +114,7 @@ class Message(object):
         monologues_soups = transcript_soup.select(
             '#transcript .monologue')
         for monologue_soup in monologues_soups:
-            user_link, = monologue_soup.select('.signature .username a')
+            user_link, = monologue_soup.select('.signature .email a')
             user_id = self._user_id_from_user_link(user_link)
             user_name = user_link.text
 

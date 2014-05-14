@@ -1,7 +1,6 @@
 import logging
 
 from chatexchange import Client
-import chatexchange
 
 import live_testing
 

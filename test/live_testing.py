@@ -11,5 +11,5 @@ enabled = False
 if (os.environ.get('ChatExchangeU') and
     os.environ.get('ChatExchangeP')):
     enabled = True
-    username = os.environ['ChatExchangeU']
+    email = os.environ['ChatExchangeU']
     password = os.environ['ChatExchangeP']

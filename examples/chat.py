@@ -22,18 +22,18 @@ def main():
     room_id = '14219'  # Charcoal Chatbot Sandbox
 
     if 'ChatExchangeU' in os.environ:
-        username = os.environ['ChatExchangeU']
+        email = os.environ['ChatExchangeU']
     else:
         sys.stderr.write("Username: ")
         sys.stderr.flush()
-        username = raw_input()
+        email = raw_input()
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:
         password = getpass.getpass("Password: ")
 
     client = chatexchange.client.Client(host_id)
-    client.login(username, password)
+    client.login(email, password)
 
     client.joinRoom(room_id)
     client.watchRoom(room_id, on_message, 1)

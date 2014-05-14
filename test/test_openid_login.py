@@ -21,5 +21,5 @@ if live_testing.enabled:
             invalid_password = 'no' + 't' * len(live_testing.password)
 
             browser.loginSEOpenID(
-                live_testing.username,
+                live_testing.email,
                 invalid_password)

@@ -20,8 +20,12 @@ class Client(object):
     max_recent_events = 1000
     max_recently_accessed_messages = 1000
 
-    def __init__(self, host='stackexchange.com'):
+    def __init__(self, host='stackexchange.com', email=None, password=None):
         self.logger = logger.getChild('SEChatWraper')
+
+        if email or password:
+            assert email and password, (
+                "must specify both email and password or neither")
 
         # any known Message instances
         self._messages = weakref.WeakValueDictionary()
@@ -49,6 +53,9 @@ class Client(object):
         self.thread = threading.Thread(target=self._worker, name="message_sender")
         self.thread.setDaemon(True)
 
+        if email:
+            self.login(email, password)
+
     def get_message(self, message_id):
         message = self._messages.setdefault(
             message_id, messages.Message(message_id, self))
@@ -74,11 +81,11 @@ class Client(object):
         'SO': 'stackexchange.com'
     }
 
-    def login(self, username, password):
+    def login(self, email, password):
         assert not self.logged_in
         self.logger.info("Logging in.")
 
-        self.br.loginSEOpenID(username, password)
+        self.br.loginSEOpenID(email, password)
 
         self.br.loginSite(self.host)
 
