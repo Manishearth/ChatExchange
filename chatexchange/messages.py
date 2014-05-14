@@ -7,10 +7,10 @@ logger = logging.getLogger(__name__)
 
 
 class Message(object):
-    def __init__(self, id, wrapper):
+    def __init__(self, id, client):
         self.logger = logger.getChild('Message')
         self.id = id
-        self.wrapper = wrapper
+        self.client = client
 
     room_id = _utils.LazyFrom('scrape_transcript')
     room_name = _utils.LazyFrom('scrape_transcript')
@@ -34,8 +34,8 @@ class Message(object):
 
     def scrape_history(self):
         # TODO: move request and soup logic to Browser
-        history_soup = self.wrapper.br.getSoup(
-            self.wrapper.br.getURL(
+        history_soup = self.client.br.getSoup(
+            self.client.br.getURL(
                 '/messages/%s/history' % (self.id,)))
 
         latest = history_soup.select('.monologue')[0]
@@ -103,8 +103,8 @@ class Message(object):
 
     def scrape_transcript(self):
         # TODO: move request and soup logic to Browser
-        transcript_soup = self.wrapper.br.getSoup(
-            self.wrapper.br.getURL(
+        transcript_soup = self.client.br.getSoup(
+            self.client.br.getURL(
                 '/transcript/message/%s' % (self.id,)))
 
         room_soup, = transcript_soup.select('.room-name a')
@@ -121,7 +121,7 @@ class Message(object):
             message_soups = monologue_soup.select('.message')
             for message_soup in message_soups:
                 message_id = int(message_soup['id'].split('-')[1])
-                message = self.wrapper.get_message(message_id)
+                message = self.client.get_message(message_id)
 
                 message.room_id = room_id
                 message.room_name = room_name
@@ -210,7 +210,7 @@ class Message(object):
     @property
     def parent(self):
         if self._parent_message_id is not None:
-            return self.wrapper.get_message(self._parent_message_id)
+            return self.client.get_message(self._parent_message_id)
 
     @property
     def text_content(self):
@@ -218,12 +218,12 @@ class Message(object):
             return _utils.html_to_text(self.content)
 
     def reply(self, text):
-        self.wrapper.send_message(
+        self.client.send_message(
             self.room_id,
             ":%s %s" % (self.id, text))
 
     def edit(self, text):
-        self.wrapper.edit_message(self.id, text)
+        self.client.edit_message(self.id, text)
 
     def star(self, value=True):
         del self.starred_by_you  # don't use cached value
@@ -251,11 +251,11 @@ class Message(object):
             self.logger.info(".pinned is already %r", value)
 
     def _toggle_starring(self):
-        # TODO: move request logic to Browser or Wrapper
-        self.wrapper.br.postSomething(
+        # TODO: move request logic to Browser or Client
+        self.client.br.postSomething(
             '/messages/%s/star' % (self.id,))
 
     def _toggle_pinning(self):
-        # TODO: move request logic to Browser or Wrapper
-        self.wrapper.br.postSomething(
+        # TODO: move request logic to Browser or Client
+        self.client.br.postSomething(
             '/messages/%s/owner-star' % (self.id,))

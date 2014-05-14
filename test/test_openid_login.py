@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from chatexchange.browser import SEChatBrowser, LoginError
+from chatexchange.browser import Browser, LoginError
 
 import live_testing
 
@@ -12,7 +12,7 @@ if live_testing.enabled:
         """
         Tests that failed SE OpenID logins raise errors.
         """
-        browser = SEChatBrowser()
+        browser = Browser()
 
         # avoid hitting the SE servers too frequently
         time.sleep(2)

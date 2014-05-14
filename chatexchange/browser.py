@@ -11,12 +11,12 @@ import websocket
 logger = logging.getLogger(__name__)
 
 
-class SEChatBrowser(object):
+class Browser(object):
     user_agent = ('ChatExchange/0.dev '
                   '(+https://github.com/Manishearth/ChatExchange)')
 
     def __init__(self):
-        self.logger = logger.getChild('SEChatBrowser')
+        self.logger = logger.getChild('Browser')
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': self.user_agent

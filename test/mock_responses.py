@@ -48,7 +48,7 @@ def favorite_with_test_fkey(url, request):
 
 <link rel="stylesheet" type="text/css" href="http://cdn.sstatic.net/skins/topbar/topbar.css"/>
 <div class="topbar">
-    <div class="topbar-wrapper">
+    <div class="topbar-client">
 
         <div class="js-topbar-dialog-corral">
         </div>

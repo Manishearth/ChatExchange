@@ -16,7 +16,7 @@ TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"
 logger = logging.getLogger(__name__)
 
 
-class SEChatWrapper(object):
+class Client(object):
     max_recent_events = 1000
     max_recently_accessed_messages = 1000
 
@@ -37,7 +37,7 @@ class SEChatWrapper(object):
         if host not in self.valid_hosts:
             raise ValueError("invalid host: %r" % (host,))
 
-        self.br = browser.SEChatBrowser()
+        self.br = browser.Browser()
         self.br.host = host
         self.host = host
         self._previous = None

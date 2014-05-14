@@ -9,7 +9,7 @@ import sys
 import webbrowser
 
 
-from chatexchange import wrapper, events
+from chatexchange import client, events
 
 
 """
@@ -40,7 +40,7 @@ def main(port='8462'):
     else:
         password = getpass.getpass("Password: ")
 
-    chat = wrapper.SEChatWrapper('stackexchange.com')
+    chat = client.Client('stackexchange.com')
     chat.login(username, password)
 
     httpd = Server(
@@ -86,7 +86,7 @@ class Server(BaseHTTPServer.HTTPServer, object):
             } for message in self.messages]
         }
 
-    def on_chat_event(self, event, wrapper):
+    def on_chat_event(self, event, client):
         if (isinstance(event, events.MessagePosted)
             and event.room_id == self.room_id):
             self.room_name = event.room_name
