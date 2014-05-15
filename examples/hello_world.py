@@ -17,7 +17,7 @@ sandbox = client.get_room(11540)
 my_message = None
 
 with sandbox.messages() as messages:
-    sandbox.send_message("hello worl")
+    sandbox._send_message("hello worl")
 
     for message in messages:
         if message.owner is me:

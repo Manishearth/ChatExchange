@@ -118,7 +118,7 @@ class Client(object):
         self.logger.info("Logged out.")
         self.logged_in = False
 
-    def send_message(self, room_id, text):
+    def _send_message(self, room_id, text):
         """
         Queues a message for sending to a given room.
         """
@@ -126,7 +126,7 @@ class Client(object):
         self.logger.info("Queued message %r for room_id #%r.", text, room_id)
         self.logger.info("Queue length: %d.", self.request_queue.qsize())
 
-    def edit_message(self, message_id, text):
+    def _edit_message(self, message_id, text):
         """
         Queues an edit to be made to a message.
         """

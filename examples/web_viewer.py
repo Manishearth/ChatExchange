@@ -113,7 +113,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
         data = json.loads(json_data)
 
         if data['action'] == 'create':
-            self.server.chat.send_message(
+            self.server.chat._send_message(
                 self.server.room_id,
                 data['text'])
         elif data['action'] == 'edit':

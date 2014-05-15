@@ -44,7 +44,7 @@ def main():
     print "(You are now in room #%s on %s.)" % (room_id, host_id)
     while True:
         message = raw_input("<< ")
-        client.send_message(room_id, message)
+        client._send_message(room_id, message)
 
     client.logout()
 

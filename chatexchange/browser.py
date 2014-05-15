@@ -261,6 +261,224 @@ class Browser(object):
             'messages/%s' % (message_id,),
             {'text': text})
 
+    def get_history(self, message_id):
+        """
+        Returns the data from the history page for message_id.
+        """
+        history_soup = self.get_soup(
+            'messages/%s/history' % (message_id,))
+
+        latest_soup = history_soup.select('.monologue')[0]
+        previous_soup = history_soup.select('.monologue')[1:]
+
+        page_message_id = int(latest_soup.select('.message a')[0]['name'])
+        assert message_id == page_message_id
+
+        room_id = int(latest_soup.select('.message a')[0]['href']
+                      .rpartition('/')[2].partition('?')[0])
+
+        latest_content = str(
+            latest_soup.select('.content')[0]
+        ).partition('>')[2].rpartition('<')[0].strip()
+
+        latest_content_source = (
+            previous_soup[0].select('.content b')[0].next_sibling.strip())
+
+        edits = 0
+        has_editor_name = False
+
+        for item in previous_soup:
+            if item.select('b')[0].text != 'edited:':
+                continue
+
+            edits += 1
+
+            if not has_editor_name:
+                has_editor_name = True
+                user_soup = item.select('.username a')[0]
+                latest_editor_user_id, latest_editor_user_name = (
+                    self.user_id_and_name_from_link(user_soup))
+
+        assert (edits > 0) == has_editor_name
+
+        if not edits:
+            latest_editor_user_id = None
+            latest_editor_user_name = None
+
+        star_data = self._get_star_data(
+            latest_soup, include_starred_by_you=False)
+
+        if star_data['pinned']:
+            pins = 0
+            pinner_user_ids = []
+            pinner_user_names = []
+
+            for p_soup in history_soup.select('#content p'):
+                if not p_soup.select('.stars.owner-star'):
+                    break
+
+                a_soup = p_soup.select('a')[0]
+
+                pins += 1
+                user_id, user_name = self.user_id_and_name_from_link(a_soup)
+                pinner_user_ids.append(user_id)
+                pinner_user_names.append(user_name)
+        else:
+            pins = 0
+            pinner_user_ids = []
+            pinner_user_names = []
+
+        data = {}
+
+        data.update(star_data)
+
+        data.update({
+            'room_id': room_id,
+            'content': latest_content,
+            'content_source': latest_content_source,
+            'editor_user_id': latest_editor_user_id,
+            'editor_user_name': latest_editor_user_name,
+            'edited': bool(edits),
+            'edits': edits,
+            'pinned': bool(pins),
+            'pins': pins,
+            'pinner_user_ids': pinner_user_ids,
+            'pinner_user_names': pinner_user_names,
+            # TODO: 'time_stamp': ...
+        })
+
+        return data
+
+    def get_transcript_with_message(self, message_id):
+        """
+        Returns the data from the transcript page associated with message_id.
+        """
+        transcript_soup = self.get_soup(
+            'transcript/message/%s' % (message_id,))
+
+        room_soup, = transcript_soup.select('.room-name a')
+        room_id = int(room_soup['href'].split('/')[2])
+        room_name = room_soup.text
+
+        messages_data = []
+
+        monologues_soups = transcript_soup.select(
+            '#transcript .monologue')
+
+        for monologue_soup in monologues_soups:
+            user_link, = monologue_soup.select('.signature .username a')
+            user_id, user_name = self.user_id_and_name_from_link(user_link)
+
+            message_soups = monologue_soup.select('.message')
+
+            for message_soup in message_soups:
+                message_id = int(message_soup['id'].split('-')[1])
+
+                edited = bool(message_soup.select('.edits'))
+
+                content = str(
+                    message_soup.select('.content')[0]
+                ).partition('>')[2].rpartition('<')[0].strip()
+
+                star_data = self._get_star_data(
+                    message_soup, include_starred_by_you=True)
+
+                parent_info_soups = message_soup.select('.reply-info')
+
+                if parent_info_soups:
+                    parent_info_soup, = parent_info_soups
+                    parent_message_id = int(
+                        parent_info_soup['href'].partition('#')[2])
+                else:
+                    parent_message_id = None
+
+                message_data = {
+                    'id': message_id,
+                    'content': content,
+                    'room_id': room_id,
+                    'room_name': room_name,
+                    'owner_user_id': user_id,
+                    'owner_user_name': user_name,
+                    'edited': edited,
+                    'parent_message_id': parent_message_id,
+                    # TODO: 'time_stamp': ...
+                }
+
+                message_data.update(star_data)
+
+                if not edited:
+                    message_data['editor_user_id'] = None
+                    message_data['editor_user_name'] = None
+                    message_data['edits'] = 0
+
+                messages_data.append(message_data)
+
+        data = {
+            'room_id': room_id,
+            'room_name': room_name,
+            'messages': messages_data
+        }
+
+        return data
+
+    def _get_star_data(self, root_soup, include_starred_by_you):
+        """
+        Gets star data indicated to the right of a message from a soup.
+        """
+
+        stars_soups = root_soup.select('.stars')
+
+        if stars_soups:
+            stars_soup, = stars_soups
+
+            times_soup = stars_soup.select('.times')
+            if times_soup and times_soup[0].text:
+                stars = int(times_soup[0].text)
+            else:
+                stars = 1
+
+            if include_starred_by_you:
+                # some pages never show user-star, so we have to skip
+                starred_by_you = bool(
+                    root_soup.select('.stars.user-star'))
+
+            pinned = bool(
+                root_soup.select('.stars.owner-star'))
+
+            if pinned:
+                pins_known = False
+            else:
+                pins_known = True
+                pinner_user_ids = []
+                pinner_user_names = []
+                pins = 0
+        else:
+            stars = 0
+            if include_starred_by_you:
+                starred_by_you = False
+
+            pins_known = True
+            pinned = False
+            pins = 0
+            pinner_user_ids = []
+            pinner_user_names = []
+
+        data = {
+            'stars': stars,
+            'starred': bool(stars),
+            'pinned': pinned,
+        }
+
+        if pins_known:
+            data['pinner_user_ids'] = pinner_user_ids
+            data['pinner_user_names'] = pinner_user_names
+            data['pins'] = pins
+
+        if include_starred_by_you:
+            data['starred_by_you'] = starred_by_you
+
+        return data
+
 
 class RoomSocketWatcher(object):
     def __init__(self, browser, room_id, on_activity):

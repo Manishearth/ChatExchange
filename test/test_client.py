@@ -97,8 +97,7 @@ if live_testing.enabled:
                 else:
                     logger.debug("Unexpected events: %r", event)
 
-            assert socket_event
-            assert polling_event
+            assert socket_event and polling_event
             assert type(socket_event) is type(polling_event)
             assert socket_event.event_id == polling_event.event_id
 
@@ -118,7 +117,7 @@ if live_testing.enabled:
         test_message_content = TEST_MESSAGE_FORMAT.format(test_message_nonce)
 
         logger.debug("Sending test message")
-        client.send_message(room_id, test_message_content)
+        client._send_message(room_id, test_message_content)
 
         @get_event
         def test_message_posted(event):

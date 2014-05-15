@@ -33,175 +33,86 @@ class Message(object):
     time_stamp = _utils.LazyFrom('scrape_history')
 
     def scrape_history(self):
-        # TODO: move request and soup logic to Browser
-        history_soup = self.client.br.get_soup(
-            'messages/%s/history' % (self.id,))
+        data = self.client.br.get_history(self.id)
 
-        latest = history_soup.select('.monologue')[0]
-        history = history_soup.select('.monologue')[1:]
+        self.room_id = data['room_id']
+        self.content = data['content']
+        self.content_source = data['content_source']
+        self.edits = data['edits']
+        self.edited = data['edited']
+        self.editor_user_id = data['editor_user_id']
+        self.editor_user_name = data['editor_user_name']
 
-        message_id = int(latest.select('.message a')[0]['name'])
-        assert message_id == self.id
+        self._scrape_stars(data)
 
-        self.room_id = int(latest.select('.message a')[0]['href']
-                           .rpartition('/')[2].partition('?')[0])
-
-        self.content = str(
-            latest.select('.content')[0]
-        ).partition('>')[2].rpartition('<')[0].strip()
-
-        self.content_source = (
-            history[0].select('.content b')[0].next_sibling.strip())
-
-        edits = 0
-        has_editor_name = False
-
-        for item in history:
-            if item.select('b')[0].text != 'edited:':
-                continue
-
-            edits += 1
-
-            if not has_editor_name:
-                has_editor_name = True
-                user_soup = item.select('.username a')[0]
-                self.editor_user_id, self.editor_user_name = (
-                    self.client.br.user_id_and_name_from_link(user_soup))
-
-        assert (edits > 0) == has_editor_name
-
-        if not edits:
-            self.editor_user_id = None
-            self.editor_user_name = None
-
-        self.edits = edits
-        self.edited = bool(self.edits)
-
-        self._scrape_stars(history_soup, scrape_starred_by_you=False)
-
-        if self.pinned:
-            pins = 0
-            pinner_user_ids = []
-            pinner_user_names = []
-
-            for p_soup in history_soup.select('#content p'):
-                if not p_soup.select('.stars.owner-star'):
-                    break
-
-                a_soup = p_soup.select('a')[0]
-
-                pins += 1
-                user_id, user_name = self.client.br.user_id_and_name_from_link(a_soup)
-                pinner_user_ids.append(user_id)
-                pinner_user_names.append(user_name)
-
-            self.pins = pins
-            self.pinner_user_ids = pinner_user_ids
-            self.pinner_user_names = pinner_user_names
+        self.pinned = data['pinned']
+        self.pins = data['pins']
+        self.pinner_user_ids = data['pinner_user_ids']
+        self.pinner_user_names = data['pinner_user_names']
 
         # TODO: self.time_stamp = ...
 
     def scrape_transcript(self):
-        # TODO: move request and soup logic to Browser
-        transcript_soup = self.client.br.get_soup(
-            'transcript/message/%s' % (self.id,))
+        data = self.client.br.get_transcript_with_message(self.id)
 
-        room_soup, = transcript_soup.select('.room-name a')
-        room_id = int(room_soup['href'].split('/')[2])
-        room_name = room_soup.text
+        self.room_id = data['room_id']
+        self.room_name = data['room_name']
 
-        monologues_soups = transcript_soup.select(
-            '#transcript .monologue')
-        for monologue_soup in monologues_soups:
-            user_link, = monologue_soup.select('.signature .username a')
-            user_id, user_name = self.client.br.user_id_and_name_from_link(user_link)
+        for message_data in data['messages']:
+            message_id = message_data['id']
 
-            message_soups = monologue_soup.select('.message')
-            for message_soup in message_soups:
-                message_id = int(message_soup['id'].split('-')[1])
-                message = self.client.get_message(message_id)
+            message = self.client.get_message(message_id)
 
-                message.room_id = room_id
-                message.room_name = room_name
-                message.owner_user_id = user_id
-                message.owner_user_name = user_name
+            message.room_id = message_data['room_id']
+            message.room_name = message_data['room_name']
+            message.owner_user_id = message_data['owner_user_id']
+            message.owner_user_name = message_data['owner_user_name']
 
-                edited = bool(message_soup.select('.edits'))
-                if edited:
-                    if not Message.edited.values.get(self):
-                        # XXX: generalize all instances of this?
-                        # if its state was previously edited, then we don't
-                        # need to worry about deleting stale `None` values. We
-                        # preserve the possibly-existing values.
-                        del self.editor_user_id
-                        del self.editor_user_name
-                        del self.edits
-                else:
-                    self.editor_user_id = None
-                    self.editor_user_name = None
-                    self.edits = 0
+            if message_data['edited']:
+                if not Message.edited.values.get(message):
+                    # If it was edited but not previously known to be edited,
+                    # these might have cached outdated None/0 no-edit values.
+                    del message.editor_user_id
+                    del message.editor_user_name
+                    del message.edits
 
-                self.edited = edited
+            if 'editor_user_id' in message_data:
+                message.editor_user_id = message_data['editor_user_id']
+            if 'editor_user_name' in message_data:
+                message.editor_user_name = message_data['editor_user_name']
+            if 'edits' in message_data:
+                message.edits = message_data['edits']
 
-                message.content = str(
-                    message_soup.select('.content')[0]
-                ).partition('>')[2].rpartition('<')[0].strip()
+            message.edited = message_data['edited']
+            message.content = message_data['content']
+            message._scrape_stars(message_data)
 
-                message._scrape_stars(message_soup, scrape_starred_by_you=True)
+            message._parent_message_id = message_data['parent_message_id']
 
-                # TODO: message.time_stamp = ...
+            # TODO: message.time_stamp = ...
 
-                parent_info_soups = message_soup.select('.reply-info')
+    def _scrape_stars(self, data):
+        self.starred = data['starred']
+        self.stars = data['stars']
 
-                if parent_info_soups:
-                    parent_info_soup, = parent_info_soups
-                    message._parent_message_id = int(
-                        parent_info_soup['href'].partition('#')[2])
-                else:
-                    message._parent_message_id = None
+        if 'starred_by_you' in data:
+            self.starred_by_you = data['starred_by_you']
 
+        if data['pinned'] and not Message.pinned.values.get(self):
+            # If it just became pinned but was previously known unpinned,
+            # these cached pin details will be stale.
+            del self.pinner_user_ids
+            del self.pinner_user_names
+            del self.pins
 
-    def _scrape_stars(self, soup, scrape_starred_by_you):
-        stars_soup = soup.select('.stars')
+        self.pinned = data['pinned']
 
-        if stars_soup:
-            times_soup = soup.select('.times')
-            if times_soup and times_soup[0].text:
-                self.stars = int(times_soup[0].text)
-            else:
-                self.stars = 1
-
-            if scrape_starred_by_you:
-                # some pages never show user-star, so we have to skip
-                self.starred_by_you = bool(
-                    soup.select('.stars.user-star'))
-
-            pinned = bool(
-                soup.select('.stars.owner-star'))
-
-            if pinned:
-                if not Message.pinned.values.get(self):
-                    # XXX: generalize all instances of this?
-                    # if its state was already pinned, then we don't need
-                    # to worry about deleting stale `[]` values. We preserve
-                    # the possibly-existing values.
-                    del self.pinner_user_ids
-                    del self.pinner_user_names
-                    del self.pins
-            else:
-                self.pinner_user_ids = []
-                self.pinner_user_names = []
-                self.pins = 0
-
-            self.pinned = pinned
-        else:
-            self.stars = 0
-            if scrape_starred_by_you:
-                self.starred_by_you = False
-            self.pinned = False
-            self.pins = 0
-            self.pinner_user_ids = []
-            self.pinner_user_names = []
+        if 'pinner_user_ids' in data:
+            self.pinner_user_ids = data['pinner_user_ids']
+        if 'pinner_user_names' in data:
+            self.pinner_user_names = data['pinner_user_names']
+        if 'pins' in data:
+            self.pins = data['pins']
 
     @property
     def parent(self):
@@ -214,22 +125,31 @@ class Message(object):
             return _utils.html_to_text(self.content)
 
     def reply(self, text):
-        self.client.send_message(
+        self.client._send_message(
             self.room_id,
             ":%s %s" % (self.id, text))
 
     def edit(self, text):
-        self.client.edit_message(self.id, text)
+        self.client._edit_message(self.id, text)
 
     def star(self, value=True):
         del self.starred_by_you  # don't use cached value
         if self.starred_by_you != value:
             self.client.br.toggle_starring()
+            # we assume this was successfully
 
-            self.starred_by_you = value  # assumed valid
+            self.starred_by_you = value
 
-            # bust staled cache
-            del self.stars
+            if self in Message.stars.values:
+                if value:
+                    self.stars += 1
+                else:
+                    self.stars -= 1
+
+                self.starred = bool(self.stars)
+            else:
+                # bust potential stale cached values
+                del self.starred
         else:
             self.logger.info(".starred_by_you is already %r", value)
 
@@ -237,11 +157,27 @@ class Message(object):
         del self.pinned  # don't used cached value
         if self.pinned != value:
             self.client.br.toggle_pinning()
+            # we assume this was successfully
 
-            # bust staled cache
-            del self.pinned
-            del self.pins
-            del self.pinner_user_ids
-            del self.pinner_user_names
+            if self in Message.pins.values:
+                assert self in Message.pinner_user_ids.values
+                assert self in Message.pinner_user_names.values
+
+                if value:
+                    self.pins += 1
+                    self.pinner_user_ids.append(self.client.br.user_id)
+                    self.pinner_user_names.append(self.client.br.user_name)
+                else:
+                    self.pins -= 1
+                    index = self.pinner_user_ids.index(self.client.br.user_id)
+                    del self.pinner_user_ids[index]
+                    del self.pinner_user_names[index]
+
+                self.pinned = bool(self.pinned)
+            else:
+                # bust potential stale cached values
+                del self.pinned
+                del self.pinner_user_ids
+                del self.pinner_user_names
         else:
             self.logger.info(".pinned is already %r", value)
