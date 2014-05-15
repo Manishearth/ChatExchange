@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 import getpass
 import logging
+import logging.handlers
 import os
 import random
 import sys
 
-import chatexchange.wrapper
+import chatexchange.client
 import chatexchange.events
 
 
@@ -21,34 +22,34 @@ def main():
     room_id = '14219'  # Charcoal Chatbot Sandbox
 
     if 'ChatExchangeU' in os.environ:
-        username = os.environ['ChatExchangeU']
+        email = os.environ['ChatExchangeU']
     else:
         sys.stderr.write("Username: ")
         sys.stderr.flush()
-        username = raw_input()
+        email = raw_input()
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:
         password = getpass.getpass("Password: ")
 
-    wrapper = chatexchange.wrapper.SEChatWrapper(host_id)
-    wrapper.login(username, password)
+    client = chatexchange.client.Client(host_id)
+    client.login(email, password)
 
-    wrapper.joinRoom(room_id)
-    wrapper.watchRoom(room_id, on_message, 1)
+    client.joinRoom(room_id)
+    client.watchRoom(room_id, on_message, 1)
 
     # If WebSockets are available, one could instead use:
-    #     wrapper.watchRoomSocket(room, on_message)
+    #     client.watchRoomSocket(room, on_message)
 
     print "(You are now in room #%s on %s.)" % (room_id, host_id)
     while True:
         message = raw_input("<< ")
-        wrapper.sendMessage(room_id, message)
+        client._send_message(room_id, message)
 
-    wrapper.logout()
+    client.logout()
 
 
-def on_message(message, wrapper):
+def on_message(message, client):
     if not isinstance(message, chatexchange.events.MessagePosted):
         # Ignore non-message_posted events.
         logger.debug("event: %r", message)
@@ -67,10 +68,10 @@ def setup_logging():
     logger.setLevel(logging.DEBUG)
 
     # In addition to the basic stderr logging configured globally
-    # above, we'll use a log file for chatexchange.wrapper.
-    wrapper_logger = logging.getLogger('chatexchange.wrapper')
+    # above, we'll use a log file for chatexchange.client.
+    wrapper_logger = logging.getLogger('chatexchange.client')
     wrapper_handler = logging.handlers.TimedRotatingFileHandler(
-        filename='wrapper.log',
+        filename='client.log',
         when='midnight', delay=True, utc=True, backupCount=7,
     )
     wrapper_handler.setFormatter(logging.Formatter(

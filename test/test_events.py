@@ -1,4 +1,4 @@
-from chatexchange import events, wrapper
+from chatexchange import events, client
 
 
 def test_message_posted_event_initialization():
@@ -25,7 +25,7 @@ def test_message_posted_event_initialization():
         "user_name": user_name
     }
 
-    event = events.make(event_data, wrapper.SEChatWrapper())
+    event = events.make(event_data, client.Client())
 
     assert isinstance(event, events.MessagePosted)
     assert type(event) == events.MessagePosted
@@ -68,7 +68,7 @@ def test_message_edited_event_initialization():
         "user_name": user_name
     }
 
-    event = events.make(event_data, wrapper.SEChatWrapper())
+    event = events.make(event_data, client.Client())
 
     assert isinstance(event, events.MessageEdited)
     assert type(event) == events.MessageEdited
@@ -112,7 +112,7 @@ def test_message_starred_event_initialization():
         "user_name": user_name
     }
 
-    event = events.make(event_data, wrapper.SEChatWrapper())
+    event = events.make(event_data, client.Client())
 
     assert isinstance(event, events.MessageStarred)
     assert type(event) == events.MessageStarred

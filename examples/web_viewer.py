@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+"""
+Opens a web page displaying a simple updating view of a chat room.
+
+This is not meant for unauthenticated, remote, or multi-client use.
+"""
+
 import BaseHTTPServer
 import collections
 import getpass
@@ -9,14 +15,7 @@ import sys
 import webbrowser
 
 
-from chatexchange import wrapper, events
-
-
-"""
-Opens a web page displaying a simple updating view of a chat room.
-
-This is not meant for unauthenticated, remote, or multi-client use.
-"""
+from chatexchange import client, events
 
 
 logger = logging.getLogger(__name__)
@@ -30,18 +29,18 @@ def main(port='8462'):
     room_id = 14219  # Charcoal Chatbot Sandbox
 
     if 'ChatExchangeU' in os.environ:
-        username = os.environ['ChatExchangeU']
+        email = os.environ['ChatExchangeU']
     else:
         sys.stderr.write("Username: ")
         sys.stderr.flush()
-        username = raw_input()
+        email = raw_input()
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:
         password = getpass.getpass("Password: ")
 
-    chat = wrapper.SEChatWrapper('stackexchange.com')
-    chat.login(username, password)
+    chat = client.Client('stackexchange.com')
+    chat.login(email, password)
 
     httpd = Server(
         ('127.0.0.1', 8462), Handler, chat=chat, room_id=room_id)
@@ -56,7 +55,7 @@ class Server(BaseHTTPServer.HTTPServer, object):
         self.room_name = "Chat Room"
         self.messages = collections.deque(maxlen=25)
 
-        self.chat.joinRoom(self.room_id)
+        self.chat.join_room(self.room_id)
         self.chat.watchRoomSocket(self.room_id, self.on_chat_event)
 
         self.chat.sendMessage(self.room_id, "Hello, world!")
@@ -86,7 +85,7 @@ class Server(BaseHTTPServer.HTTPServer, object):
             } for message in self.messages]
         }
 
-    def on_chat_event(self, event, wrapper):
+    def on_chat_event(self, event, client):
         if (isinstance(event, events.MessagePosted)
             and event.room_id == self.room_id):
             self.room_name = event.room_name
@@ -114,7 +113,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
         data = json.loads(json_data)
 
         if data['action'] == 'create':
-            self.server.chat.send_message(
+            self.server.chat._send_message(
                 self.server.room_id,
                 data['text'])
         elif data['action'] == 'edit':

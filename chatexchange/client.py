@@ -16,12 +16,16 @@ TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"
 logger = logging.getLogger(__name__)
 
 
-class SEChatWrapper(object):
+class Client(object):
     max_recent_events = 1000
     max_recently_accessed_messages = 1000
 
-    def __init__(self, host='stackexchange.com'):
+    def __init__(self, host='stackexchange.com', email=None, password=None):
         self.logger = logger.getChild('SEChatWraper')
+
+        if email or password:
+            assert email and password, (
+                "must specify both email and password or neither")
 
         # any known Message instances
         self._messages = weakref.WeakValueDictionary()
@@ -37,7 +41,7 @@ class SEChatWrapper(object):
         if host not in self.valid_hosts:
             raise ValueError("invalid host: %r" % (host,))
 
-        self.br = browser.SEChatBrowser()
+        self.br = browser.Browser()
         self.br.host = host
         self.host = host
         self._previous = None
@@ -49,9 +53,21 @@ class SEChatWrapper(object):
         self.thread = threading.Thread(target=self._worker, name="message_sender")
         self.thread.setDaemon(True)
 
-    def get_message(self, message_id):
+        if email:
+            self.login(email, password)
+
+    def get_message(self, message_id, **attrs):
+        """
+        Gets the (possibly new) Message instance with the given message_id.
+
+        Updates it will the specified attribute values.
+        """
+
         message = self._messages.setdefault(
             message_id, messages.Message(message_id, self))
+
+        for key, value in attrs.items():
+            setattr(message, key, value)
 
         # We want to keep some recently-accessed messages in memory even
         # if they weren't directly referred-to by recent events. For
@@ -74,16 +90,16 @@ class SEChatWrapper(object):
         'SO': 'stackexchange.com'
     }
 
-    def login(self, username, password):
+    def login(self, email, password):
         assert not self.logged_in
         self.logger.info("Logging in.")
 
-        self.br.loginSEOpenID(username, password)
+        self.br.login_se_openid(email, password)
 
-        self.br.loginSite(self.host)
+        self.br.login_site(self.host)
 
         if self.host == 'stackexchange.com':
-            self.br.loginChatSE()
+            self.br.login_se_chat()
 
         self.logged_in = True
         self.logger.info("Logged in.")
@@ -102,13 +118,7 @@ class SEChatWrapper(object):
         self.logger.info("Logged out.")
         self.logged_in = False
 
-    def sendMessage(self, room_id, text):
-        warnings.warn(
-            "Use send_message instead of sendMessage",
-            DeprecationWarning, stacklevel=1)
-        return self.send_message(room_id, text)
-
-    def send_message(self, room_id, text):
+    def _send_message(self, room_id, text):
         """
         Queues a message for sending to a given room.
         """
@@ -116,7 +126,7 @@ class SEChatWrapper(object):
         self.logger.info("Queued message %r for room_id #%r.", text, room_id)
         self.logger.info("Queue length: %d.", self.request_queue.qsize())
 
-    def edit_message(self, message_id, text):
+    def _edit_message(self, message_id, text):
         """
         Queues an edit to be made to a message.
         """
@@ -176,14 +186,10 @@ class SEChatWrapper(object):
             self.logger.debug("Attempt %d: start.", attempt)
 
             if action_type == 'send':
-                response = self.br.postSomething(
-                    '/chats/%s/messages/new' % (room_id,),
-                    {'text': text})
+                response = self.br.send_message(room_id, text)
             else:
                 assert action_type == 'edit'
-                response = self.br.postSomething(
-                    '/messages/%s' % (message_id,),
-                    {'text': text})
+                response = self.br.edit_message(message_id, text)
 
             if isinstance(response, str):
                 match = re.match(TOO_FAST_RE, response)
@@ -219,7 +225,7 @@ class SEChatWrapper(object):
             time.sleep(wait)
 
     def joinRoom(self, room_id):
-        self.br.joinRoom(room_id)
+        self.br.join_room(room_id)
 
     def _room_events(self, activity, room_id):
         """

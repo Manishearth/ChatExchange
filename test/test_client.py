@@ -6,7 +6,7 @@ import Queue
 
 import pytest
 
-from chatexchange.wrapper import SEChatWrapper
+from chatexchange.client import Client
 from chatexchange import events
 
 import live_testing
@@ -49,9 +49,9 @@ if live_testing.enabled:
         to flood Stack Exchange with more test messages than necessary.
         """
 
-        wrapper = SEChatWrapper(host_id)
-        wrapper.login(
-            live_testing.username,
+        client = Client(host_id)
+        client.login(
+            live_testing.email,
             live_testing.password)
 
         timeout_duration = 60
@@ -97,19 +97,18 @@ if live_testing.enabled:
                 else:
                     logger.debug("Unexpected events: %r", event)
 
-            assert socket_event
-            assert polling_event
+            assert socket_event and polling_event
             assert type(socket_event) is type(polling_event)
             assert socket_event.event_id == polling_event.event_id
 
             return socket_event
 
         logger.debug("Joining chat")
-        wrapper.joinRoom(room_id)
+        client.joinRoom(room_id)
 
-        wrapper.watchRoom(room_id, lambda event, _:
+        client.watchRoom(room_id, lambda event, _:
             pending_events.put((False, event)), 5)
-        wrapper.watchRoomSocket(room_id, lambda event, _:
+        client.watchRoomSocket(room_id, lambda event, _:
             pending_events.put((True, event)))
 
         time.sleep(2)  # Avoid race conditions
@@ -118,7 +117,7 @@ if live_testing.enabled:
         test_message_content = TEST_MESSAGE_FORMAT.format(test_message_nonce)
 
         logger.debug("Sending test message")
-        wrapper.sendMessage(room_id, test_message_content)
+        client._send_message(room_id, test_message_content)
 
         @get_event
         def test_message_posted(event):
@@ -182,9 +181,9 @@ if live_testing.enabled:
 
         # it should be safe to assume that there isn't so much activity
         # that these events will have been flushed out of recent_events.
-        assert test_message_posted in wrapper.recent_events
-        assert test_reply in wrapper.recent_events
-        assert test_edit in wrapper.recent_events
+        assert test_message_posted in client.recent_events
+        assert test_reply in client.recent_events
+        assert test_edit in client.recent_events
         assert test_edit.message.content_source == test_edit_content
 
-        wrapper.logout()
+        client.logout()
