@@ -1,7 +1,26 @@
 # encoding: utf-8
 from HTMLParser import HTMLParser
+import functools
 import htmlentitydefs
+import logging
 import weakref
+
+
+def log_and_ignore_exceptions(
+    f, exceptions=Exception, logger=logging.getLogger('exceptions')
+):
+    """
+    Wraps a function to catch its exceptions, log them, and return None.
+    """
+    @functools.wraps(f)
+    def wrapper(*a, **kw):
+        try:
+            return f(*a, **kw)
+        except exceptions:
+            logger.exception("ignored unhandled exception in %s", f)
+            return None
+
+    return wrapper
 
 
 class HTMLTextExtractor(HTMLParser):
