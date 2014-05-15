@@ -1,3 +1,5 @@
+import pytest
+
 import chatexchange
 from chatexchange.events import MessageEdited
 
@@ -5,6 +7,7 @@ import live_testing
 
 
 if live_testing:
+    @pytest.mark.xfail("not implemented yet")
     def test_room_iterators():
         client = chatexchange.Client(
             'stackexchange.com', live_testing.email, live_testing.password)
