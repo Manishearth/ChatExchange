@@ -56,9 +56,18 @@ class Client(object):
         if email:
             self.login(email, password)
 
-    def get_message(self, message_id):
+    def get_message(self, message_id, **attrs):
+        """
+        Gets the (possibly new) Message instance with the given message_id.
+
+        Updates it will the specified attribute values.
+        """
+
         message = self._messages.setdefault(
             message_id, messages.Message(message_id, self))
+
+        for key, value in attrs.items():
+            setattr(message, key, value)
 
         # We want to keep some recently-accessed messages in memory even
         # if they weren't directly referred-to by recent events. For
@@ -180,7 +189,7 @@ class Client(object):
                 response = self.br.send_message(room_id, text)
             else:
                 assert action_type == 'edit'
-                response = self.br.edit_message(room_id, text)
+                response = self.br.edit_message(message_id, text)
 
             if isinstance(response, str):
                 match = re.match(TOO_FAST_RE, response)

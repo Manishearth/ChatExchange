@@ -34,9 +34,8 @@ class Message(object):
 
     def scrape_history(self):
         # TODO: move request and soup logic to Browser
-        history_soup = self.client.br._get_soup(
-            self.client.br._url(
-                '/messages/%s/history' % (self.id,)))
+        history_soup = self.client.br.get_soup(
+            'messages/%s/history' % (self.id,))
 
         latest = history_soup.select('.monologue')[0]
         history = history_soup.select('.monologue')[1:]
@@ -65,9 +64,9 @@ class Message(object):
 
             if not has_editor_name:
                 has_editor_name = True
-                user_soup = item.select('.email a')[0]
-                self.editor_user_id = self._user_id_from_user_link(user_soup)
-                self.editor_user_name = user_soup.text
+                user_soup = item.select('.username a')[0]
+                self.editor_user_id, self.editor_user_name = (
+                    self.client.br.user_id_and_name_from_link(user_soup))
 
         assert (edits > 0) == has_editor_name
 
@@ -92,8 +91,9 @@ class Message(object):
                 a_soup = p_soup.select('a')[0]
 
                 pins += 1
-                pinner_user_ids.append(self._user_id_from_user_link(a_soup))
-                pinner_user_names.append(a_soup.text)
+                user_id, user_name = self.client.br.user_id_and_name_from_link(a_soup)
+                pinner_user_ids.append(user_id)
+                pinner_user_names.append(user_name)
 
             self.pins = pins
             self.pinner_user_ids = pinner_user_ids
@@ -103,9 +103,8 @@ class Message(object):
 
     def scrape_transcript(self):
         # TODO: move request and soup logic to Browser
-        transcript_soup = self.client.br._get_soup(
-            self.client.br._url(
-                '/transcript/message/%s' % (self.id,)))
+        transcript_soup = self.client.br.get_soup(
+            'transcript/message/%s' % (self.id,))
 
         room_soup, = transcript_soup.select('.room-name a')
         room_id = int(room_soup['href'].split('/')[2])
@@ -114,9 +113,8 @@ class Message(object):
         monologues_soups = transcript_soup.select(
             '#transcript .monologue')
         for monologue_soup in monologues_soups:
-            user_link, = monologue_soup.select('.signature .email a')
-            user_id = self._user_id_from_user_link(user_link)
-            user_name = user_link.text
+            user_link, = monologue_soup.select('.signature .username a')
+            user_id, user_name = self.client.br.user_id_and_name_from_link(user_link)
 
             message_soups = monologue_soup.select('.message')
             for message_soup in message_soups:
@@ -162,8 +160,6 @@ class Message(object):
                 else:
                     message._parent_message_id = None
 
-    def _user_id_from_user_link(self, user_link):
-        return int(user_link['href'].split('/')[2])
 
     def _scrape_stars(self, soup, scrape_starred_by_you):
         stars_soup = soup.select('.stars')

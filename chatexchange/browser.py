@@ -6,6 +6,7 @@ import time
 from bs4 import BeautifulSoup
 import requests
 import websocket
+import _utils
 
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,12 @@ logger = logging.getLogger(__name__)
 class Browser(object):
     user_agent = ('ChatExchange/0.dev '
                   '(+https://github.com/Manishearth/ChatExchange)')
+
+    chat_fkey = _utils.LazyFrom('_update_chat_fkey_and_user')
+    user_name = _utils.LazyFrom('_update_chat_fkey_and_user')
+    user_id = _utils.LazyFrom('_update_chat_fkey_and_user')
+
+    request_timeout = 10.0
 
     def __init__(self):
         self.logger = logger.getChild('Browser')
@@ -24,12 +31,59 @@ class Browser(object):
         self.rooms = {}
         self.sockets = {}
         self.polls = {}
-        self._chat_fkey = None
         self.host = None
 
     @property
     def chat_root(self):
+        assert self.host, "browser has no associated host"
         return 'http://chat.%s' % (self.host,)
+
+    # request helpers
+
+    def _request(
+        self, method, url,
+        data=None, headers=None, with_chat_root=True
+    ):
+        if with_chat_root:
+            url = self.chat_root + '/' + url
+
+        method_method = getattr(self.session, method)
+        # using the actual .post method causes data to be form-encoded,
+        # whereas using .request with method='POST' would create a query string
+        response = method_method(
+            url, data=data, headers=headers, timeout=self.request_timeout)
+
+        response.raise_for_status()
+
+        return response
+
+    def get(self, url, data=None, headers=None, with_chat_root=True):
+        return self._request('get', url, data, headers, with_chat_root)
+
+    def post(self, url, data=None, headers=None, with_chat_root=True):
+        return self._request('post', url, data, headers, with_chat_root)
+
+    def get_soup(self, url, data=None, headers=None, with_chat_root=True):
+        response = self.get(url, data, headers, with_chat_root)
+        return BeautifulSoup(response.content)
+
+    def post_soup(self, url, data=None, headers=None, with_chat_root=True):
+        response = self.post(url, data, headers, with_chat_root)
+        return BeautifulSoup(response.content)
+
+    def post_fkeyed(self, url, data=None, headers=None):
+        if data is None:
+            data = {}
+        elif not isinstance(data, dict):
+            raise TypeError("data must be a dict")
+        else:
+            data = dict(data)
+
+        data['fkey'] = self.chat_fkey
+
+        return self.post(url, data, headers)
+
+    # authentication
 
     def login_se_openid(self, user, password):
         """
@@ -67,12 +121,6 @@ class Browser(object):
 
         self.host = host
 
-    def chat_fkey(self):
-        if self._chat_fkey is None:
-            self.update_chat_fkey()
-
-        return self._chat_fkey
-
     def _se_openid_login_with_fkey(self, fkey_url, post_url, data=()):
         """
         POSTs the specified login data to post_url, after retrieving an
@@ -80,7 +128,7 @@ class Browser(object):
 
         Also handles SE OpenID prompts to allow login to a site.
         """
-        fkey_soup = self._get_soup(fkey_url)
+        fkey_soup = self.get_soup(fkey_url, with_chat_root=False)
         fkey_input = fkey_soup.find('input', {'name': 'fkey'})
         if fkey_input is None:
             raise LoginError("fkey input not found")
@@ -89,18 +137,17 @@ class Browser(object):
         data = dict(data)
         data['fkey'] = fkey
 
-        response = self.session.post(
-            post_url, data=data, allow_redirects=True)
-
-        # treat HTTP errors as Python errors
-        response.raise_for_status()
+        response = self.post(post_url, data, with_chat_root=False)
 
         response = self._handle_se_openid_prompt_if_neccessary(response)
 
         return response
 
     def _handle_se_openid_prompt_if_neccessary(self, prompt_response):
-        if not prompt_response.url.startswith('https://openid.stackexchange.com/account/prompt'):
+        prompt_prefix = 'https://openid.stackexchange.com/account/prompt'
+
+        if not prompt_response.url.startswith(prompt_prefix):
+            # no prompt for us to handle
             return prompt_response
 
         prompt_soup = BeautifulSoup(prompt_response.content)
@@ -110,69 +157,70 @@ class Browser(object):
             'fkey': prompt_soup.find('input', {'name': 'fkey'})['value']
         }
 
-        response = self.session.post(
-            'https://openid.stackexchange.com/account/prompt/submit',
-            data=data)
-        response.raise_for_status()
+        url = 'https://openid.stackexchange.com/account/prompt/submit'
+
+        response = self.post(url, data, with_chat_root=False)
 
         return response
 
     def login_se_chat(self):
-        chatlogin = self._get_soup("http://stackexchange.com/users/chat-login")
-        authToken = chatlogin.find('input', {"name": "authToken"})['value']
-        nonce = chatlogin.find('input', {"name": "nonce"})['value']
-        data = {"authToken": authToken, "nonce": nonce}
-        referer_header = {"Referer": "http://stackexchange.com/users/chat-login"}
-        rdata = self.session.post(
-            "http://chat.stackexchange.com/login/global-fallback",
-            data=data, allow_redirects=True, headers=referer_header
-        ).content
+        start_login_url = 'http://stackexchange.com/users/chat-login'
+        start_login_soup = self.get_soup(start_login_url, with_chat_root=False)
 
-        # the fkey is available here, without any addiitonal request
-        fkey = BeautifulSoup(rdata).find('input', {"name": "fkey"})['value']
-        self._chat_fkey = fkey
+        auth_token = start_login_soup.find('input', {'name': 'authToken'})['value']
+        nonce = start_login_soup.find('input', {'name': 'nonce'})['value']
+        data = {'authToken': auth_token, "nonce": nonce}
+        referer_header = {'Referer': start_login_url}
 
-        return rdata
+        login_url = 'http://chat.stackexchange.com/login/global-fallback'
+        login_request = self.post(login_url, data, referer_header, with_chat_root=False)
+        login_soup = BeautifulSoup(login_request.content)
 
-    def update_chat_fkey(self):
-        try:
-            fkey = self._get_soup(
-                self._url("chats/join/favorite")
-            ).find('input', {"name": "fkey"})['value']
-            if fkey is not None and fkey != "":
-                self._chat_fkey = fkey
-                return True
-        except Exception as e:
-                self.logger.error("Error updating fkey: %s", e)
-        return False
+        self._load_fkey(login_soup)
 
-    def _post_something(self, relurl, data=None):
-        if data is None:
-            data = {}
-        data['fkey'] = self.chat_fkey()
-        req = self.session.post(self._url(relurl), data)
-        try:
-            return req.json()
-        except ValueError:
-            return req.content
+        return login_request
 
-    def _get_something(self, relurl):
-        return self.session.get(self._url(relurl)).content
+    def _load_fkey(self, soup):
+        chat_fkey = soup.find('input', {'name': 'fkey'})['value']
+        if not chat_fkey:
+            raise BrowserError('fkey missing')
 
-    def _get_soup(self, url):
-        return BeautifulSoup(self.session.get(url).content)
+        self.chat_fkey = chat_fkey
+
+    def _load_user(self, soup):
+        user_link_soup, = soup.select('.topbar-menu-links a')
+        user_id, user_name = self.user_id_and_name_from_link(user_link_soup)
+
+        self.user_id = user_id
+        self.user_name = user_name
+
+    @staticmethod
+    def user_id_and_name_from_link(link_soup):
+        user_name = link_soup.text
+        user_id = int(link_soup['href'].split('/')[2])
+        return user_id, user_name
+
+    def _update_chat_fkey_and_user(self):
+        """
+        Updates the fkey used by this browser, and associated user name/id.
+        """
+        favorite_soup = self.get_soup('chats/join/favorite')
+        self._load_fkey(favorite_soup)
+        self._load_user(favorite_soup)
+
+    # remote requests
 
     def join_room(self, room_id):
         room_id = str(room_id)
         self.rooms[room_id] = {}
-        result = self._post_something(
-            '/chats/%s/events' % (room_id,),
+        response = self.post_fkeyed(
+            'chats/%s/events' % (room_id,),
             {
                 'since': 0, 
                 'mode': 'Messages',
                 'msgCount': 100
             })
-        eventtime = result['time']
+        eventtime = response.json()['time']
         self.rooms[room_id]['eventtime'] = eventtime
 
     def watch_room_socket(self, room_id, on_activity):
@@ -195,27 +243,22 @@ class Browser(object):
         self.polls[room_id] = http_watcher
         http_watcher.start()
 
-    def _url(self, rel):
-        if rel[0] != '/':
-            rel = '/' + rel
-        return self.chat_root + rel
-
     def toggle_starring(self, message_id):
-        self._post_something(
-            '/messages/%s/star' % (message_id,))
+        return self.post_fkeyed(
+            'messages/%s/star' % (message_id,))
 
     def toggle_pinning(self, message_id):
-        self._post_something(
-            '/messages/%s/owner-star' % (message_id,))
+        return self.post_fkeyed(
+            'messages/%s/owner-star' % (message_id,))
 
     def send_message(self, room_id, text):
-        return self._post_something(
-            '/chats/%s/messages/new' % (room_id,),
+        return self.post_fkeyed(
+            'chats/%s/messages/new' % (room_id,),
             {'text': text})
 
     def edit_message(self, message_id, text):
-        return self._post_something(
-            '/messages/%s' % (message_id,),
+        return self.post_fkeyed(
+            'messages/%s' % (message_id,),
             {'text': text})
 
 
@@ -231,10 +274,10 @@ class RoomSocketWatcher(object):
     def start(self):
         last_event_time = self.browser.rooms[self.room_id]['eventtime']
 
-        ws_auth_data = self.browser._post_something(
-            '/ws-auth',
+        ws_auth_data = self.browser.post_fkeyed(
+            'ws-auth',
             {'roomid': self.room_id}
-        )
+        ).json()
         wsurl = ws_auth_data['url'] + '?l=%s' % (last_event_time,)
         self.logger.debug('wsurl == %r', wsurl)
 
@@ -273,9 +316,8 @@ class RoomPollingWatcher(object):
         while not self.killed:
             last_event_time = self.browser.rooms[self.room_id]['eventtime']
 
-            activity = self.browser._post_something(
-                '/events',
-                {'r' + self.room_id: last_event_time})
+            activity = self.browser.post_fkeyed(
+                'events', {'r' + self.room_id: last_event_time}).json()
 
             try:
                 room_result = activity['r' + self.room_id]
@@ -289,5 +331,9 @@ class RoomPollingWatcher(object):
             time.sleep(self.interval)
 
 
-class LoginError(Exception):
+class BrowserError(Exception):
+    pass
+
+
+class LoginError(BrowserError):
     pass
