@@ -4,7 +4,6 @@ import time
 import Queue
 import threading
 import logging
-import warnings
 import weakref
 
 import requests
@@ -33,14 +32,6 @@ class Client(object):
         self._messages = weakref.WeakValueDictionary()
         self._rooms = weakref.WeakValueDictionary()
         self._users = weakref.WeakValueDictionary()
-
-        if host in self._deprecated_hosts:
-            replacement = self._deprecated_hosts[host]
-            warnings.warn(
-                "host value %r is deprecated, use %r instead" % (
-                    host, replacement
-                ), DeprecationWarning, stacklevel=2)
-            host = replacement
 
         if host not in self.valid_hosts:
             raise ValueError("invalid host: %r" % (host,))
@@ -92,13 +83,6 @@ class Client(object):
         'stackexchange.com',
         'meta.stackexchange.com',
         'stackoverflow.com'
-    }
-
-    _deprecated_hosts = {
-        'SE': 'stackexchange.com',
-        'MSO': 'meta.stackexchange.com',
-        'MSE': 'meta.stackexchange.com',
-        'SO': 'stackexchange.com'
     }
 
     def get_me(self):

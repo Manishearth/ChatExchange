@@ -18,7 +18,7 @@ def main():
 
     # Run `. setp.sh` to set the below testing environment variables
 
-    host_id = 'SE'
+    host_id = 'stackexchange.com'
     room_id = '14219'  # Charcoal Chatbot Sandbox
 
     if 'ChatExchangeU' in os.environ:
@@ -45,7 +45,7 @@ def main():
     print "(You are now in room #%s on %s.)" % (room_id, host_id)
     while True:
         message = raw_input("<< ")
-        room.(message)
+        room.send_message(message)
 
     client.logout()
 

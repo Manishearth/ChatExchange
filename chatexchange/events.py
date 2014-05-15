@@ -77,7 +77,7 @@ class MessageEvent(Event):
         self.target_user_id = self.data.get('target_user_id', None)
         self.parent_message_id = self.data.get('parent_id', None)
 
-        self.message = self.client.get_message(self._message_id )
+        self.message = self.client.get_message(self._message_id)
 
         self._update_message()
 
