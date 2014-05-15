@@ -24,7 +24,7 @@ class Browser(object):
     user_name = _utils.LazyFrom('_update_chat_fkey_and_user')
     user_id = _utils.LazyFrom('_update_chat_fkey_and_user')
 
-    request_timeout = 10.0
+    request_timeout = 30.0
 
     def __init__(self):
         self.logger = logger.getChild('Browser')
