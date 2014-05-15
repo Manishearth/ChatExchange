@@ -18,33 +18,29 @@ def main():
 
     # Run `. setp.sh` to set the below testing environment variables
 
-    host_id = 'SE'
+    host_id = 'stackexchange.com'
     room_id = '14219'  # Charcoal Chatbot Sandbox
 
     if 'ChatExchangeU' in os.environ:
-        username = os.environ['ChatExchangeU']
+        email = os.environ['ChatExchangeU']
     else:
-        sys.stderr.write("Username: ")
-        sys.stderr.flush()
-        username = raw_input()
+        email = raw_input("Email: ")
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:
         password = getpass.getpass("Password: ")
 
     client = chatexchange.client.Client(host_id)
-    client.login(username, password)
+    client.login(email, password)
 
-    client.joinRoom(room_id)
-    client.watchRoom(room_id, on_message, 1)
-
-    # If WebSockets are available, one could instead use:
-    #     client.watchRoomSocket(room, on_message)
+    room = client.get_room(room_id)
+    room.join()
+    room.watch(on_message)
 
     print "(You are now in room #%s on %s.)" % (room_id, host_id)
     while True:
         message = raw_input("<< ")
-        client.sendMessage(room_id, message)
+        room.send_message(message)
 
     client.logout()
 
@@ -56,7 +52,7 @@ def on_message(message, client):
         return
 
     print ""
-    print ">> (%s) %s" % (message.user_name, message.content)
+    print ">> (%s) %s" % (message.user.name, message.content)
     if message.content.startswith('!!/random'):
         print message
         print "Spawning thread"

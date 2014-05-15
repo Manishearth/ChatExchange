@@ -1,4 +1,4 @@
-Unofficial documentation of the interface used by Stack Exchange chat.
+Incomplete unofficial documentation of Stack Exchange chat interface.
 
 All POST methods require an `fkey` POST form data argument. It won't be
 specifically listed for each of them.

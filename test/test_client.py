@@ -39,6 +39,7 @@ else:
 
 if live_testing.enabled:
     @pytest.mark.parametrize('host_id,room_id', TEST_ROOMS)
+    @pytest.mark.timeout(240)
     def test_se_message_echo(host_id, room_id):
         """
         Tests that we are able to send a message, and recieve it back,
@@ -51,7 +52,7 @@ if live_testing.enabled:
 
         client = Client(host_id)
         client.login(
-            live_testing.username,
+            live_testing.email,
             live_testing.password)
 
         timeout_duration = 60
@@ -97,19 +98,21 @@ if live_testing.enabled:
                 else:
                     logger.debug("Unexpected events: %r", event)
 
-            assert socket_event
-            assert polling_event
+            assert socket_event and polling_event
             assert type(socket_event) is type(polling_event)
-            assert socket_event.event_id == polling_event.event_id
+            assert socket_event.id == polling_event.id
 
             return socket_event
 
         logger.debug("Joining chat")
-        client.joinRoom(room_id)
 
-        client.watchRoom(room_id, lambda event, _:
+        room = client.get_room(room_id)
+
+        room.join()
+
+        room.watch_polling(lambda event, _:
             pending_events.put((False, event)), 5)
-        client.watchRoomSocket(room_id, lambda event, _:
+        room.watch_socket(lambda event, _:
             pending_events.put((True, event)))
 
         time.sleep(2)  # Avoid race conditions
@@ -118,7 +121,7 @@ if live_testing.enabled:
         test_message_content = TEST_MESSAGE_FORMAT.format(test_message_nonce)
 
         logger.debug("Sending test message")
-        client.sendMessage(room_id, test_message_content)
+        room.send_message(test_message_content)
 
         @get_event
         def test_message_posted(event):
@@ -146,11 +149,13 @@ if live_testing.enabled:
 
         logger.debug("Observed test reply")
 
-        assert test_reply.parent_message_id == test_message_posted.message_id
+        assert test_reply.parent_message_id == test_message_posted.message.id
         assert test_reply.message.parent.id == test_reply.parent_message_id
-        assert test_reply.message.parent.content == test_message_posted.content
-        assert test_message_posted.message_id == test_message_posted.message.id
+        assert test_message_posted.message.id == test_message_posted.message.id
         assert test_reply.message.parent is test_message_posted.message
+
+        # unsafe - html content is unstable; may be inconsistent between views
+        # assert test_reply.message.parent.content == test_message_posted.content
 
         test_edit_nonce = uuid.uuid4().hex
         test_edit_content = TEST_MESSAGE_FORMAT.format(test_edit_nonce)
@@ -177,14 +182,14 @@ if live_testing.enabled:
         logger.debug("Observed final test edit")
 
         assert test_message_posted.message is test_edit.message
-        assert test_edit.message_id == test_message_posted.message_id
-        assert test_edit.message_edits == 4
+        assert test_edit.message.id == test_message_posted.message.id
+        assert test_edit.message.edits == 4
+        assert test_edit.message.content_source == test_edit_content
 
         # it should be safe to assume that there isn't so much activity
         # that these events will have been flushed out of recent_events.
-        assert test_message_posted in client.recent_events
-        assert test_reply in client.recent_events
-        assert test_edit in client.recent_events
-        assert test_edit.message.content_source == test_edit_content
+        assert test_message_posted in client._recently_gotten_objects
+        assert test_reply in client._recently_gotten_objects
+        assert test_edit in client._recently_gotten_objects
 
         client.logout()

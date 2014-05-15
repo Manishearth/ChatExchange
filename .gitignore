@@ -53,6 +53,10 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+# epydoc output
+html/
+epydocs/
+
 # IntelliJ IDEA Project Files
 .idea/*
 .iml

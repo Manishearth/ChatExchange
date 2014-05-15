@@ -15,7 +15,7 @@ def test_update_fkey():
         browser = Browser()
         browser.host = 'stackexchange.com'
 
-        assert browser.chat_fkey() == TEST_FKEY
+        assert browser.chat_fkey == TEST_FKEY
 
 
 def test_user_agent():
@@ -36,7 +36,7 @@ def test_user_agent():
     with only_httmock(verify_user_agent):
         browser = Browser()
 
-        browser.getSomething('http://example.com/')
-        browser.getSoup('http://example.com/')
+        browser.get_soup('http://example.com/', with_chat_root=False)
+        browser.get_soup('http://example.com/2', with_chat_root=False)
 
         assert len(good_requests) == 2, "Unexpected number of requests"
