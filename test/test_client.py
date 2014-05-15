@@ -39,6 +39,7 @@ else:
 
 if live_testing.enabled:
     @pytest.mark.parametrize('host_id,room_id', TEST_ROOMS)
+    @pytest.mark.timeout(240)
     def test_se_message_echo(host_id, room_id):
         """
         Tests that we are able to send a message, and recieve it back,

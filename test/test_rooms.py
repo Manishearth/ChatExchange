@@ -8,6 +8,7 @@ import live_testing
 
 if live_testing:
     @pytest.mark.xfail(reason="not implemented yet")
+    @pytest.mark.timeout(60)
     def test_room_iterators():
         client = chatexchange.Client(
             'stackexchange.com', live_testing.email, live_testing.password)
