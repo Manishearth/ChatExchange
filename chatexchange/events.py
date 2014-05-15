@@ -44,7 +44,7 @@ class Event(object):
         else:
             self.type_id = data['event_type']
 
-        self.event_id = data['id']
+        self.id = data['id']
         self.room = client.get_room(data['room_id'], name=data['room_name'])
         self.time_stamp = data['time_stamp']
 
@@ -69,15 +69,15 @@ class MessageEvent(Event):
         self.user = self.client.get_user(
             self.data['user_id'], name=self.data['user_name'])
         self.content = self.data.get('content', None)
-        self.message_id = self.data['message_id']
-        self.message_edits = self.data.get('message_edits', 0)
+        self._message_id = self.data['message_id']
+        self._message_edits = self.data.get('message_edits', 0)
         self.show_parent = self.data.get('show_parent', False)
-        self.message_stars = self.data.get('message_stars', 0)
-        self.message_owner_stars = self.data.get('message_owner_stars', 0)
+        self._message_stars = self.data.get('message_stars', 0)
+        self._message_owner_stars = self.data.get('message_owner_stars', 0)
         self.target_user_id = self.data.get('target_user_id', None)
         self.parent_message_id = self.data.get('parent_id', None)
 
-        self.message = self.client.get_message(self.message_id)
+        self.message = self.client.get_message(self._message_id )
 
         self._update_message()
 
@@ -86,12 +86,12 @@ class MessageEvent(Event):
         message = self.message
         message.content = self.content
         message.deleted = self.content is None
-        message.edits = self.message_edits
-        message.stars = self.message_stars
+        message.edits = self._message_edits
+        message.stars = self._message_stars
         if message.stars == 0:
             message.starred_by_you = False
 
-        pinned = self.message_owner_stars > 0
+        pinned = self._message_owner_stars > 0
 
         if pinned:
             if not messages.Message.pinned.values.get(message):

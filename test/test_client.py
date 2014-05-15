@@ -100,16 +100,19 @@ if live_testing.enabled:
 
             assert socket_event and polling_event
             assert type(socket_event) is type(polling_event)
-            assert socket_event.event_id == polling_event.event_id
+            assert socket_event.id == polling_event.id
 
             return socket_event
 
         logger.debug("Joining chat")
-        client._join_room(room_id)
 
-        client.watchRoom(room_id, lambda event, _:
+        room = client.get_room(room_id)
+
+        room.join()
+
+        room.watch(lambda event, _:
             pending_events.put((False, event)), 5)
-        client.watchRoomSocket(room_id, lambda event, _:
+        room.watch_socket(lambda event, _:
             pending_events.put((True, event)))
 
         time.sleep(2)  # Avoid race conditions
@@ -146,9 +149,9 @@ if live_testing.enabled:
 
         logger.debug("Observed test reply")
 
-        assert test_reply.parent_message_id == test_message_posted.message_id
+        assert test_reply.parent_message_id == test_message_posted.message.id
         assert test_reply.message.parent.id == test_reply.parent_message_id
-        assert test_message_posted.message_id == test_message_posted.message.id
+        assert test_message_posted.message.id == test_message_posted.message.id
         assert test_reply.message.parent is test_message_posted.message
 
         # unsafe - html content is unstable; may be inconsistent between views
@@ -179,8 +182,8 @@ if live_testing.enabled:
         logger.debug("Observed final test edit")
 
         assert test_message_posted.message is test_edit.message
-        assert test_edit.message_id == test_message_posted.message_id
-        assert test_edit.message_edits == 4
+        assert test_edit.message.id == test_message_posted.message.id
+        assert test_edit.message.edits == 4
 
         # it should be safe to assume that there isn't so much activity
         # that these events will have been flushed out of recent_events.
