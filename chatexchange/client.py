@@ -18,10 +18,26 @@ logger = logging.getLogger(__name__)
 
 
 class Client(object):
-    max_recent_events = 1000
-    max_recently_gotten_objects = 5000
+    """
+    A high-level interface for interacting with Stack Exchange chat.
+
+    @ivar logged_in:   Whether this client is currently logged-in.
+                       If False, attempting requests will result in errors.
+    @type logged_in:   L{bool}
+    @ivar host:        Hostname of associated Stack Exchange site.
+    @type host:        L{str}
+    @cvar valid_hosts: Set of valid/real Stack Exchange hostnames with chat.
+    @type valid_hosts: L{set}
+    """
+
+    _max_recently_gotten_objects = 5000
 
     def __init__(self, host='stackexchange.com', email=None, password=None):
+        """
+        Initializes a client for a specific chat host.
+
+        If email and password are provided, the client will L{login}.
+        """
         self.logger = logger.getChild('SEChatWraper')
 
         if email or password:
@@ -36,39 +52,53 @@ class Client(object):
         if host not in self.valid_hosts:
             raise ValueError("invalid host: %r" % (host,))
 
-        self.br = browser.Browser()
-        self.br.host = host
         self.host = host
-        self._previous = None
-        self.request_queue = Queue.Queue()
         self.logged_in = False
-        self.recent_events = collections.deque(maxlen=self.max_recent_events)
-        self._recently_gotten_objects = collections.deque(maxlen=self.max_recently_gotten_objects)
-        self._requests_served = 0
-        self.thread = threading.Thread(target=self._worker, name="message_sender")
-        self.thread.setDaemon(True)
+        self._request_queue = Queue.Queue()
 
-        if email:
+        self._br = browser.Browser()
+        self._br.host = host
+        self._previous = None
+        self._recently_gotten_objects = collections.deque(maxlen=self._max_recently_gotten_objects)
+        self._requests_served = 0
+        self._thread = threading.Thread(target=self._worker, name="message_sender")
+        self._thread.setDaemon(True)
+
+        if email or password:
+            assert email and password
             self.login(email, password)
 
-    def get_message(self, message_id, **attrs):
+    def get_message(self, message_id, **attrs_to_set):
         """
-        Gets the (possibly new) Message instance with the given message_id.
+        Returns the Message instance with the given message_id.
+        Any keyword arguments will be assigned as attributes of the Message.
 
-        Updates it will the specified attribute values.
+        @rtype: L{chatexchange.messages.Message}
         """
-        return self._get_deduplicated(
-            messages.Message, message_id, self._messages, attrs)
+        return self._get_and_set_deduplicated(
+            messages.Message, message_id, self._messages, attrs_to_set)
 
-    def get_room(self, room_id, **attrs):
-        return self._get_deduplicated(
-            rooms.Room, room_id, self._rooms, attrs)
+    def get_room(self, room_id, **attrs_to_set):
+        """
+        Returns the Room instance with the given room_id.
+        Any keyword arguments will be assigned as attributes of the Room.
 
-    def get_user(self, user_id, **attrs):
-        return self._get_deduplicated(
-            users.User, user_id, self._users, attrs)
+        @rtype: L{rooms.Room}
+        """
+        return self._get_and_set_deduplicated(
+            rooms.Room, room_id, self._rooms, attrs_to_set)
 
-    def _get_deduplicated(self, cls, id, instances, attrs):
+    def get_user(self, user_id, **attrs_to_set):
+        """
+        Returns the User instance with the given room_id.
+        Any keyword arguments will be assigned as attributes of the Room.
+
+        @rtype: L{users.User}
+        """
+        return self._get_and_set_deduplicated(
+            users.User, user_id, self._users, attrs_to_set)
+
+    def _get_and_set_deduplicated(self, cls, id, instances, attrs):
         instance = instances.setdefault(id, cls(id, self))
 
         for key, value in attrs.items():
@@ -86,72 +116,64 @@ class Client(object):
     }
 
     def get_me(self):
-        assert self.br.user_id is not None
-        return self.get_user(self.br.user_id, name=self.br.user_name)
+        """
+        Returns the currently-logged-in User.
+
+        @rtype: L{users.User}
+        """
+        assert self._br.user_id is not None
+        return self.get_user(self._br.user_id, name=self._br.user_name)
 
     def login(self, email, password):
+        """
+        Authenticates using the provided Stack Exchange OpenID credentials.
+        If successful, blocks until the instance is ready to use.
+        """
         assert not self.logged_in
         self.logger.info("Logging in.")
 
-        self.br.login_se_openid(email, password)
+        self._br.login_se_openid(email, password)
 
-        self.br.login_site(self.host)
+        self._br.login_site(self.host)
 
         if self.host == 'stackexchange.com':
-            self.br.login_se_chat()
+            self._br.login_se_chat()
 
         self.logged_in = True
         self.logger.info("Logged in.")
-        self.thread.start()
+        self._thread.start()
 
     def logout(self):
+        """
+        Logs out this client once all queued requests are sent.
+        The client cannot be logged back in/reused.
+        """
         assert self.logged_in
 
-        for watcher in self.br.sockets.values():
+        for watcher in self._br.sockets.values():
             watcher.killed = True
 
-        for watcher in self.br.polls.values():
+        for watcher in self._br.polls.values():
             watcher.killed = True
 
-        self.request_queue.put(SystemExit)
+        self._request_queue.put(SystemExit)
         self.logger.info("Logged out.")
         self.logged_in = False
 
-    def _send_message(self, room_id, text):
-        """
-        Queues a message for sending to a given room.
-        """
-        self.request_queue.put(('send', room_id, text))
-        self.logger.info("Queued message %r for room_id #%r.", text, room_id)
-        self.logger.info("Queue length: %d.", self.request_queue.qsize())
-
-    def _edit_message(self, message_id, text):
-        """
-        Queues an edit to be made to a message.
-        """
-        self.request_queue.put(('edit', message_id, text))
-        self.logger.info("Queued edit %r for message_id #%r.", text, message_id)
-        self.logger.info("Queue length: %d.", self.request_queue.qsize())
-
     def __del__(self):
         if self.logged_in:
-            self.request_queue.put(SystemExit)
-            # todo: underscore everything used by
-            # the thread so this is guaranteed
-            # to work.
+            self._request_queue.put(SystemExit)
             assert False, "You forgot to log out."
 
     def _worker(self):
         assert self.logged_in
         self.logger.info("Worker thread reporting for duty.")
         while True:
-            next_action = self.request_queue.get()  # blocking
+            next_action = self._request_queue.get()  # blocking
             if next_action == SystemExit:
                 self.logger.info("Worker thread exits.")
                 return
             else:
-                action_type = next_action[0]
-
                 self._requests_served += 1
                 self.logger.info(
                     "Now serving customer %d, %r",
@@ -159,11 +181,11 @@ class Client(object):
 
                 self._do_action_despite_throttling(next_action)
 
-            self.request_queue.task_done()
+            self._request_queue.task_done()
 
     # Appeasing the rate limiter gods is hard.
-    BACKOFF_MULTIPLIER = 2
-    BACKOFF_ADDER = 5
+    _BACKOFF_MULTIPLIER = 2
+    _BACKOFF_ADDER = 5
 
     # When told to wait n seconds, wait n * BACKOFF_MULTIPLIER + BACKOFF_ADDER
 
@@ -186,10 +208,10 @@ class Client(object):
 
             try:
                 if action_type == 'send':
-                    response = self.br.send_message(room_id, text)
+                    response = self._br.send_message(room_id, text)
                 else:
                     assert action_type == 'edit'
-                    response = self.br.edit_message(message_id, text)
+                    response = self._br.edit_message(message_id, text)
             except requests.HTTPError as ex:
                 if ex.response.status_code == 409:
                     # this could be a throttling message we know how to handle
@@ -205,17 +227,17 @@ class Client(object):
                         "Attempt %d: denied: throttled, must wait %.1f seconds",
                         attempt, wait)
                     # Wait more than that, though.
-                    wait *= self.BACKOFF_MULTIPLIER
-                    wait += self.BACKOFF_ADDER
+                    wait *= self._BACKOFF_MULTIPLIER
+                    wait += self._BACKOFF_ADDER
                 else:  # Something went wrong. I guess that happens.
-                    wait = self.BACKOFF_ADDER
+                    wait = self._BACKOFF_ADDER
                     logging.error(
                         "Attempt %d: denied: unknown reason %r",
                         attempt, response)
             elif isinstance(response, dict):
                 if response["id"] is None:  # Duplicate message?
                     text += " "  # Append because markdown
-                    wait = self.BACKOFF_ADDER
+                    wait = self._BACKOFF_ADDER
                     self.logger.debug(
                         "Attempt %d: denied: duplicate, waiting %.1f seconds.",
                         attempt, wait)
@@ -223,7 +245,7 @@ class Client(object):
             if wait:
                 self.logger.debug("Attempt %d: waiting %.1f seconds", attempt, wait)
             else:
-                wait = self.BACKOFF_ADDER
+                wait = self._BACKOFF_ADDER
                 self.logger.debug("Attempt %d: success. Waiting %.1f seconds", attempt, wait)
                 sent = True
                 self._previous = text
@@ -231,7 +253,7 @@ class Client(object):
             time.sleep(wait)
 
     def _join_room(self, room_id):
-        self.br.join_room(room_id)
+        self._br.join_room(room_id)
 
     def _room_events(self, activity, room_id):
         """
@@ -243,19 +265,19 @@ class Client(object):
         for room_event_data in room_events_data:
             if room_event_data:
                 event = events.make(room_event_data, self)
-                self.recent_events.appendleft(event)
+                self._recently_gotten_objects.appendleft(event)
                 yield event
 
-    def _watch_room(self, room_id, event_callback, interval):
+    def _watch_room_polling(self, room_id, event_callback, interval):
         def on_activity(activity):
             for event in self._room_events(activity, room_id):
                 event_callback(event, self)
 
-        self.br.watch_room_http(room_id, on_activity, interval)
+        self._br.watch_room_http(room_id, on_activity, interval)
 
     def _watch_room_socket(self, room_id, event_callback):
         def on_activity(activity):
             for event in self._room_events(activity, room_id):
                 event_callback(event, self)
 
-        self.br.watch_room_socket(room_id, on_activity)
+        self._br.watch_room_socket(room_id, on_activity)

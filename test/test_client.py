@@ -110,7 +110,7 @@ if live_testing.enabled:
 
         room.join()
 
-        room.watch(lambda event, _:
+        room.watch_polling(lambda event, _:
             pending_events.put((False, event)), 5)
         room.watch_socket(lambda event, _:
             pending_events.put((True, event)))
@@ -121,7 +121,7 @@ if live_testing.enabled:
         test_message_content = TEST_MESSAGE_FORMAT.format(test_message_nonce)
 
         logger.debug("Sending test message")
-        client._send_message(room_id, test_message_content)
+        room.send_message(test_message_content)
 
         @get_event
         def test_message_posted(event):
@@ -184,12 +184,12 @@ if live_testing.enabled:
         assert test_message_posted.message is test_edit.message
         assert test_edit.message.id == test_message_posted.message.id
         assert test_edit.message.edits == 4
+        assert test_edit.message.content_source == test_edit_content
 
         # it should be safe to assume that there isn't so much activity
         # that these events will have been flushed out of recent_events.
-        assert test_message_posted in client.recent_events
-        assert test_reply in client.recent_events
-        assert test_edit in client.recent_events
-        assert test_edit.message.content_source == test_edit_content
+        assert test_message_posted in client._recently_gotten_objects
+        assert test_reply in client._recently_gotten_objects
+        assert test_edit in client._recently_gotten_objects
 
         client.logout()

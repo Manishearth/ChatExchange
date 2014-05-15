@@ -10,10 +10,9 @@ logger = logging.getLogger(__name__)
 
 if live_testing.enabled:
     def test_specific_messages():
-        chat = Client('stackexchange.com')
-        # it shouldn't be necessary to log in for this test
+        client = Client('stackexchange.com')
 
-        message1 = chat.get_message(15359027)
+        message1 = client.get_message(15359027)
 
         assert message1.id == 15359027
         assert message1.text_content == '@JeremyBanks hello'
@@ -24,7 +23,7 @@ if live_testing.enabled:
         message2 = message1.parent
 
         assert message2.id == 15358991
-        assert message2 is chat.get_message(15358991)
+        assert message2 is client.get_message(15358991)
         assert message2.text_content == "@bot forever in my tests"
         assert message2.owner.id == 1251
 
@@ -49,7 +48,7 @@ if live_testing.enabled:
         assert message4.text_content == "and again!"
         assert message4.parent is None
 
-        message5 = chat.get_message(15359293)
+        message5 = client.get_message(15359293)
         message5.scrape_transcript = 'NOT EXPECTED TO BE CALLED'
         message5.scrape_history()
 
@@ -60,7 +59,7 @@ if live_testing.enabled:
         assert set(p.id for p in message5.pinners) == {1251}
         assert message5.editor.id == 97938
 
-        message6 = chat.get_message(15493758)
+        message6 = client.get_message(15493758)
         message6.scrape_transcript = 'NOT EXPECTED TO BE CALLED'
         message6.scrape_history()
 
