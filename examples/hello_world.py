@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-from getpass import getpass
+import getpass
 import logging
+import os
 
 import chatexchange
 from chatexchange.events import MessageEdited
@@ -8,16 +9,22 @@ from chatexchange.events import MessageEdited
 
 logging.basicConfig(level=logging.DEBUG)
 
-email = raw_input('Email: ')
-password = getpass()
+if 'ChatExchangeU' in os.environ:
+    email = os.environ['ChatExchangeU']
+else:
+    email = raw_input("Email: ")
+if 'ChatExchangeP' in os.environ:
+    password = os.environ['ChatExchangeP']
+else:
+    password = getpass.getpass("Password: ")
 client = chatexchange.Client('stackexchange.com', email, password)
 
 me = client.get_me()
-sandbox = client.get_room(11540)
+sandbox = client.get_room(14219)
 my_message = None
 
-with sandbox.messages() as messages:
-    sandbox._send_message("hello worl")
+with sandbox.new_messages() as messages:
+    sandbox.send_message("hello worl")
 
     for message in messages:
         if message.owner is me:
@@ -26,7 +33,7 @@ with sandbox.messages() as messages:
             print "message sent successfully"
             break
 
-with sandbox.events(MessageEdited) as edits:
+with sandbox.new_events(MessageEdited) as edits:
     my_message.edit("hello world")
 
     for edit in edits:

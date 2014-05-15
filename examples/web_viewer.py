@@ -15,7 +15,8 @@ import sys
 import webbrowser
 
 
-from chatexchange import client, events
+import chatexchange
+from chatexchange import events
 
 
 logger = logging.getLogger(__name__)
@@ -39,56 +40,55 @@ def main(port='8462'):
     else:
         password = getpass.getpass("Password: ")
 
-    chat = client.Client('stackexchange.com')
-    chat.login(email, password)
+    client = chatexchange.Client('stackexchange.com')
+    client.login(email, password)
 
     httpd = Server(
-        ('127.0.0.1', 8462), Handler, chat=chat, room_id=room_id)
+        ('127.0.0.1', 8462), Handler, client=client, room_id=room_id)
     webbrowser.open('http://localhost:%s/' % (port,))
     httpd.serve_forever()
 
 
 class Server(BaseHTTPServer.HTTPServer, object):
     def __init__(self, *a, **kw):
-        self.chat = kw.pop('chat')
-        self.room_id = kw.pop('room_id')
-        self.room_name = "Chat Room"
+        self.client = kw.pop('client')
+        self.room = self.client.get_room(kw.pop('room_id'))
+        self.room.name = "Chat Room"  # prevent request
         self.messages = collections.deque(maxlen=25)
 
-        self.chat.join_room(self.room_id)
-        self.chat.watchRoomSocket(self.room_id, self.on_chat_event)
+        self.room.join()
+        self.room.watch_socket(self.on_chat_event)
 
-        self.chat.sendMessage(self.room_id, "Hello, world!")
+        self.room.send_message("Hello, world!")
 
         super(Server, self).__init__(*a, **kw)
 
     def get_state(self):
         return {
-            'host': self.chat.host,
+            'host': self.client.host,
             'room': {
-                'id': self.room_id,
-                'name': self.room_name
+                'id': self.room.id,
+                'name': self.room.name
             },
             'recent_events':
-                map(str, self.chat.recent_events),
+                map(str, self.client._recently_gotten_objects),
             'messages': [{
                 'id': message.id,
-                'owner_user_id': message.owner_user_id,
-                'owner_user_name': message.owner_user_name,
+                'owner_user_id': message.owner.id,
+                'owner_user_name': message.owner.name,
                 'text_content': message.text_content,
                 'stars': message.stars,
                 'starred_by_you': message.starred_by_you,
                 'pinned': message.pinned,
-                'pinner_user_name': message.pinner_user_names and message.pinner_user_names[0],
-                'pinner_user_id': message.pinner_user_ids and message.pinner_user_ids[0],
+                'pinner_user_name': message.pinners and message.pinners[0].name,
+                'pinner_user_id': message.pinners and message.pinners[0].id,
                 'edits': message.edits,
             } for message in self.messages]
         }
 
     def on_chat_event(self, event, client):
         if (isinstance(event, events.MessagePosted)
-            and event.room_id == self.room_id):
-            self.room_name = event.room_name
+            and event.room is self.room):
             self.messages.append(event.message)
 
 
@@ -113,26 +113,24 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
         data = json.loads(json_data)
 
         if data['action'] == 'create':
-            self.server.chat._send_message(
-                self.server.room_id,
-                data['text'])
+            self.server.room.send_message(data['text'])
         elif data['action'] == 'edit':
-            message = self.server.chat.get_message(data['target'])
+            message = self.server.client.get_message(data['target'])
             message.edit(data['text'])
         elif data['action'] == 'reply':
-            message = self.server.chat.get_message(data['target'])
+            message = self.server.client.get_message(data['target'])
             message.reply(data['text'])
         elif data['action'] == 'set-starring':
-            message = self.server.chat.get_message(data['target'])
+            message = self.server.client.get_message(data['target'])
             message.star(data['value'])
         elif data['action'] == 'set-pinning':
-            message = self.server.chat.get_message(data['target'])
+            message = self.server.client.get_message(data['target'])
             message.pin(data['value'])
         elif data['action'] == 'scrape-transcript':
-            message = self.server.chat.get_message(data['target'])
+            message = self.server.client.get_message(data['target'])
             message.scrape_transcript()
         elif data['action'] == 'scrape-history':
-            message = self.server.chat.get_message(data['target'])
+            message = self.server.client.get_message(data['target'])
             message.scrape_history()
         else:
             assert False

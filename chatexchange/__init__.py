@@ -10,3 +10,7 @@ from . import client
 Browser = browser.Browser
 
 Client = client.Client
+
+__all__ = [
+    'browser', 'users', 'messages', 'rooms', 'events', 'client',
+    'Browser', 'Client']

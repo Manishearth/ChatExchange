@@ -1,3 +1,4 @@
+# encoding: utf-8
 import json
 import logging
 import threading
@@ -13,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class Browser(object):
+    """
+    An interface for scraping and making requests to Stack Exchange chat.
+    """
     user_agent = ('ChatExchange/0.dev '
                   '(+https://github.com/Manishearth/ChatExchange)')
 
@@ -54,6 +58,9 @@ class Browser(object):
             url, data=data, headers=headers, timeout=self.request_timeout)
 
         response.raise_for_status()
+
+        # XXX: until throttling is implemented everywhere in Client, at least add some delay here.
+        time.sleep(0.75)
 
         return response
 
@@ -188,7 +195,7 @@ class Browser(object):
         self.chat_fkey = chat_fkey
 
     def _load_user(self, soup):
-        user_link_soup, = soup.select('.topbar-menu-links a')
+        user_link_soup = soup.select('.topbar-menu-links a')[0]
         user_id, user_name = self.user_id_and_name_from_link(user_link_soup)
 
         self.user_id = user_id
@@ -232,6 +239,7 @@ class Browser(object):
         socket_watcher = RoomSocketWatcher(self, room_id, on_activity)
         self.sockets[room_id] = socket_watcher
         socket_watcher.start()
+        return socket_watcher
 
     def watch_room_http(self, room_id, on_activity, interval):
         """
@@ -242,6 +250,7 @@ class Browser(object):
         http_watcher = RoomPollingWatcher(self, room_id, on_activity, interval)
         self.polls[room_id] = http_watcher
         http_watcher.start()
+        return http_watcher
 
     def toggle_starring(self, message_id):
         return self.post_fkeyed(
@@ -283,6 +292,10 @@ class Browser(object):
 
         latest_content_source = (
             previous_soup[0].select('.content b')[0].next_sibling.strip())
+
+        owner_soup = latest_soup.select('.username a')[0]
+        owner_user_id, owner_user_name = (
+            self.user_id_and_name_from_link(owner_soup))
 
         edits = 0
         has_editor_name = False
@@ -336,6 +349,8 @@ class Browser(object):
             'room_id': room_id,
             'content': latest_content,
             'content_source': latest_content_source,
+            'owner_user_id': owner_user_id,
+            'owner_user_name': owner_user_name,
             'editor_user_id': latest_editor_user_id,
             'editor_user_name': latest_editor_user_name,
             'edited': bool(edits),
@@ -479,6 +494,70 @@ class Browser(object):
 
         return data
 
+    def get_profile(self, user_id):
+        """
+        Returns the data from the profile page for user_id.
+        """
+        profile_soup = self.get_soup('users/%s' % (user_id,))
+
+        name = profile_soup.find('h1').text
+
+        is_moderator = bool(u'♦' in profile_soup.select('.user-status')[0].text)
+        message_count = int(profile_soup.select('.user-message-count-xxl')[0].text)
+        room_count = int(profile_soup.select('.user-room-count-xxl')[0].text)
+
+        return {
+            'name': name,
+            'is_moderator': is_moderator,
+            'message_count': message_count,
+            'room_count': room_count
+        }
+
+    def get_room_info(self, room_id):
+        """
+        Returns the data from the room info page for room_id.
+        """
+        info_soup = self.get_soup('rooms/info/%s' % (room_id,))
+
+        name = info_soup.find('h1').text
+
+        description = str(
+            info_soup.select('.roomcard-xxl p')[0]
+        ).partition('>')[2].rpartition('<')[0].strip()
+
+        message_count = int(info_soup.select('.room-message-count-xxl')[0].text)
+        user_count = int(info_soup.select('.room-user-count-xxl')[0].text)
+
+        parent_image_soups = info_soup.select('.roomcard-xxl img')
+        if parent_image_soups:
+            parent_site_name = parent_image_soups[0]['title']
+        else:
+            parent_site_name = None
+
+        owner_user_ids = []
+        owner_user_names = []
+
+        for card_soup in info_soup.select('#room-ownercards .usercard'):
+            user_id, user_name = self.user_id_and_name_from_link(card_soup.find('a'))
+            owner_user_ids.append(user_id)
+            owner_user_names.append(user_name)
+
+        tags = []
+
+        for tag_soup in info_soup.select('.roomcard-xxl .tag'):
+            tags.append(tag_soup.text)
+
+        return {
+            'name': name,
+            'description': description,
+            'message_count': message_count,
+            'user_count': user_count,
+            'parent_site_name': parent_site_name,
+            'owner_user_ids': owner_user_ids,
+            'owner_user_names': owner_user_names,
+            'tags': tags
+        }
+
 
 class RoomSocketWatcher(object):
     def __init__(self, browser, room_id, on_activity):
@@ -488,6 +567,9 @@ class RoomSocketWatcher(object):
         self.thread = None
         self.on_activity = on_activity
         self.killed = False
+
+    def close(self):
+        self.killed = True
 
     def start(self):
         last_event_time = self.browser.rooms[self.room_id]['eventtime']
@@ -529,6 +611,9 @@ class RoomPollingWatcher(object):
         self.thread = threading.Thread(target=self._runner)
         self.thread.setDaemon(True)
         self.thread.start()
+
+    def close(self):
+        self.killed = True
 
     def _runner(self):
         while not self.killed:
