@@ -239,6 +239,7 @@ class Browser(object):
         socket_watcher = RoomSocketWatcher(self, room_id, on_activity)
         self.sockets[room_id] = socket_watcher
         socket_watcher.start()
+        return socket_watcher
 
     def watch_room_http(self, room_id, on_activity, interval):
         """
@@ -249,6 +250,7 @@ class Browser(object):
         http_watcher = RoomPollingWatcher(self, room_id, on_activity, interval)
         self.polls[room_id] = http_watcher
         http_watcher.start()
+        return http_watcher
 
     def toggle_starring(self, message_id):
         return self.post_fkeyed(
@@ -566,6 +568,9 @@ class RoomSocketWatcher(object):
         self.on_activity = on_activity
         self.killed = False
 
+    def close(self):
+        self.killed = True
+
     def start(self):
         last_event_time = self.browser.rooms[self.room_id]['eventtime']
 
@@ -606,6 +611,9 @@ class RoomPollingWatcher(object):
         self.thread = threading.Thread(target=self._runner)
         self.thread.setDaemon(True)
         self.thread.start()
+
+    def close(self):
+        self.killed = True
 
     def _runner(self):
         while not self.killed:

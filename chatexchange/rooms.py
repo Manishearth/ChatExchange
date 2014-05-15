@@ -1,6 +1,9 @@
+import Queue
+import contextlib
 import logging
 
 from . import _utils, events
+import collections
 
 
 logger = logging.getLogger(__name__)
@@ -52,26 +55,75 @@ class Room(object):
         return self.watch_polling(event_callback, 3)
 
     def watch_polling(self, event_callback, interval):
-        return self._client._watch_room_polling(self.id, event_callback, interval)
+        def on_activity(activity):
+            for event in self._events_from_activity(activity, self.id):
+                event_callback(event, self._client)
+
+        return self._client._br.watch_room_http(self.id, on_activity, interval)
 
     def watch_socket(self, event_callback):
-        return self._client._watch_room_socket(self.id, event_callback)
+        def on_activity(activity):
+            for event in self._events_from_activity(activity, self.id):
+                event_callback(event, self._client)
+
+        return self._client._br.watch_room_socket(self.id, on_activity)
+
+    def _events_from_activity(self, activity, room_id):
+        """
+        Returns a list of Events associated with a particular room,
+        given an activity message from the server.
+        """
+        room_activity = activity.get('r%s' % (room_id,), {})
+        room_events_data = room_activity.get('e', [])
+        for room_event_data in room_events_data:
+            if room_event_data:
+                event = events.make(room_event_data, self._client)
+                self._client._recently_gotten_objects.appendleft(event)
+                yield event
 
     def new_events(self, types=events.Event):
-        raise NotImplementedError()
-        events = FilteredEventIterator()
-
-        self.watch_socket()
-
-        return events
+        return FilteredEventIterator(self, types)
 
     def new_messages(self):
-        raise NotImplementedError()
+        return MessageIterator(self)
 
 
 class FilteredEventIterator(object):
-    pass
+    def __init__(self, room, types):
+        self.types = types
+        self._queue = Queue.Queue()
+
+        room.join()
+        self._watcher = room.watch(self._on_event)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, tracback):
+        self._watcher.close()
+
+    def __iter__(self):
+        while True:
+            yield self._queue.get()
+
+    def _on_event(self, event, client):
+        if isinstance(event, self.types):
+            self._queue.put(event)
 
 
 class MessageIterator(object):
-    pass
+    def __init__(self, room):
+        self._event_iter = FilteredEventIterator(room, events.MessagePosted)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, tracback):
+        self._event_iter._watcher.close()
+
+    def __iter__(self):
+        for event in self._event_iter:
+            yield event.message
+
+    def _on_event(self, event, client):
+        return self._event_iter._on_event(event)

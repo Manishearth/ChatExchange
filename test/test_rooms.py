@@ -1,9 +1,12 @@
-import pytest
+import logging
 
 import chatexchange
 from chatexchange.events import MessageEdited
 
 import live_testing
+
+
+logger = logging.getLogger(__name__)
 
 
 if live_testing.enabled:
@@ -25,8 +28,6 @@ if live_testing.enabled:
         sandbox.text_description
         sandbox.parent_site_name + sandbox.name
 
-    @pytest.mark.timeout(60)
-    @pytest.mark.xfail(reason="event iterators not yet implemented")
     def test_room_iterators():
         client = chatexchange.Client(
             'stackexchange.com', live_testing.email, live_testing.password)
@@ -37,13 +38,15 @@ if live_testing.enabled:
         my_message = None
 
         with sandbox.new_messages() as messages:
-            sandbox._send_message("hello worl")
+            sandbox.send_message("hello worl")
 
             for message in messages:
                 if message.owner is me:
                     my_message = message
                     assert my_message.content == "hello worl"
                     break
+                else:
+                    logger.info("ignoring message: %r", message)
 
         with sandbox.new_events(MessageEdited) as edits:
             my_message.edit("hello world")

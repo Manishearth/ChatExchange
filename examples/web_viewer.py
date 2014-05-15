@@ -71,7 +71,7 @@ class Server(BaseHTTPServer.HTTPServer, object):
                 'name': self.room.name
             },
             'recent_events':
-                map(str, self.client.recent_events),
+                map(str, self.client._recently_gotten_objects),
             'messages': [{
                 'id': message.id,
                 'owner_user_id': message.owner.id,

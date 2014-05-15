@@ -24,9 +24,7 @@ def main():
     if 'ChatExchangeU' in os.environ:
         email = os.environ['ChatExchangeU']
     else:
-        sys.stderr.write("Username: ")
-        sys.stderr.flush()
-        email = raw_input()
+        email = raw_input("Email: ")
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:

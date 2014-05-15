@@ -38,7 +38,7 @@ class Client(object):
 
         If email and password are provided, the client will L{login}.
         """
-        self.logger = logger.getChild('SEChatWraper')
+        self.logger = logger.getChild('Client')
 
         if email or password:
             assert email and password, (
@@ -254,30 +254,3 @@ class Client(object):
 
     def _join_room(self, room_id):
         self._br.join_room(room_id)
-
-    def _room_events(self, activity, room_id):
-        """
-        Returns a list of Events associated with a particular room,
-        given an activity message from the server.
-        """
-        room_activity = activity.get('r%s' % (room_id,), {})
-        room_events_data = room_activity.get('e', [])
-        for room_event_data in room_events_data:
-            if room_event_data:
-                event = events.make(room_event_data, self)
-                self._recently_gotten_objects.appendleft(event)
-                yield event
-
-    def _watch_room_polling(self, room_id, event_callback, interval):
-        def on_activity(activity):
-            for event in self._room_events(activity, room_id):
-                event_callback(event, self)
-
-        self._br.watch_room_http(room_id, on_activity, interval)
-
-    def _watch_room_socket(self, room_id, event_callback):
-        def on_activity(activity):
-            for event in self._room_events(activity, room_id):
-                event_callback(event, self)
-
-        self._br.watch_room_socket(room_id, on_activity)
