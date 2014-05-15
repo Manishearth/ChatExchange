@@ -15,6 +15,14 @@ if live_testing:
 
         me = client.get_me()
         sandbox = client.get_room(11540)
+
+        # we aren't checking the result, just that it doesn't blow up
+        me in sandbox.owners
+        sandbox.description
+        sandbox.tags[:]
+        sandbox.parent_site_name + sandbox.name
+        assert sandbox.message_count + sandbox.user_count >= 0
+
         my_message = None
 
         with sandbox.messages() as messages:

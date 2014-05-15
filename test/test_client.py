@@ -105,7 +105,7 @@ if live_testing.enabled:
             return socket_event
 
         logger.debug("Joining chat")
-        client.joinRoom(room_id)
+        client._join_room(room_id)
 
         client.watchRoom(room_id, lambda event, _:
             pending_events.put((False, event)), 5)
@@ -148,9 +148,11 @@ if live_testing.enabled:
 
         assert test_reply.parent_message_id == test_message_posted.message_id
         assert test_reply.message.parent.id == test_reply.parent_message_id
-        assert test_reply.message.parent.content == test_message_posted.content
         assert test_message_posted.message_id == test_message_posted.message.id
         assert test_reply.message.parent is test_message_posted.message
+
+        # unsafe - html content is unstable; may be inconsistent between views
+        # assert test_reply.message.parent.content == test_message_posted.content
 
         test_edit_nonce = uuid.uuid4().hex
         test_edit_content = TEST_MESSAGE_FORMAT.format(test_edit_nonce)

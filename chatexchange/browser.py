@@ -188,7 +188,7 @@ class Browser(object):
         self.chat_fkey = chat_fkey
 
     def _load_user(self, soup):
-        user_link_soup, = soup.select('.topbar-menu-links a')
+        user_link_soup = soup.select('.topbar-menu-links a')[0]
         user_id, user_name = self.user_id_and_name_from_link(user_link_soup)
 
         self.user_id = user_id
@@ -284,6 +284,10 @@ class Browser(object):
         latest_content_source = (
             previous_soup[0].select('.content b')[0].next_sibling.strip())
 
+        owner_soup = latest_soup.select('.username a')[0]
+        owner_user_id, owner_user_name = (
+            self.user_id_and_name_from_link(owner_soup))
+
         edits = 0
         has_editor_name = False
 
@@ -336,6 +340,8 @@ class Browser(object):
             'room_id': room_id,
             'content': latest_content,
             'content_source': latest_content_source,
+            'owner_user_id': owner_user_id,
+            'owner_user_name': owner_user_name,
             'editor_user_id': latest_editor_user_id,
             'editor_user_name': latest_editor_user_name,
             'edited': bool(edits),

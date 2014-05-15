@@ -12,74 +12,79 @@ class Message(object):
         self.id = id
         self.client = client
 
-    room_id = _utils.LazyFrom('scrape_transcript')
-    room_name = _utils.LazyFrom('scrape_transcript')
+    room = _utils.LazyFrom('scrape_transcript')
     content = _utils.LazyFrom('scrape_transcript')
-    owner_user_id = _utils.LazyFrom('scrape_transcript')
-    owner_user_name = _utils.LazyFrom('scrape_transcript')
+    owner = _utils.LazyFrom('scrape_transcript')
     _parent_message_id = _utils.LazyFrom('scrape_transcript')
     stars = _utils.LazyFrom('scrape_transcript')
     starred_by_you = _utils.LazyFrom('scrape_transcript')
     pinned = _utils.LazyFrom('scrape_transcript')
 
-    editor_user_id = _utils.LazyFrom('scrape_history')
-    editor_user_name = _utils.LazyFrom('scrape_history')
     content_source = _utils.LazyFrom('scrape_history')
+    editor = _utils.LazyFrom('scrape_history')
     edited = _utils.LazyFrom('scrape_history')
     edits = _utils.LazyFrom('scrape_history')
     pins = _utils.LazyFrom('scrape_history')
-    pinner_user_ids = _utils.LazyFrom('scrape_history')
-    pinner_user_names = _utils.LazyFrom('scrape_history')
+    pinners = _utils.LazyFrom('scrape_history')
     time_stamp = _utils.LazyFrom('scrape_history')
 
     def scrape_history(self):
         data = self.client.br.get_history(self.id)
 
-        self.room_id = data['room_id']
+        self.owner = self.client.get_user(
+            data['owner_user_id'], name=data['owner_user_name'])
+        self.room = self.client.get_room(data['room_id'])
         self.content = data['content']
         self.content_source = data['content_source']
         self.edits = data['edits']
         self.edited = data['edited']
-        self.editor_user_id = data['editor_user_id']
-        self.editor_user_name = data['editor_user_name']
+        if data['editor_user_id'] is not None:
+            self.editor = self.client.get_user(
+                data['editor_user_id'], name=data['editor_user_name'])
+        else:
+            self.editor = None
 
         self._scrape_stars(data)
 
         self.pinned = data['pinned']
         self.pins = data['pins']
-        self.pinner_user_ids = data['pinner_user_ids']
-        self.pinner_user_names = data['pinner_user_names']
+        self.pinners = [
+            self.client.get_user(user_id, name=user_name)
+            for user_id, user_name
+            in zip(data['pinner_user_ids'], data['pinner_user_names'])
+        ]
 
         # TODO: self.time_stamp = ...
 
     def scrape_transcript(self):
         data = self.client.br.get_transcript_with_message(self.id)
 
-        self.room_id = data['room_id']
-        self.room_name = data['room_name']
+        self.room = self.client.get_room(
+            data['room_id'], name=data['room_name'])
 
         for message_data in data['messages']:
             message_id = message_data['id']
 
             message = self.client.get_message(message_id)
 
-            message.room_id = message_data['room_id']
-            message.room_name = message_data['room_name']
-            message.owner_user_id = message_data['owner_user_id']
-            message.owner_user_name = message_data['owner_user_name']
+            message.owner = self.client.get_user(
+                message_data['owner_user_id'], name=message_data['owner_user_name'])
+            message.room = self.client.get_room(
+                message_data['room_id'], name=message_data['room_name'])
 
             if message_data['edited']:
                 if not Message.edited.values.get(message):
                     # If it was edited but not previously known to be edited,
                     # these might have cached outdated None/0 no-edit values.
-                    del message.editor_user_id
-                    del message.editor_user_name
+                    del message.editor
                     del message.edits
 
             if 'editor_user_id' in message_data:
-                message.editor_user_id = message_data['editor_user_id']
-            if 'editor_user_name' in message_data:
-                message.editor_user_name = message_data['editor_user_name']
+                if message_data['editor_user_id'] is not None:
+                    message.editor = self.client.get_user(
+                        message_data['editor_user_id'], name=message_data['editor_user_name'])
+                else:
+                    message.editor = None
             if 'edits' in message_data:
                 message.edits = message_data['edits']
 
@@ -100,17 +105,18 @@ class Message(object):
 
         if data['pinned'] and not Message.pinned.values.get(self):
             # If it just became pinned but was previously known unpinned,
-            # these cached pin details will be stale.
-            del self.pinner_user_ids
-            del self.pinner_user_names
+            # these cached pin details will be stale if set.
+            del self.pinners
             del self.pins
 
         self.pinned = data['pinned']
 
         if 'pinner_user_ids' in data:
-            self.pinner_user_ids = data['pinner_user_ids']
-        if 'pinner_user_names' in data:
-            self.pinner_user_names = data['pinner_user_names']
+            self.pinners = [
+                self.client.get_user(user_id, name=user_name)
+                for user_id, user_name
+                in zip(data['pinner_user_ids'], data['pinner_user_names'])
+            ]
         if 'pins' in data:
             self.pins = data['pins']
 
@@ -126,7 +132,7 @@ class Message(object):
 
     def reply(self, text):
         self.client._send_message(
-            self.room_id,
+            self.room.id,
             ":%s %s" % (self.id, text))
 
     def edit(self, text):
@@ -135,7 +141,7 @@ class Message(object):
     def star(self, value=True):
         del self.starred_by_you  # don't use cached value
         if self.starred_by_you != value:
-            self.client.br.toggle_starring()
+            self.client.br.toggle_starring(self.id)
             # we assume this was successfully
 
             self.starred_by_you = value
@@ -156,28 +162,24 @@ class Message(object):
     def pin(self, value=True):
         del self.pinned  # don't used cached value
         if self.pinned != value:
-            self.client.br.toggle_pinning()
+            self.client.br.toggle_pinning(self.id)
             # we assume this was successfully
 
             if self in Message.pins.values:
-                assert self in Message.pinner_user_ids.values
-                assert self in Message.pinner_user_names.values
+                assert self in Message.pinners.values
+                me = self.client.get_me()
 
                 if value:
                     self.pins += 1
-                    self.pinner_user_ids.append(self.client.br.user_id)
-                    self.pinner_user_names.append(self.client.br.user_name)
+                    self.pinners.append(me)
                 else:
                     self.pins -= 1
-                    index = self.pinner_user_ids.index(self.client.br.user_id)
-                    del self.pinner_user_ids[index]
-                    del self.pinner_user_names[index]
+                    self.pinners.remove(me)
 
                 self.pinned = bool(self.pinned)
             else:
                 # bust potential stale cached values
                 del self.pinned
-                del self.pinner_user_ids
-                del self.pinner_user_names
+                del self.pinners
         else:
             self.logger.info(".pinned is already %r", value)

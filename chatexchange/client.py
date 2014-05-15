@@ -7,7 +7,9 @@ import logging
 import warnings
 import weakref
 
-from . import browser, events, messages
+import requests
+
+from . import browser, events, messages, rooms, users
 
 
 TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"
@@ -18,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class Client(object):
     max_recent_events = 1000
-    max_recently_accessed_messages = 1000
+    max_recently_gotten_objects = 5000
 
     def __init__(self, host='stackexchange.com', email=None, password=None):
         self.logger = logger.getChild('SEChatWraper')
@@ -27,8 +29,10 @@ class Client(object):
             assert email and password, (
                 "must specify both email and password or neither")
 
-        # any known Message instances
+        # any known instances
         self._messages = weakref.WeakValueDictionary()
+        self._rooms = weakref.WeakValueDictionary()
+        self._users = weakref.WeakValueDictionary()
 
         if host in self._deprecated_hosts:
             replacement = self._deprecated_hosts[host]
@@ -48,7 +52,7 @@ class Client(object):
         self.request_queue = Queue.Queue()
         self.logged_in = False
         self.recent_events = collections.deque(maxlen=self.max_recent_events)
-        self._recently_accessed_messages = collections.deque(maxlen=self.max_recently_accessed_messages)
+        self._recently_gotten_objects = collections.deque(maxlen=self.max_recently_gotten_objects)
         self._requests_served = 0
         self.thread = threading.Thread(target=self._worker, name="message_sender")
         self.thread.setDaemon(True)
@@ -62,20 +66,27 @@ class Client(object):
 
         Updates it will the specified attribute values.
         """
+        return self._get_deduplicated(
+            messages.Message, message_id, self._messages, attrs)
 
-        message = self._messages.setdefault(
-            message_id, messages.Message(message_id, self))
+    def get_room(self, room_id, **attrs):
+        return self._get_deduplicated(
+            rooms.Room, room_id, self._rooms, attrs)
+
+    def get_user(self, user_id, **attrs):
+        return self._get_deduplicated(
+            users.User, user_id, self._users, attrs)
+
+    def _get_deduplicated(self, cls, id, instances, attrs):
+        instance = instances.setdefault(id, cls(id, self))
 
         for key, value in attrs.items():
-            setattr(message, key, value)
+            setattr(instance, key, value)
 
-        # We want to keep some recently-accessed messages in memory even
-        # if they weren't directly referred-to by recent events. For
-        # example, if we keep accessing the .parent of a particular
-        # message, we'll want to keep the parent's data around.
-        self._recently_accessed_messages.appendleft(message)
+        # we force a fixed number of recent objects to be cached
+        self._recently_gotten_objects.appendleft(instance)
 
-        return message
+        return instance
 
     valid_hosts = {
         'stackexchange.com',
@@ -89,6 +100,10 @@ class Client(object):
         'MSE': 'meta.stackexchange.com',
         'SO': 'stackexchange.com'
     }
+
+    def get_me(self):
+        assert self.br.user_id is not None
+        return self.get_user(self.br.user_id, name=self.br.user_name)
 
     def login(self, email, password):
         assert not self.logged_in
@@ -185,11 +200,18 @@ class Client(object):
             attempt += 1
             self.logger.debug("Attempt %d: start.", attempt)
 
-            if action_type == 'send':
-                response = self.br.send_message(room_id, text)
-            else:
-                assert action_type == 'edit'
-                response = self.br.edit_message(message_id, text)
+            try:
+                if action_type == 'send':
+                    response = self.br.send_message(room_id, text)
+                else:
+                    assert action_type == 'edit'
+                    response = self.br.edit_message(message_id, text)
+            except requests.HTTPError as ex:
+                if ex.response.status_code == 409:
+                    # this could be a throttling message we know how to handle
+                    response = ex.response
+                else:
+                    raise
 
             if isinstance(response, str):
                 match = re.match(TOO_FAST_RE, response)
@@ -224,7 +246,7 @@ class Client(object):
 
             time.sleep(wait)
 
-    def joinRoom(self, room_id):
+    def _join_room(self, room_id):
         self.br.join_room(room_id)
 
     def _room_events(self, activity, room_id):
@@ -240,16 +262,16 @@ class Client(object):
                 self.recent_events.appendleft(event)
                 yield event
 
-    def watchRoom(self, room_id, on_event, interval):
+    def _watch_room(self, room_id, event_callback, interval):
         def on_activity(activity):
             for event in self._room_events(activity, room_id):
-                on_event(event, self)
+                event_callback(event, self)
 
         self.br.watch_room_http(room_id, on_activity, interval)
 
-    def watchRoomSocket(self, room_id, on_event):
+    def _watch_room_socket(self, room_id, event_callback):
         def on_activity(activity):
             for event in self._room_events(activity, room_id):
-                on_event(event, self)
+                event_callback(event, self)
 
         self.br.watch_room_socket(room_id, on_activity)

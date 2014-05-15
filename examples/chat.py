@@ -35,16 +35,17 @@ def main():
     client = chatexchange.client.Client(host_id)
     client.login(email, password)
 
-    client.joinRoom(room_id)
-    client.watchRoom(room_id, on_message, 1)
+    room = client.get_room(room_id)
+    room.join()
+    room.watch(on_message, 1)
 
     # If WebSockets are available, one could instead use:
-    #     client.watchRoomSocket(room, on_message)
+    #     room.watch_socket(on_message)
 
     print "(You are now in room #%s on %s.)" % (room_id, host_id)
     while True:
         message = raw_input("<< ")
-        client._send_message(room_id, message)
+        room.(message)
 
     client.logout()
 
@@ -56,7 +57,7 @@ def on_message(message, client):
         return
 
     print ""
-    print ">> (%s) %s" % (message.user_name, message.content)
+    print ">> (%s) %s" % (message.user.name, message.content)
     if message.content.startswith('!!/random'):
         print message
         print "Spawning thread"
