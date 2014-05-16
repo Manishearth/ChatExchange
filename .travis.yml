@@ -13,6 +13,7 @@ branches:
     - test-manish
     - test-jeremy
     - test-cpython
+    - test-pypy
 env:
   global:
     - secure: "l3wVjDs94gpM1p+lmjBHPDJm65qMb4hCc9c6IA+0IAKCnLX0CNqzn5H4R3JIswOb9d8nMyF1iU/wwv7KBoZTnm8dSqoiv+puD82xc+auR3fF/pcxK2jZq6qgXTRlfgAst80qJbH2g5mNLLI30/mSHoHI/5FWLmjaoeifA4O1rkE="
