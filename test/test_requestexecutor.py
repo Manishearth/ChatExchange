@@ -13,43 +13,40 @@ def test_throttling():
     but with no failures or retries.
     """
 
+    min_interval = 0.9
     target_interval = 1.0
     max_interval = 1.1
+    consecutive_penalty_factor = 1.5
 
     logger.info("Creating RequestExecutor")
     with requestexecutor.RequestExecutor(
         min_interval=target_interval,
-        max_attempts=2
+        max_attempts=2,
+        consecutive_penalty_factor=consecutive_penalty_factor,
     ) as executor:
         assert executor._thread.is_alive()
 
         times = []
 
-        def successful_consecutively(value):
+        def simple_success(value):
             times.append(time.time())
-            if len(times) > 1:
-                interval = times[-1] - times[-2]
-
-                assert interval >= target_interval, "interval %s < %s" % (interval, target_interval)
-                assert interval <= max_interval
-
             return value
 
         retry_times = []
-        def retry_in_5_first_time(value):
+        def retry_in_7_first_time(value):
             times.append(time.time())
             retry_times.append(time.time())
             if len(retry_times) == 1:
-                raise requestexecutor.RequestAttemptFailed(5.0)
+                raise requestexecutor.RequestAttemptFailed(7.0)
             return value
 
-        a = executor.submit(successful_consecutively, 'a')
-        b = executor.submit(successful_consecutively, 'b')
-        c = executor.submit(successful_consecutively, 'c')
-        d = executor.submit(successful_consecutively, 'd')
-        e = executor.submit(retry_in_5_first_time, 'e')
-        f = executor.submit(retry_in_5_first_time, 'f')
-        g = executor.submit(retry_in_5_first_time, 'g')
+        a = executor.submit(simple_success, 'a')
+        b = executor.submit(simple_success, 'b')
+        c = executor.submit(simple_success, 'c')
+        d = executor.submit(simple_success, 'd')
+        e = executor.submit(retry_in_7_first_time, 'e')
+        f = executor.submit(retry_in_7_first_time, 'f')
+        g = executor.submit(retry_in_7_first_time, 'g')
 
         assert b.result() == 'b'
         assert a.result() == 'a'
@@ -74,8 +71,17 @@ def test_throttling():
     assert d.result() == 'd'
     assert f.result() == 'f'
     assert g.result() == 'g'
-    assert 2.9 <= intervals[-1] <= 3.1  # the retried call
 
+    assert min_interval <= intervals[0] <= max_interval
+    assert min_interval <= intervals[1] <= max_interval
+    assert min_interval <= intervals[2] <= max_interval
+    assert min_interval <= intervals[3] <= max_interval # request 5 is the failure
+    assert (min_interval * consecutive_penalty_factor <= intervals[4]
+            <= max_interval * consecutive_penalty_factor)
+    assert min_interval <= intervals[5] <= max_interval
+    interval_from_failure_to_success = times[-1] - times[4]
+    logger.info('interval_from_failure_to_success = %r', interval_from_failure_to_success)
+    assert 6.9 <= interval_from_failure_to_success <= 7.1
 
 if __name__ == '__main__':
     import logging

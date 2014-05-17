@@ -16,13 +16,17 @@ class RequestExecutor(concurrent.futures.Executor):
 
     see https://docs.python.org/3.4/library/concurrent.futures.html#concurrent.futures.Executor
 
-    @iattr max_attempts:         The maximum number of times a request will be called/retried.
-    @iattr min_interval:         The minimum amount of time that must elapse between request call invocations.
+    @iattr max_attempts: The maximum number of times a request will be called/retried.
+    @iattr min_interval: The minimum amount of time that must elapse between request call invocations.
+    @iattr consecutive_penalty_factor: A factor by which to multiply the min_interval
+                                       for each consecutive failure.
     """
 
-    def __init__(self, min_interval=3.0, max_attempts=5):
+    def __init__(self, min_interval=3.0, max_attempts=3, consecutive_penalty_factor=2.0):
         self.min_interval = min_interval
         self.max_attempts = max_attempts
+        self.consecutive_penalty_factor = consecutive_penalty_factor
+
         self._request_queue = Queue.PriorityQueue()
         self._new_requests = Queue.Queue()
 
@@ -36,6 +40,8 @@ class RequestExecutor(concurrent.futures.Executor):
 
     def _work(self):
         logger.debug("Worker thread for %r starting", self)
+
+        self._consecutive_failures = 0
 
         # keep working until we shut down submissions and there's nothing left to progress
         # the order of the queue .empty() calls below is significant
@@ -69,8 +75,15 @@ class RequestExecutor(concurrent.futures.Executor):
                         not_cancelled = request.running() or request.set_running_or_notify_cancel()
                         if not_cancelled:
                             logger.info("Worker attempting to run %r", request)
-                            request._attempt()
-                            self._time = time.time() + self.min_interval
+                            successful = request._attempt()
+
+                            if successful:
+                                self._consecutive_failures = 0
+                                self._time = time.time() + self.min_interval
+                            else:
+                                self._consecutive_failures += 1
+                                self._time = time.time() + (
+                                    self.min_interval * self.consecutive_penalty_factor ** self._consecutive_failures)
 
                             # put the request back on the queue if it isn't done
                             if not request.done():
@@ -166,6 +179,7 @@ class RequestFuture(concurrent.futures.Future):
         try:
             result = self._fn(*self._args, **self._kwargs)
             self.set_result(result)
+            return True
         except RequestAttemptFailed as ex:
             self._time = time.time() + ex.min_interval
             self._exceptions.append(ex)
