@@ -55,7 +55,7 @@ if live_testing.enabled:
         assert message5.edited
         assert message5.edits == 1
         # assert message5.pinned
-        assert message5.pins == 1
+        # assert message5.pins == 1
         assert set(p.id for p in message5.pinners) == {1251}
         assert message5.editor.id == 97938
 
@@ -67,5 +67,5 @@ if live_testing.enabled:
         assert message6.edits == 0
         assert message6.editor is None
         # assert message6.pinned
-        assert message6.pins == 2
+        # assert message6.pins == 2
         assert set(p.id for p in message6.pinners) == {1251, 97938}
