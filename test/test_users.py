@@ -12,4 +12,4 @@ if live_testing.enabled:
         assert not user.is_moderator
         assert user.name == "Stack Exchange"
         assert user.room_count >= 18
-        assert user.message_count >= 129814
+        assert user.message_count >= 129810
