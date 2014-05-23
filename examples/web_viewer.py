@@ -14,7 +14,6 @@ import os
 import sys
 import webbrowser
 
-
 import chatexchange
 from chatexchange import events
 
