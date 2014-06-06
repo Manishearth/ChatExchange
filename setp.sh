@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "Make sure you source this file instead of simply running it!"
 read -p "Username: " u
 export ChatExchangeU=$u
 export CEU="h"
