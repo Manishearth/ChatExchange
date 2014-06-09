@@ -47,6 +47,10 @@ class Room(object):
         return self._client._join_room(self.id)
 
     def send_message(self, text):
+        """
+        Sends a message
+        @ivar text: The message to send
+        @type text: L{str}
         self._client._request_queue.put(('send', self.id, text))
         self._logger.info("Queued message %r for room_id #%r.", text, self.id)
         self._logger.info("Queue length: %d.", self._client._request_queue.qsize())
