@@ -51,7 +51,7 @@ class Room(object):
         Sends a message (queued, to avoid getting throttled)
         @ivar text: The message to send
         @type text: L{str}
-        ""'
+        """
         self._client._request_queue.put(('send', self.id, text))
         self._logger.info("Queued message %r for room_id #%r.", text, self.id)
         self._logger.info("Queue length: %d.", self._client._request_queue.qsize())
