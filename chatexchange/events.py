@@ -97,9 +97,13 @@ class MessageEvent(Event):
             if not messages.Message.pinned.values.get(message):
             # If it just became pinned but was previously known unpinned,
             # these cached pin details will be stale if set.
-                del message.pinner_user_ids
-                del message.pinner_user_names
-                del message.pins
+                try:
+                    del message.pinner_user_ids
+                    del message.pinner_user_names
+                    del message.pins
+                except AttributeError:
+                    # The pin details are not set
+                    pass
         else:
             message.pinner_user_ids = []
             message.pinner_user_names = []
