@@ -270,6 +270,9 @@ class Browser(object):
             'messages/%s' % (message_id,),
             {'text': text})
 
+    def delete_message(self, message_id):
+        return self.post_fkeyed('messages/%s/delete' % (message_id, ))
+
     def get_history(self, message_id):
         """
         Returns the data from the history page for message_id.
