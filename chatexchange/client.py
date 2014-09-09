@@ -194,7 +194,7 @@ class Client(object):
         if action_type == 'send':
             action_type, room_id, text = action
         else:
-            assert action_type == 'edit'
+            assert action_type == 'edit' or action_type == 'delete'
             action_type, message_id, text = action
 
         sent = False
@@ -209,9 +209,11 @@ class Client(object):
             try:
                 if action_type == 'send':
                     response = self._br.send_message(room_id, text)
-                else:
-                    assert action_type == 'edit'
+                elif action_type == 'edit':
                     response = self._br.edit_message(message_id, text)
+                else:
+                    assert action_type == 'delete'
+                    response = self._br.delete_message(message_id)
             except requests.HTTPError as ex:
                 if ex.response.status_code == 409:
                     # this could be a throttling message we know how to handle

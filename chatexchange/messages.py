@@ -138,6 +138,11 @@ class Message(object):
         self._client._request_queue.put(('edit', self.id, text))
         self._logger.info("Queued edit %r for message_id #%r.", text, self.id)
         self._logger.info("Queue length: %d.", self._client._request_queue.qsize())
+        
+    def delete(self):
+        self._client._request_queue.put(('delete', self.id, ''))
+        self._logger.info("Queued deletion for message_id #%r.", self.id)
+        self._logger.info("Queue length: %d.", self._client._request_queue.qsize())
 
     def star(self, value=True):
         del self.starred_by_you  # don't use cached value
