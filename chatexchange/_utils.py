@@ -63,7 +63,7 @@ class LazyFrom(object):
     def __init__(self, method_name):
         """
         method_name is the name of the method that will be invoked if
-        the value is not known. It must asign a value for the attribute
+        the value is not known. It must assign a value for the attribute
         attribute (through this descriptor).
         """
         self.method_name = method_name
