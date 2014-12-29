@@ -52,6 +52,12 @@ class Room(object):
         @ivar text: The message to send
         @type text: L{str}
         """
+        if len(text) > 500:
+            self._logger.info("Could not send message because it was longer than 500 characters.")
+            return
+        if len(text) == 0:
+            self._logger.info("Could not send message because it was empty.")
+            return
         self._client._request_queue.put(('send', self.id, text))
         self._logger.info("Queued message %r for room_id #%r.", text, self.id)
         self._logger.info("Queue length: %d.", self._client._request_queue.qsize())
