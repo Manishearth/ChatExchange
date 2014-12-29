@@ -85,7 +85,7 @@ class Browser(object):
         response.raise_for_status()
 
         # XXX: until throttling is implemented everywhere in Client, at least add some delay here.
-        time.sleep(0.75)
+        time.sleep(0.1)
 
         return response
 
