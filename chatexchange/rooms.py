@@ -46,13 +46,13 @@ class Room(object):
     def join(self):
         return self._client._join_room(self.id)
 
-    def send_message(self, text):
+    def send_message(self, text, length_check=True):
         """
         Sends a message (queued, to avoid getting throttled)
         @ivar text: The message to send
         @type text: L{str}
         """
-        if len(text) > 500:
+        if len(text) > 500 and length_check:
             self._logger.info("Could not send message because it was longer than 500 characters.")
             return
         if len(text) == 0:
