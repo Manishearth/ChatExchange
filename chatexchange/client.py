@@ -256,3 +256,6 @@ class Client(object):
 
     def _join_room(self, room_id):
         self._br.join_room(room_id)
+
+    def _leave_room(self, room_id):
+        self._br.leave_room(room_id)

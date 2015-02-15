@@ -46,6 +46,9 @@ class Room(object):
     def join(self):
         return self._client._join_room(self.id)
 
+    def leave(self):
+        return self._client._leave_room(self.id)
+
     def send_message(self, text, length_check=True):
         """
         Sends a message (queued, to avoid getting throttled)

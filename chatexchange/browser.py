@@ -255,6 +255,18 @@ class Browser(object):
         eventtime = response.json()['time']
         self.rooms[room_id]['eventtime'] = eventtime
 
+    def leave_room(self, room_id):
+        room_id = str(room_id)
+        if room_id in self.rooms:
+            self.rooms.pop(room_id)
+        if room_id in self.sockets:
+            self.sockets[room_id].close()
+            self.sockets.pop(room_id)
+        if room_id in self.polls:
+            self.polls[room_id].close()
+            self.polls.pop(room_id)
+        self.post_fkeyed('/chats/leave/%s' % (room_id,))
+
     def watch_room_socket(self, room_id, on_activity):
         """
         Watches for raw activity in a room using WebSockets.
@@ -598,6 +610,8 @@ class RoomSocketWatcher(object):
 
     def close(self):
         self.killed = True
+        if hasattr(self, 'ws'):
+            self.ws.close()
 
     def start(self):
         last_event_time = self.browser.rooms[self.room_id]['eventtime']
