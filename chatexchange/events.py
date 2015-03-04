@@ -45,7 +45,10 @@ class Event(object):
             self.type_id = data['event_type']
 
         self.id = data['id']
-        self.room = client.get_room(data['room_id'], name=data['room_name'])
+        if 'room_id' in data:
+            self.room = client.get_room(data['room_id'], name=data['room_name'])
+        else:
+            self.room = None
         self.time_stamp = data['time_stamp']
 
         self._init_from_data()
