@@ -55,9 +55,11 @@ class Client(object):
         self.host = host
         self.logged_in = False
         self._request_queue = Queue.Queue()
+        self.on_websocket_closed = None
 
         self._br = browser.Browser()
         self._br.host = host
+        self._br.on_websocket_closed = self.on_websocket_closed
         self._previous = None
         self._recently_gotten_objects = collections.deque(maxlen=self._max_recently_gotten_objects)
         self._requests_served = 0
