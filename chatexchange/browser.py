@@ -36,6 +36,7 @@ class Browser(object):
         self.sockets = {}
         self.polls = {}
         self.host = None
+        self.on_websocket_closed = None
 
     @property
     def chat_root(self):
@@ -274,6 +275,7 @@ class Browser(object):
         This starts a new daemon thread.
         """
         socket_watcher = RoomSocketWatcher(self, room_id, on_activity)
+        socket_watcher.on_websocket_closed = self.on_websocket_closed
         self.sockets[room_id] = socket_watcher
         socket_watcher.start()
         return socket_watcher
@@ -607,6 +609,7 @@ class RoomSocketWatcher(object):
         self.room_id = str(room_id)
         self.thread = None
         self.on_activity = on_activity
+        self.on_websocket_closed = None
         self.killed = False
 
     def close(self):
@@ -634,7 +637,13 @@ class RoomSocketWatcher(object):
     def _runner(self):
         #look at wsdump.py later to handle opcodes
         while not self.killed:
-            a = self.ws.recv()
+            try:
+                a = self.ws.recv()
+            except websocket.WebSocketConnectionClosedException:
+                if self.on_websocket_closed is not None:
+                    self.on_websocket_closed(self.room_id)
+                self.killed = True
+                break
 
             if a is not None and a != "":
                 self.on_activity(json.loads(a))
