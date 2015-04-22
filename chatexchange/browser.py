@@ -639,9 +639,11 @@ class RoomSocketWatcher(object):
         while not self.killed:
             try:
                 a = self.ws.recv()
-            except websocket.WebSocketConnectionClosedException:
+            except websocket.WebSocketConnectionClosedException as e:
                 if self.on_websocket_closed is not None:
                     self.on_websocket_closed(self.room_id)
+                else:
+                    raise e
                 self.killed = True
                 break
 
