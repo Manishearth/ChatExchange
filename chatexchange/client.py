@@ -7,7 +7,6 @@ import logging
 import weakref
 
 import requests
-import websocket
 
 from . import browser, events, messages, rooms, users
 
