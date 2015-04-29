@@ -162,6 +162,10 @@ class Client(object):
         self.logger.info("Logged out.")
         self.logged_in = False
 
+    def set_websocket_recovery(self, on_ws_closed):
+        self.on_websocket_closed = on_ws_closed
+        self._br.set_websocket_recovery(on_ws_closed)
+
     def __del__(self):
         if self.logged_in:
             self._request_queue.put(SystemExit)

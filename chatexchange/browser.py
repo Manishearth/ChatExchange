@@ -601,6 +601,11 @@ class Browser(object):
             'tags': tags
         }
 
+    def set_websocket_recovery(self, on_ws_closed):
+        self.on_websocket_closed = on_ws_closed
+        for s in self.sockets:
+            s.on_websocket_closed = self.on_websocket_closed
+
 
 class RoomSocketWatcher(object):
     def __init__(self, browser, room_id, on_activity):
