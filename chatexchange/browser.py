@@ -36,7 +36,16 @@ class Browser(object):
         self.sockets = {}
         self.polls = {}
         self.host = None
-        self.on_websocket_closed = None
+        self.on_websocket_closed = self._default_ws_recovery
+
+    def _default_ws_recovery(self, room_id):
+        on_activity = self.sockets[room_id].on_activity
+        try:
+            self.leave_room(room_id)
+        except websocket.WebSocketConnectionClosedException:
+            pass
+        self.join_room(room_id)
+        self.watch_room_socket(room_id, on_activity)
 
     @property
     def chat_root(self):
