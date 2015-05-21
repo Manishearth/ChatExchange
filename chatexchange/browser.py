@@ -283,6 +283,7 @@ class Browser(object):
 
         This starts a new daemon thread.
         """
+        room_id = str(room_id)
         socket_watcher = RoomSocketWatcher(self, room_id, on_activity)
         socket_watcher.on_websocket_closed = self.on_websocket_closed
         self.sockets[room_id] = socket_watcher
@@ -295,6 +296,7 @@ class Browser(object):
 
         This starts a new daemon thread.
         """
+        room_id = str(room_id)
         http_watcher = RoomPollingWatcher(self, room_id, on_activity, interval)
         self.polls[room_id] = http_watcher
         http_watcher.start()
