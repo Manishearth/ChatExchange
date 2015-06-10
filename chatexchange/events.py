@@ -148,6 +148,9 @@ class MessageEdited(MessageEvent):
 @register_type
 class UserEntered(Event):
     type_id = 3
+    def _init_from_data(self):
+        self.user = self.client.get_user(
+            self.data['user_id'], name=self.data['user_name'])
 
 
 @register_type
