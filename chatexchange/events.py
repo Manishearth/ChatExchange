@@ -160,7 +160,6 @@ class UserLeft(Event):
         self.user = self.client.get_user(
             self.data['user_id'], name=self.data['user_name'])
 
-
 @register_type
 class RoomNameChanged(Event):
     type_id = 5
