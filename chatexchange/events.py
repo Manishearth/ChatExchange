@@ -156,6 +156,9 @@ class UserEntered(Event):
 @register_type
 class UserLeft(Event):
     type_id = 4
+    def _init_from_data(self):
+        self.user = self.client.get_user(
+            self.data['user_id'], name=self.data['user_name'])
 
 
 @register_type
