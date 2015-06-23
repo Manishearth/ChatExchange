@@ -559,12 +559,18 @@ class Browser(object):
         is_moderator = bool(u'♦' in profile_soup.select('.user-status')[0].text)
         message_count = int(profile_soup.select('.user-message-count-xxl')[0].text)
         room_count = int(profile_soup.select('.user-room-count-xxl')[0].text)
+        reputation_elements = profile_soup.select('.reputation-score')
+        if len(reputation_elements) > 0:
+            reputation = int(profile_soup.select('.reputation-score')[0]['title'])
+        else:
+            reputation = -1
 
         return {
             'name': name,
             'is_moderator': is_moderator,
             'message_count': message_count,
-            'room_count': room_count
+            'room_count': room_count,
+            'reputation': reputation
         }
 
     def get_room_info(self, room_id):
