@@ -17,6 +17,7 @@ class User(object):
     is_moderator = _utils.LazyFrom('scrape_profile')
     message_count = _utils.LazyFrom('scrape_profile')
     room_count = _utils.LazyFrom('scrape_profile')
+    reputation = _utils.LazyFrom('scrape_profile')
 
     def scrape_profile(self):
         data = self._client._br.get_profile(self.id)
@@ -25,3 +26,4 @@ class User(object):
         self.is_moderator = data['is_moderator']
         self.message_count = data['message_count']
         self.room_count = data['room_count']
+        self.reputation = data['reputation']
