@@ -205,23 +205,6 @@ class Browser(object):
 
         return response
 
-    def login_se_chat(self):
-        start_login_url = 'http://stackexchange.com/users/chat-login'
-        start_login_soup = self.get_soup(start_login_url, with_chat_root=False)
-
-        auth_token = start_login_soup.find('input', {'name': 'authToken'})['value']
-        nonce = start_login_soup.find('input', {'name': 'nonce'})['value']
-        data = {'authToken': auth_token, "nonce": nonce}
-        referer_header = {'Referer': start_login_url}
-
-        login_url = 'http://chat.stackexchange.com/login/global-fallback'
-        login_request = self.post(login_url, data, referer_header, with_chat_root=False)
-        login_soup = BeautifulSoup(login_request.content)
-
-        self._load_fkey(login_soup)
-
-        return login_request
-
     def _load_fkey(self, soup):
         chat_fkey = soup.find('input', {'name': 'fkey'})['value']
         if not chat_fkey:
@@ -258,7 +241,7 @@ class Browser(object):
         response = self.post_fkeyed(
             'chats/%s/events' % (room_id,),
             {
-                'since': 0, 
+                'since': 0,
                 'mode': 'Messages',
                 'msgCount': 100
             })
