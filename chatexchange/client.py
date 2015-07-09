@@ -136,9 +136,6 @@ class Client(object):
 
         self._br.login_site(self.host)
 
-        if self.host == 'stackexchange.com':
-            self._br.login_se_chat()
-
         self.logged_in = True
         self.logger.info("Logged in.")
         self._thread.start()
