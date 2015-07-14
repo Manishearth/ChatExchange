@@ -1,7 +1,7 @@
 # encoding: utf-8
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 import functools
-import htmlentitydefs
+from html import entities as htmlentitydefs
 import logging
 import weakref
 
@@ -39,11 +39,11 @@ class HTMLTextExtractor(HTMLParser):
             codepoint = int(number[1:], 16)
         else:
             codepoint = int(number)
-        self.result.append(unichr(codepoint))
+        self.result.append(chr(codepoint))
 
     def handle_entityref(self, name):
         codepoint = htmlentitydefs.name2codepoint[name]
-        self.result.append(unichr(codepoint))
+        self.result.append(chr(codepoint))
 
     def get_text(self):
         return u''.join(self.result)

@@ -1,7 +1,7 @@
 import collections
 import re
 import time
-import Queue
+import queue
 import threading
 import logging
 import weakref
@@ -54,7 +54,7 @@ class Client(object):
 
         self.host = host
         self.logged_in = False
-        self._request_queue = Queue.Queue()
+        self._request_queue = queue.Queue()
 
         self._br = browser.Browser()
         self._br.host = host

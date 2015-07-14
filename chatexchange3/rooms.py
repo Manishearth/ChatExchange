@@ -1,4 +1,4 @@
-import Queue
+import queue
 import contextlib
 import logging
 
@@ -105,7 +105,7 @@ class Room(object):
 class FilteredEventIterator(object):
     def __init__(self, room, types):
         self.types = types
-        self._queue = Queue.Queue()
+        self._queue = queue.Queue()
 
         room.join()
         self._watcher = room.watch(self._on_event)

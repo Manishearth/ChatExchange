@@ -7,7 +7,7 @@ import time
 from bs4 import BeautifulSoup
 import requests
 import websocket
-import _utils
+from . import _utils
 import socket
 
 logger = logging.getLogger(__name__)
@@ -68,29 +68,29 @@ class Browser(object):
         # Try again if we fail. We're blaming "the internet" for weirdness.
         MAX_HTTP_RETRIES = 5                # EGAD! A MAGIC NUMBER!
         attempt = 0
-        while attempt <= MAX_HTTP_RETRIES:      
+        response = None
+        while attempt <= MAX_HTTP_RETRIES:
             attempt += 1
-            response = None
             try:
                 response = method_method(
                     url, data=data, headers=headers, timeout=self.request_timeout)
                 break
-            except requests.exceptions.ConnectionError, e:          # We want to try again, so continue
+            except requests.exceptions.ConnectionError as e:          # We want to try again, so continue
                                                                     # BadStatusLine throws this error
-                print "Connection Error -> Trying again..."
-                time.sleep(0.1)     # short pause before retrying
-                if attempt == MAX_HTTP_RETRIES:                     # Only show exception if last try
-                    raise
-                continue
-            except (requests.exceptions.Timeout, socket.timeout) as e:                  # Timeout occurred, retry
-                                                                # Catching both because of this bug in requests
-                                                                # https://github.com/kennethreitz/requests/issues/1236
-                print "Timeout -> Trying again..."
-                time.sleep(1.0)     # Longer pause because it was a time out. Assume overloaded and give them a second
+                print("Connection Error -> Trying again...")
+                time.sleep(0.1)                                     # short pause before retrying
                 if attempt == MAX_HTTP_RETRIES:                     # Only show exception if last try
                     raise
                 continue
 
+            except (requests.exceptions.Timeout, socket.timeout) as e:                  # Timeout occurred, retry
+                                                                # Catching both because of this bug in requests
+                                                                # https://github.com/kennethreitz/requests/issues/1236
+                print("Timeout -> Trying again...")
+                time.sleep(1.0)     # Longer pause because it was a time out. Assume overloaded and give them a second
+                if attempt == MAX_HTTP_RETRIES:                     # Only show exception if last try
+                    raise
+                continue
 
         response.raise_for_status()
 
