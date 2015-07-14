@@ -1,8 +1,8 @@
 import httmock
 
-from ChatExchange3.chatexchange3 import Browser
+from chatexchange3 import Browser
 
-from ChatExchange3.test.mock_responses import (
+from mock_responses import (
     only_httmock, favorite_with_test_fkey, TEST_FKEY)
 
 
