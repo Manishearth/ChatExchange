@@ -3,14 +3,14 @@ ChatExchange
 
 [![Travis CI build status for master](https://travis-ci.org/Manishearth/ChatExchange.svg?branch=master)](https://travis-ci.org/Manishearth/ChatExchange)
 
-A Python API for talking to Stack Exchange chat.
+A Python 3 API for talking to Stack Exchange chat.
 
 ## Dependencies
 
- - BeautifulSoup (`sudo apt-get install python-beautifulsoup`)
- - Requests (`pip install requests`). Usually there by default. Please upgrade it with `pip install requests --upgrade`  
-   *Note that Ubuntu comes with an old version of `pip` that is not compatible any more with the latest version of `requests`. It will be broken after you installed `requests`, except if you update it before (or afterwards) with `easy_install pip`.*
- - python-websockets for the experimental websocket listener (`pip install websocket-client`). This module is optional, without it `initSocket()` from SEChatBrowser will not work
+ - BeautifulSoup (`sudo apt-get install python3-beautifulsoup`)
+ - Requests (`pip3 install requests`). Usually there by default. Please upgrade it with `pip3 install requests --upgrade`  
+   *Note that Ubuntu comes with an old version of `pip3` that is not compatible any more with the latest version of `requests`. It will be broken after you installed `requests`, except if you update it before (or afterwards) with `easy_install pip3` or `pip3 install --upgrade pip` (that one works only before).*
+ - python-websockets for the experimental websocket listener (`pip3 install websocket-client`). This module is optional, without it `initSocket()` from SEChatBrowser will not work
 
 ## Shortcuts
 
