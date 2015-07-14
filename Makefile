@@ -13,18 +13,18 @@ test: install-dependencies PHONY
 
 test-coverage: install-dependencies PHONY
 	python -m coverage run --branch -m pytest
-	python -m coverage report --include 'chatexchange/*'
+	python -m coverage report --include 'chatexchange3/*'
 
 install-dependencies: PHONY
-	# This also creates a link to `chatexchange/` in the Python
+	# This also creates a link to `chatexchange3/` in the Python
 	# environment, which is neccessary for the other files to be
 	# able to find it.
 	rm -rf src/*.egg-info
 	pip install -e .
 
 epydocs: PHONY
-	epydoc chatexchange --html -o epydocs \
-	     --top ChatExchange.chatexchange --no-frames --no-private --verbose
+	epydoc chatexchange3 --html -o epydocs \
+	     --top ChatExchange3.chatexchange3 --no-frames --no-private --verbose
 
 clean: PHONY
 	rm -rf src/*.egg-info
