@@ -6,10 +6,10 @@ import queue
 
 import pytest
 
-from ChatExchange3.chatexchange3.client import Client
-from ChatExchange3.chatexchange3 import events
+from chatexchange3.client import Client
+from chatexchange3 import events
 
-from ChatExchange3.test import live_testing
+from test import live_testing
 
 
 logger = logging.getLogger(__name__)
