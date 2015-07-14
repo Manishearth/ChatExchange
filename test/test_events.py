@@ -1,4 +1,4 @@
-from chatexchange import events, client
+from ChatExchange3.chatexchange3 import events, client
 
 
 def test_message_posted_event_initialization():

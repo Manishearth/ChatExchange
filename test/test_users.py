@@ -1,11 +1,11 @@
-import chatexchange
+from ChatExchange3 import chatexchange3
 
-import live_testing
+from ChatExchange3.test import live_testing
 
 
 if live_testing.enabled:
     def test_user_info():
-        client = chatexchange.Client('stackexchange.com')
+        client = chatexchange3.Client('stackexchange.com')
 
         user = client.get_user(-2)
         assert user.id == -2

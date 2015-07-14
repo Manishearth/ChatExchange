@@ -5,7 +5,7 @@ Opens a web page displaying a simple updating view of a chat room.
 This is not meant for unauthenticated, remote, or multi-client use.
 """
 
-import BaseHTTPServer
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import collections
 import getpass
 import json
@@ -14,8 +14,8 @@ import os
 import sys
 import webbrowser
 
-import chatexchange
-from chatexchange import events
+from ChatExchange3 import chatexchange3
+from ChatExchange3.chatexchange3 import events
 
 
 logger = logging.getLogger(__name__)
@@ -33,13 +33,13 @@ def main(port='8462'):
     else:
         sys.stderr.write("Username: ")
         sys.stderr.flush()
-        email = raw_input()
+        email = input()
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:
         password = getpass.getpass("Password: ")
 
-    client = chatexchange.Client('stackexchange.com')
+    client = chatexchange3.Client('stackexchange.com')
     client.login(email, password)
 
     httpd = Server(
@@ -48,7 +48,7 @@ def main(port='8462'):
     httpd.serve_forever()
 
 
-class Server(BaseHTTPServer.HTTPServer, object):
+class Server(HTTPServer, object):
     def __init__(self, *a, **kw):
         self.client = kw.pop('client')
         self.room = self.client.get_room(kw.pop('room_id'))
@@ -86,12 +86,11 @@ class Server(BaseHTTPServer.HTTPServer, object):
         }
 
     def on_chat_event(self, event, client):
-        if (isinstance(event, events.MessagePosted)
-            and event.room is self.room):
+        if isinstance(event, events.MessagePosted) and event.room is self.room:
             self.messages.append(event.message)
 
 
-class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
+class Handler(BaseHTTPRequestHandler, object):
     logger = logging.getLogger(__name__).getChild('Handler')
 
     def do_GET(self):
