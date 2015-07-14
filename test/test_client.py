@@ -9,7 +9,7 @@ import pytest
 from chatexchange3.client import Client
 from chatexchange3 import events
 
-from test import live_testing
+from . import live_testing
 
 
 logger = logging.getLogger(__name__)
