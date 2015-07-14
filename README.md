@@ -1,7 +1,7 @@
-ChatExchange
+ChatExchange - [![Build Status](https://travis-ci.org/ByteCommander/ChatExchange3.svg)](https://travis-ci.org/ByteCommander/ChatExchange3)
 ============
 
-[![Build Status](https://travis-ci.org/ByteCommander/ChatExchange3.svg)](https://travis-ci.org/ByteCommander/ChatExchange3)
+
 
 A Python 3 API for talking to Stack Exchange chat.
 
