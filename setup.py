@@ -6,7 +6,7 @@ setuptools.setup(
     version='0.0.1',
     url='https://github.com/ByteCommander/ChatExchange3',
     packages=[
-        'chatexchange3', 'chatexchange3_tests'
+        'chatexchange3', 'chatexchange3_test'
     ],
     install_requires=[
         'beautifulsoup4>=4.3.2',
