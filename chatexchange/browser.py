@@ -601,6 +601,22 @@ class Browser(object):
             'tags': tags
         }
 
+    def get_pingable_user_ids_in_room(self, room_id):
+        url = "rooms/pingable/{0}".format(room_id)
+        resp_json = self.get(url).json()
+        user_ids = []
+        for user in resp_json:
+            user_ids.append(user[0])
+        return user_ids
+
+    def get_pingable_user_names_in_room(self, room_id):
+        url = "rooms/pingable/{0}".format(room_id)
+        resp_json = self.get(url).json()
+        user_names = []
+        for user in resp_json:
+            user_names.append(user[1])
+        return user_names
+
     def set_websocket_recovery(self, on_ws_closed):
         self.on_websocket_closed = on_ws_closed
         for s in self.sockets:
