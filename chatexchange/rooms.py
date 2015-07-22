@@ -107,6 +107,12 @@ class Room(object):
     def get_pingable_user_names(self):
         return self._client._br.get_pingable_user_names_in_room(self.id)
 
+    def get_current_user_ids(self):
+        return self._client._br.get_current_user_ids_in_room(self.id)
+
+    def get_current_user_names(self):
+        return self._client._br.get_current_user_names_in_room(self.id)
+
 
 class FilteredEventIterator(object):
     def __init__(self, room, types):
