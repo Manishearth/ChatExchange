@@ -9,6 +9,7 @@ import requests
 import websocket
 from . import _utils
 import socket
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -600,6 +601,45 @@ class Browser(object):
             'owner_user_names': owner_user_names,
             'tags': tags
         }
+
+    def get_pingable_user_ids_in_room(self, room_id):
+        url = "rooms/pingable/{0}".format(room_id)
+        resp_json = self.get(url).json()
+        user_ids = []
+        for user in resp_json:
+            user_ids.append(user[0])
+        return user_ids
+
+    def get_pingable_user_names_in_room(self, room_id):
+        url = "rooms/pingable/{0}".format(room_id)
+        resp_json = self.get(url).json()
+        user_names = []
+        for user in resp_json:
+            user_names.append(user[1])
+        return user_names
+
+    def get_current_user_ids_in_room(self, room_id):
+        url = "/rooms/{0}/".format(room_id)
+        soup = self.get_soup(url)
+        script_tag = soup.find_all('script')[3]
+        users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_tag.text)[0]
+        user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
+        user_ids = []
+        for ud in user_data:
+            user_ids.append(int(re.compile("id: (\d+),").search(ud).group(1)))
+        return user_ids
+
+    def get_current_user_names_in_room(self, room_id):
+        url = "/rooms/{0}/".format(room_id)
+        soup = self.get_soup(url)
+        script_tag = soup.find_all('script')[3]
+        users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_tag.text)[0]
+        user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
+        user_names = []
+        for ud in user_data:
+            user_names.append(re.compile("name: \(\"(.+?)\"\),").search(ud).group(1))
+        return user_names
+
 
     def set_websocket_recovery(self, on_ws_closed):
         self.on_websocket_closed = on_ws_closed
