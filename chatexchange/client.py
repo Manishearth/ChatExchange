@@ -242,6 +242,10 @@ class Client(object):
                     # Wait more than that, though.
                     wait += 1
                 else:  # Something went wrong. I guess that happens.
+                    if attempt > 5:
+                        err = ChatActionError()
+                        err.message = "5 failed attempts to do chat action. Unknown reason: %s" % unpacked
+                        raise err
                     wait = self._BACKOFF_ADDER
                     logging.error(
                         "Attempt %d: denied: unknown reason %r",
@@ -271,3 +275,7 @@ class Client(object):
 
     def _leave_room(self, room_id):
         self._br.leave_room(room_id)
+
+
+class ChatActionError(Exception):
+    pass
