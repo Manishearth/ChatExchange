@@ -54,6 +54,7 @@ class Client(object):
 
         self.host = host
         self.logged_in = False
+        self.on_message_sent = None
         self._request_queue = Queue.Queue()
 
         self._br = browser.Browser()
@@ -201,6 +202,7 @@ class Client(object):
         attempt = 0
         if text == self._previous:
             text = " " + text
+        response = None
         while not sent:
             wait = 0
             attempt += 1
@@ -253,6 +255,8 @@ class Client(object):
                 self._previous = text
 
             time.sleep(wait)
+        if action_type == 'send' and self.on_message_sent is not None:
+            self.on_message_sent(response.json()["id"], room_id)
 
     def _join_room(self, room_id):
         self._br.join_room(room_id)
