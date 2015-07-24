@@ -54,6 +54,7 @@ class Client(object):
 
         self.host = host
         self.logged_in = False
+        self.on_message_sent = None
         self._request_queue = queue.Queue()
 
         self._br = browser.Browser()
@@ -184,10 +185,17 @@ class Client(object):
             self._request_queue.task_done()
 
     # Appeasing the rate limiter gods is hard.
-    _BACKOFF_MULTIPLIER = 2
     _BACKOFF_ADDER = 5
 
     # When told to wait n seconds, wait n * BACKOFF_MULTIPLIER + BACKOFF_ADDER
+
+    @staticmethod
+    def _unpack_response(response):
+        try:
+            j = response.json()
+            return j
+        except ValueError:
+            return response.text
 
     def _do_action_despite_throttling(self, action):
         action_type = action[0]
@@ -201,6 +209,8 @@ class Client(object):
         attempt = 0
         if text == self._previous:
             text = " " + text
+        response = None
+        unpacked = None
         while not sent:
             wait = 0
             attempt += 1
@@ -221,23 +231,23 @@ class Client(object):
                 else:
                     raise
 
-            if isinstance(response, str):
-                match = re.match(TOO_FAST_RE, response)
+            unpacked = Client._unpack_response(response)
+            if isinstance(unpacked, basestring) and unpacked != "ok":
+                match = re.match(TOO_FAST_RE, unpacked)
                 if match:  # Whoops, too fast.
                     wait = int(match.group(1))
                     self.logger.debug(
                         "Attempt %d: denied: throttled, must wait %.1f seconds",
                         attempt, wait)
                     # Wait more than that, though.
-                    wait *= self._BACKOFF_MULTIPLIER
-                    wait += self._BACKOFF_ADDER
+                    wait += 1
                 else:  # Something went wrong. I guess that happens.
                     wait = self._BACKOFF_ADDER
                     logging.error(
                         "Attempt %d: denied: unknown reason %r",
-                        attempt, response)
-            elif isinstance(response, dict):
-                if response["id"] is None:  # Duplicate message?
+                        attempt, unpacked)
+            elif isinstance(unpacked, dict):
+                if unpacked["id"] is None:  # Duplicate message?
                     text += " "  # Append because markdown
                     wait = self._BACKOFF_ADDER
                     self.logger.debug(
@@ -253,6 +263,8 @@ class Client(object):
                 self._previous = text
 
             time.sleep(wait)
+        if action_type == 'send' and isinstance(unpacked, dict) and self.on_message_sent is not None:
+            self.on_message_sent(response.json()["id"], room_id)
 
     def _join_room(self, room_id):
         self._br.join_room(room_id)
