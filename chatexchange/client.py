@@ -232,7 +232,7 @@ class Client(object):
                     raise
 
             unpacked = Client._unpack_response(response)
-            if isinstance(unpacked, basestring):
+            if isinstance(unpacked, basestring) and unpacked != "ok":
                 match = re.match(TOO_FAST_RE, unpacked)
                 if match:  # Whoops, too fast.
                     wait = int(match.group(1))
