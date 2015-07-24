@@ -243,8 +243,7 @@ class Client(object):
                     wait += 1
                 else:  # Something went wrong. I guess that happens.
                     if attempt > 5:
-                        err = ChatActionError()
-                        err.message = "5 failed attempts to do chat action. Unknown reason: %s" % unpacked
+                        err = ChatActionError("5 failed attempts to do chat action. Unknown reason: %s" % unpacked)
                         raise err
                     wait = self._BACKOFF_ADDER
                     logging.error(
