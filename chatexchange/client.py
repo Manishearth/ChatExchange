@@ -185,7 +185,6 @@ class Client(object):
             self._request_queue.task_done()
 
     # Appeasing the rate limiter gods is hard.
-    _BACKOFF_MULTIPLIER = 2
     _BACKOFF_ADDER = 5
 
     # When told to wait n seconds, wait n * BACKOFF_MULTIPLIER + BACKOFF_ADDER
@@ -241,8 +240,7 @@ class Client(object):
                         "Attempt %d: denied: throttled, must wait %.1f seconds",
                         attempt, wait)
                     # Wait more than that, though.
-                    wait *= self._BACKOFF_MULTIPLIER
-                    wait += self._BACKOFF_ADDER
+                    wait += 1
                 else:  # Something went wrong. I guess that happens.
                     wait = self._BACKOFF_ADDER
                     logging.error(
