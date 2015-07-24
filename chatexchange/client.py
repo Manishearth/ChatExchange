@@ -190,6 +190,14 @@ class Client(object):
 
     # When told to wait n seconds, wait n * BACKOFF_MULTIPLIER + BACKOFF_ADDER
 
+    @staticmethod
+    def _unpack_response(response):
+        try:
+            j = response.json()
+            return j
+        except ValueError:
+            return response.text
+
     def _do_action_despite_throttling(self, action):
         action_type = action[0]
         if action_type == 'send':
@@ -203,6 +211,7 @@ class Client(object):
         if text == self._previous:
             text = " " + text
         response = None
+        unpacked = None
         while not sent:
             wait = 0
             attempt += 1
@@ -223,8 +232,9 @@ class Client(object):
                 else:
                     raise
 
-            if isinstance(response, str):
-                match = re.match(TOO_FAST_RE, response)
+            unpacked = Client._unpack_response(response)
+            if isinstance(unpacked, basestring):
+                match = re.match(TOO_FAST_RE, unpacked)
                 if match:  # Whoops, too fast.
                     wait = int(match.group(1))
                     self.logger.debug(
@@ -237,9 +247,9 @@ class Client(object):
                     wait = self._BACKOFF_ADDER
                     logging.error(
                         "Attempt %d: denied: unknown reason %r",
-                        attempt, response)
-            elif isinstance(response, dict):
-                if response["id"] is None:  # Duplicate message?
+                        attempt, unpacked)
+            elif isinstance(unpacked, dict):
+                if unpacked["id"] is None:  # Duplicate message?
                     text += " "  # Append because markdown
                     wait = self._BACKOFF_ADDER
                     self.logger.debug(
@@ -255,7 +265,7 @@ class Client(object):
                 self._previous = text
 
             time.sleep(wait)
-        if action_type == 'send' and self.on_message_sent is not None:
+        if action_type == 'send' and isinstance(unpacked, dict) and self.on_message_sent is not None:
             self.on_message_sent(response.json()["id"], room_id)
 
     def _join_room(self, room_id):
