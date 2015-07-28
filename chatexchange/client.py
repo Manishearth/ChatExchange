@@ -232,7 +232,9 @@ class Client(object):
                     raise
 
             unpacked = Client._unpack_response(response)
-            if isinstance(unpacked, basestring) and unpacked != "ok":
+            ignored_messages = ["ok", "It is too late to delete this message",
+                                "It is too late to edit this message"]
+            if isinstance(unpacked, basestring) and unpacked not in ignored_messages:
                 match = re.match(TOO_FAST_RE, unpacked)
                 if match:  # Whoops, too fast.
                     wait = int(match.group(1))
