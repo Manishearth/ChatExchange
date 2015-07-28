@@ -108,11 +108,11 @@ class Browser(object):
 
     def get_soup(self, url, data=None, headers=None, with_chat_root=True):
         response = self.get(url, data, headers, with_chat_root)
-        return BeautifulSoup(response.content)
+        return BeautifulSoup(response.content, "html.parser")
 
     def post_soup(self, url, data=None, headers=None, with_chat_root=True):
         response = self.post(url, data, headers, with_chat_root)
-        return BeautifulSoup(response.content)
+        return BeautifulSoup(response.content, "html.parser")
 
     def post_fkeyed(self, url, data=None, headers=None):
         if data is None:
@@ -193,7 +193,7 @@ class Browser(object):
             # no prompt for us to handle
             return prompt_response
 
-        prompt_soup = BeautifulSoup(prompt_response.content)
+        prompt_soup = BeautifulSoup(prompt_response.content, "html.parser")
 
         data = {
             'session': prompt_soup.find('input', {'name': 'session'})['value'],
