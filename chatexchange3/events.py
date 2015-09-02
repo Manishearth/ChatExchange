@@ -69,8 +69,11 @@ class MessageEvent(Event):
     Base class for events about Messages.
     """
     def _init_from_data(self):
-        self.user = self.client.get_user(
-            self.data['user_id'], name=self.data['user_name'])
+        if 'user_id' in self.data:
+            self.user = self.client.get_user(
+                self.data['user_id'], name=self.data['user_name'])
+        else:
+            self.user = None
         self.content = self.data.get('content', None)
         self._message_id = self.data['message_id']
         self._message_edits = self.data.get('message_edits', 0)
