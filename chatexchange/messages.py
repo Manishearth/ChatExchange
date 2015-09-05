@@ -130,9 +130,9 @@ class Message(object):
         if self.content is not None:
             return _utils.html_to_text(self.content)
 
-    def reply(self, text):
+    def reply(self, text, length_check=True):
         self.room.send_message(
-            ":%s %s" % (self.id, text))
+            ":%s %s" % (self.id, text), length_check)
 
     def edit(self, text):
         self._client._request_queue.put(('edit', self.id, text))
