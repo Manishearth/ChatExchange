@@ -1,6 +1,6 @@
 import logging
 
-from . import _utils
+from chatexchange6 import _utils
 
 
 logger = logging.getLogger(__name__)

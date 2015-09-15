@@ -7,7 +7,7 @@ import contextlib
 import collections
 import logging
 
-from . import _utils, events
+from chatexchange6 import _utils, events
 
 
 logger = logging.getLogger(__name__)

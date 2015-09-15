@@ -1,11 +1,11 @@
 from . import browser
 
-from . import users
-from . import messages
-from . import rooms
-from . import events
-from . import client
-from . import _utils
+from chatexchange6 import users
+from chatexchange6 import messages
+from chatexchange6 import rooms
+from chatexchange6 import events
+from chatexchange6 import client
+from chatexchange6 import _utils
 
 
 Browser = browser.Browser
