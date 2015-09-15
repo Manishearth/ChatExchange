@@ -3,7 +3,7 @@ import logging
 import chatexchange6
 from chatexchange6.events import MessageEdited
 
-import live_testing
+from tests import live_testing
 
 
 logger = logging.getLogger(__name__)

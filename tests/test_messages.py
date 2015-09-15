@@ -2,7 +2,7 @@ import logging
 
 from chatexchange6 import Client
 
-import live_testing
+from tests import live_testing
 
 
 logger = logging.getLogger(__name__)
