@@ -1,15 +1,19 @@
+import sys
+if sys.version_info[0] == 2:
+    import Queue as queue
+else:
+    import queue
 import logging
 import time
 import uuid
 import os
-import queue
 
 import pytest
 
 from chatexchange.client import Client
 from chatexchange import events
 
-from test import live_testing
+import live_testing
 
 
 logger = logging.getLogger(__name__)

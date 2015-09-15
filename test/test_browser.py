@@ -2,8 +2,7 @@ import httmock
 
 from chatexchange import Browser
 
-from test.mock_responses import (
-    only_httmock, favorite_with_test_fkey, TEST_FKEY)
+from mock_responses import (only_httmock, favorite_with_test_fkey, TEST_FKEY)
 
 
 def test_update_fkey():

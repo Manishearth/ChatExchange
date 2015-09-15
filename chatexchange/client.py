@@ -1,11 +1,14 @@
+import sys
+if sys.version_info[0] == 2:
+    import Queue as queue
+else:
+    import queue
 import collections
 import re
 import time
-import queue
 import threading
 import logging
 import weakref
-
 import requests
 
 from . import browser, events, messages, rooms, users

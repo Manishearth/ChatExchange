@@ -1,7 +1,12 @@
 # encoding: utf-8
-from html.parser import HTMLParser
+import sys
+if sys.version_info[0] == 2:
+    from HTMLParser import HTMLParser
+    import htmlentitydefs
+else:
+    from html.parser import HTMLParser
+    from html import entities as htmlentitydefs
 import functools
-from html import entities as htmlentitydefs
 import logging
 import weakref
 

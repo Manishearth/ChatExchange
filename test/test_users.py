@@ -1,6 +1,6 @@
 import chatexchange
 
-from test import live_testing
+import live_testing
 
 
 if live_testing.enabled:

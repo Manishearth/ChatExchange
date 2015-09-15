@@ -4,7 +4,7 @@ import pytest
 
 from chatexchange.browser import Browser, LoginError
 
-from test import live_testing
+import live_testing
 
 
 if live_testing.enabled:
