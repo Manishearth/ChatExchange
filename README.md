@@ -1,4 +1,4 @@
-ChatExchange - [![Build Status](https://travis-ci.org/ByteCommander/ChatExchange3.svg)](https://travis-ci.org/ByteCommander/ChatExchange3)
+ChatExchange3 - [![Build Status](https://travis-ci.org/ByteCommander/ChatExchange3.svg)](https://travis-ci.org/ByteCommander/ChatExchange3)
 ============
 
 
