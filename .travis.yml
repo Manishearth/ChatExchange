@@ -1,8 +1,14 @@
 language: python
 sudo: false
 python:
-  - '3.4'
-  - '2.7'
+  - "2.6"
+  - "2.7"
+  - "3.2"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.5-dev" 
+  - "nightly" 
 install:
   - pip install .
 script:
