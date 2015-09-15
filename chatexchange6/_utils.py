@@ -51,7 +51,7 @@ class HTMLTextExtractor(HTMLParser):
         self.result.append(chr(codepoint))
 
     def get_text(self):
-        return u''.join(self.result)
+        return ''.join(self.result)
 
 
 def html_to_text(html):
