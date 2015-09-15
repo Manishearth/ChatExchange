@@ -12,8 +12,8 @@ python:
 install:
   - pip install .
 script:
-  - python -W default::Warning -m coverage run --branch -m pytest --tb short
-  - python -m coverage report --include 'chatexchange6/*'
+  - python -W default::Warning -m coverage.__main__ run --branch -m pytest --tb short
+  - python -m coverage.__main__ report --include 'chatexchange6/*'
 branches:
   only:
     - master
