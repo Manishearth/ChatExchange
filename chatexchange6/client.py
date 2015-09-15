@@ -112,7 +112,7 @@ class Client(object):
 
         return instance
 
-    valid_hosts = {'stackexchange.com', 'meta.stackexchange.com', 'stackoverflow.com'}
+    valid_hosts = ('stackexchange.com', 'meta.stackexchange.com', 'stackoverflow.com')
 
     def get_me(self):
         """
