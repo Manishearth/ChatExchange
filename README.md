@@ -3,8 +3,8 @@ ChatExchange6 - [![Build Status](https://travis-ci.org/ByteCommander/ChatExchang
 
 A Python2 and Python3 cross-version API for talking to Stack Exchange chat.
 
-Supported Python versions (currently checked by Travis-CI): `2.7` `3.3` `3.4` `3.5-dev`  
-Python versions with previously failing Travis-CI builds (now excluded from tests): `2.6` `3.2` `3.5` `3.6-dev (nightly)`
+Supported Python versions (currently checked by Travis-CI): `2.7` `3.2` `3.3` `3.4` `3.5-dev`  
+Python versions with previously failing Travis-CI builds (now excluded from tests): `2.6` `3.5` `3.6-dev (nightly)`
 
 ## Dependencies
 **Make sure you use either `pip2` or `pip3` depending on which Python version you want to run this on.**
