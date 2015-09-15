@@ -9,7 +9,8 @@ A Python2 and Python3 cross-version API for talking to Stack Exchange chat.
     <kbd>2.6</kbd>  
  - Unclear versions (Travis-CI build fails because of the packages we use for our Travis-CI tests only):  
     Those Python versions are currently excluded from our Travis-CI build jobs!  
-    <kbd>3.5</kbd> <kbd>3.6-dev (nightly)</kbd>
+    <kbd>3.5</kbd> because of package `pytest` (see [link](https://github.com/pytest-dev/pytest/issues/744))
+    <kbd>3.6-dev (nightly)</kbd> because of package `coverage` (see [link](https://bitbucket.org/ned/coveragepy/issues/391))
 
 ## Dependencies
 **Make sure you use either `pip2` or `pip3` depending on which Python version you want to run this on.**
