@@ -2,9 +2,9 @@ import time
 
 import pytest
 
-from chatexchange3.browser import Browser, LoginError
+from chatexchange.browser import Browser, LoginError
 
-from chatexchange3_test import live_testing
+from test import live_testing
 
 
 if live_testing.enabled:
