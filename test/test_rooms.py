@@ -1,9 +1,9 @@
 import logging
 
-import chatexchange3
-from chatexchange3.events import MessageEdited
+import chatexchange
+from chatexchange.events import MessageEdited
 
-from chatexchange3_test import live_testing
+import live_testing
 
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 if live_testing.enabled:
     def test_room_info():
-        client = chatexchange3.Client('stackexchange.com')
+        client = chatexchange.Client('stackexchange.com')
 
         a_feeds_user = client.get_user(-2)
         bot_user = client.get_user(97938)
@@ -29,7 +29,7 @@ if live_testing.enabled:
         sandbox.parent_site_name + sandbox.name
 
     def test_room_iterators():
-        client = chatexchange3.Client(
+        client = chatexchange.Client(
             'stackexchange.com', live_testing.email, live_testing.password)
 
         me = client.get_me()

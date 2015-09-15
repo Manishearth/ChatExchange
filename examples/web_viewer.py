@@ -5,17 +5,20 @@ Opens a web page displaying a simple updating view of a chat room.
 This is not meant for unauthenticated, remote, or multi-client use.
 """
 
-from http.server import HTTPServer, BaseHTTPRequestHandler
+import sys
+if sys.version_info[0] == 2:
+    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+else:
+    from http.server import HTTPServer, BaseHTTPRequestHandler
 import collections
 import getpass
 import json
 import logging
 import os
-import sys
 import webbrowser
 
-from ChatExchange3 import chatexchange3
-from ChatExchange3.chatexchange3 import events
+import chatexchange
+from chatexchange import events
 
 
 logger = logging.getLogger(__name__)
@@ -39,7 +42,7 @@ def main(port='8462'):
     else:
         password = getpass.getpass("Password: ")
 
-    client = chatexchange3.Client('stackexchange.com')
+    client = chatexchange.Client('stackexchange.com')
     client.login(email, password)
 
     httpd = Server(
