@@ -40,7 +40,7 @@ class HTMLTextExtractor(HTMLParser):
         self.result.append(d)
 
     def handle_charref(self, number):
-        if number[0] in (u'x', u'X'):
+        if number[0] in ('x', 'X'):
             codepoint = int(number[1:], 16)
         else:
             codepoint = int(number)
