@@ -17,8 +17,8 @@ import logging
 import os
 import webbrowser
 
-import chatexchange
-from chatexchange import events
+import chatexchange6
+from chatexchange6 import events
 
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ def main(port='8462'):
     else:
         password = getpass.getpass("Password: ")
 
-    client = chatexchange.Client('stackexchange.com')
+    client = chatexchange6.Client('stackexchange.com')
     client.login(email, password)
 
     httpd = Server(

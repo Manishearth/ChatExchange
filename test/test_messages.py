@@ -1,6 +1,6 @@
 import logging
 
-from chatexchange import Client
+from chatexchange6 import Client
 
 import live_testing
 

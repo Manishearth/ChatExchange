@@ -3,8 +3,8 @@ import getpass
 import logging
 import os
 
-import chatexchange
-from chatexchange.events import MessageEdited
+import chatexchange6
+from chatexchange6.events import MessageEdited
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -17,7 +17,7 @@ if 'ChatExchangeP' in os.environ:
     password = os.environ['ChatExchangeP']
 else:
     password = getpass.getpass("Password: ")
-client = chatexchange.Client('stackexchange.com', email, password)
+client = chatexchange6.Client('stackexchange.com', email, password)
 
 me = client.get_me()
 sandbox = client.get_room(14219)

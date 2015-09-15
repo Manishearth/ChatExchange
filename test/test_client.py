@@ -10,8 +10,8 @@ import os
 
 import pytest
 
-from chatexchange.client import Client
-from chatexchange import events
+from chatexchange6.client import Client
+from chatexchange6 import events
 
 import live_testing
 
