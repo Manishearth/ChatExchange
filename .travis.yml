@@ -8,7 +8,6 @@ python:
   - "3.5-dev" 
   - "2.6"
   - "3.5"
-  - "nightly"
 install:
   - pip install .
 script:
