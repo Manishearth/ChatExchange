@@ -15,6 +15,7 @@ import re
 from chatexchange6 import _utils
 
 logger = logging.getLogger(__name__)
+print("#### Logger: " + str(type(logger)))
 
 
 class Browser(object):
