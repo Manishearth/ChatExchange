@@ -1,6 +1,10 @@
 # encoding: utf-8
+import sys
+if sys.version_info <= (2, 6):
+    import chatexchange6._logging26backport as logging
+else:
+    import logging
 import json
-import logging
 import threading
 import time
 from bs4 import BeautifulSoup
@@ -8,7 +12,7 @@ import requests
 import websocket
 import socket
 import re
-from chatexchange6  import _utils
+from chatexchange6 import _utils
 
 logger = logging.getLogger(__name__)
 
