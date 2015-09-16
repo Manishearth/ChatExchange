@@ -1,10 +1,9 @@
 # encoding: utf-8
 import sys
+import logging
 if sys.version_info <= (2, 6):
-    print("### Now importing logging26backport")
-    import chatexchange6._logging26backport as logging
-else:
-    import logging
+    logging.Logger.getChild = lambda self, suffix:\
+        self.manager.getLogger('.'.join((self.name, suffix)) if self.root is not self else suffix)
 import json
 import threading
 import time
@@ -16,7 +15,6 @@ import re
 from chatexchange6 import _utils
 
 logger = logging.getLogger(__name__)
-print("#### Logger: " + str(type(logger)))
 
 
 class Browser(object):
