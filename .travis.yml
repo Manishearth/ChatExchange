@@ -27,7 +27,7 @@ matrix:
 
 install:
   - pip install .
-  - pip install pytest=$(PYTEST_MINIMAL_VERSION)
+  - pip install pytest="$PYTEST_MINIMAL_VERSION"
 script:
   - python -W default::Warning -m coverage.__main__ run --branch -m pytest --tb short
   - python -m coverage.__main__ report --include 'chatexchange6/*'
