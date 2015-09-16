@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='ChatExchange6',
-    version='0.0.1',
+    version='1.0',
     url='https://github.com/ByteCommander/ChatExchange6',
     packages=[
         'chatexchange6'
