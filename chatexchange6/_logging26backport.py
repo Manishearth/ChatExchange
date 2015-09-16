@@ -2,7 +2,7 @@ import logging
 from logging import *
 
 
-class Logger26(logging.getLoggerClass()):
+class Logger(logging.Logger):
 
     def getChild(self, suffix):
         """
@@ -26,4 +26,3 @@ class Logger26(logging.getLoggerClass()):
         return self.manager.getLogger(suffix)
 
 
-logging.setLoggerClass(Logger26)
