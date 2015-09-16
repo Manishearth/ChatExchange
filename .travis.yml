@@ -10,7 +10,6 @@ python:
   - "2.6"
 install:
   - pip install .
-  - pip install git+https://github.com/Carreau/pytest.git@test-35
 script:
   - python -W default::Warning -m coverage.__main__ run --branch -m pytest --tb short
   - python -m coverage.__main__ report --include 'chatexchange6/*'
