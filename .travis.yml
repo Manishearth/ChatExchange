@@ -8,8 +8,26 @@ python:
   - "3.5"
   - "3.5-dev" 
   - "2.6"
+env:
+  - PYTEST_MINIMAL_VERSION = 2.8.0
+  - PYTEST_MINIMAL_VERSION = 2.7.2
+matrix:
+  exclude:
+    - env: PYTEST_MINIMAL_VERSION = 2.7.2
+      python:
+        - "3.5"
+    - env: PYTEST_MINIMAL_VERSION = 2.8.0
+      python:
+        - "2.7"
+        - "3.2"
+        - "3.3"
+        - "3.4"
+        - "3.5-dev"
+        - "2.6"
+
 install:
   - pip install .
+  - pip install pytest=$PYTEST_MINIMAL_VERSION
 script:
   - python -W default::Warning -m coverage.__main__ run --branch -m pytest --tb short
   - python -m coverage.__main__ report --include 'chatexchange6/*'
