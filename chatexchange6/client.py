@@ -3,11 +3,14 @@ if sys.version_info[0] == 2:
     import Queue as queue
 else:
     import queue
+if sys.version_info[0] == 2 and sys.version_info[1] < 7:
+    import chatexchange6.logging26 as logging
+else:
+    import logging
 import collections
 import re
 import time
 import threading
-import logging
 import weakref
 import requests
 from chatexchange6 import browser, events, messages, rooms, users
