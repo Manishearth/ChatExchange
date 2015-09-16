@@ -2,6 +2,8 @@ language: python
 sudo: false
 
 matrix:
+  allow-failures:
+    - python: "nightly"
   include:
     - python: "2.6"
       env: PYTEST_MINIMAL_VERSION=2.7.3
@@ -17,9 +19,8 @@ matrix:
       env: PYTEST_MINIMAL_VERSION=2.7.3
     - python: "3.5-dev"
       env: PYTEST_MINIMAL_VERSION=2.7.3
-    allow-failures:
-      - python: "nightly"
-        env: PYTEST_MINIMAL_VERSION=2.7.3
+    - python: "nightly"
+      env: PYTEST_MINIMAL_VERSION=2.7.3
 install:
   - pip install .
   - echo $PYTEST_MINIMAL_VERSION
