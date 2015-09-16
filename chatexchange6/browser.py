@@ -1,6 +1,7 @@
 # encoding: utf-8
 import sys
 if sys.version_info <= (2, 6):
+    print("### Now importing logging26backport")
     import chatexchange6._logging26backport as logging
 else:
     import logging
