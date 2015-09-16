@@ -3,28 +3,30 @@ sudo: false
 
 matrix:
   allow-failures:
-    - python: "nightly"
+    - python:
+      - "2.6"
+      - "nightly"
   include:
     - python: "2.6"
-      env: PYTEST_MINIMAL_VERSION=2.7.3
+#      env: PYTEST_MINIMAL_VERSION=2.7.3
     - python: "2.7"
-      env: PYTEST_MINIMAL_VERSION=2.7.3
+#      env: PYTEST_MINIMAL_VERSION=2.7.3
     - python: "3.2"
-      env: PYTEST_MINIMAL_VERSION=2.7.3
+#      env: PYTEST_MINIMAL_VERSION=2.7.3
     - python: "3.3"
-      env: PYTEST_MINIMAL_VERSION=2.7.3
+#      env: PYTEST_MINIMAL_VERSION=2.7.3
     - python: "3.4"
-      env: PYTEST_MINIMAL_VERSION=2.7.3
+#      env: PYTEST_MINIMAL_VERSION=2.7.3
     - python: "3.5"
-      env: PYTEST_MINIMAL_VERSION=2.7.3
+#      env: PYTEST_MINIMAL_VERSION=2.7.3
     - python: "3.5-dev"
-      env: PYTEST_MINIMAL_VERSION=2.7.3
+#      env: PYTEST_MINIMAL_VERSION=2.7.3
     - python: "nightly"
-      env: PYTEST_MINIMAL_VERSION=2.7.3
+#      env: PYTEST_MINIMAL_VERSION=2.7.3
 install:
   - pip install .
-  - echo $PYTEST_MINIMAL_VERSION
-  - pip install 'pytest>='"$PYTEST_MINIMAL_VERSION"
+#  - echo $PYTEST_MINIMAL_VERSION
+#  - pip install 'pytest>='"$PYTEST_MINIMAL_VERSION"
 script:
   - python -W default::Warning -m coverage.__main__ run --branch -m pytest --tb short
   - python -m coverage.__main__ report --include 'chatexchange6/*'
