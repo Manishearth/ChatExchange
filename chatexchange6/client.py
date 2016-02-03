@@ -13,7 +13,8 @@ import time
 import threading
 import weakref
 import requests
-from chatexchange6 import browser, events, messages, rooms, users
+
+from . import browser, events, messages, rooms, users
 
 
 TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"

@@ -7,12 +7,14 @@ if sys.version_info[:2] <= (2, 6):
 import json
 import threading
 import time
+
 from bs4 import BeautifulSoup
 import requests
 import websocket
+from . import _utils
 import socket
 import re
-from chatexchange6 import _utils
+
 
 logger = logging.getLogger(__name__)
 
