@@ -12,7 +12,7 @@ import requests
 import websocket
 import socket
 import re
-import _utils
+from chatexchange6 import _utils
 
 logger = logging.getLogger(__name__)
 
