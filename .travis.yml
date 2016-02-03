@@ -22,7 +22,7 @@ branches:
     - master
 env:
   global:
-    - secure: "l3wVjDs94gpM1p+lmjBHPDJm65qMb4hCc9c6IA+0IAKCnLX0CNqzn5H4R3JIswOb9d8nMyF1iU/wwv7KBoZTnm8dSqoiv+puD82xc+auR3fF/pcxK2jZq6qgXTRlfgAst80qJbH2g5mNLLI30/mSHoHI/5FWLmjaoeifA4O1rkE="
+    - secure: "S9c9S/OgKGa7mLz/Ys0aVwbyNtxBubUVWO0i3ew0sm0KwUBFiNNPtWTyCT21jGrjd1Zp0AvMlcSFhJ9auGAMAVIqPTqM1GkNGU5fPwx6Lo3KAGSqW+XN2cAFXljEyAQ2Bhn/ilWeUymC1EpkNRIDarCJZcNsctrs8P3H67gSFtc="
     - secure: "av9hxTZp/Dhe9xAOq6WlhTNDoWjjczN3lFanG6h/3h4kW7DsxhfXMRA96z6MambbC6c9ARFiwsQ24NeCAfPQ1m6r9uZwNkusqnRDOwZQeVQcmopnoNNG4Kd/9oclIVgsAlSG6WfhkyQPUG2p7PkOvxFV4/YjDSViYDR3eoih3JA="
 notifications:
   email: false

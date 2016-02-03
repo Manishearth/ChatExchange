@@ -235,7 +235,9 @@ class Client(object):
 
             unpacked = Client._unpack_response(response)
             ignored_messages = ["ok", "It is too late to delete this message",
-                                "It is too late to edit this message"]
+                                "It is too late to edit this message",
+                                "The message has been deleted and cannot be edited",
+                                "This message has already been deleted."]
             if isinstance(unpacked, str) and unpacked not in ignored_messages:
                 match = re.match(TOO_FAST_RE, unpacked)
                 if match:  # Whoops, too fast.
