@@ -626,7 +626,7 @@ class Browser(object):
     def get_current_user_ids_in_room(self, room_id):
         url = "/rooms/{0}/".format(room_id)
         soup = self.get_soup(url)
-        script_tag = soup.find_all('script')[3]
+        script_tag = soup.body.script
         users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_tag.text)[0]
         user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
         user_ids = []
@@ -637,7 +637,7 @@ class Browser(object):
     def get_current_user_names_in_room(self, room_id):
         url = "/rooms/{0}/".format(room_id)
         soup = self.get_soup(url)
-        script_tag = soup.find_all('script')[3]
+        script_tag = soup.body.script
         users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_tag.text)[0]
         user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
         user_names = []
