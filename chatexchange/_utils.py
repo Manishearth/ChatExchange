@@ -55,6 +55,23 @@ def html_to_text(html):
     return s.get_text()
 
 
+# Number of seconds since the user was last seen, based on <12d ago> data.
+def parse_last_seen(text):
+    suffixes = {
+        's': 1,
+        'm': 60,
+        'h': 3600,
+        'd': 86400,
+        'y': 31536000
+    }
+    splat = text.split(' ')
+    assert len(splat) == 2, "text doesn't appear to be in <x ago> format"
+    char = text[-1]
+    number = int(text[:-1])
+    assert char in suffixes, "suffix char unrecognized"
+    return number * suffixes[char]
+
+
 class LazyFrom(object):
     """
     A descriptor used when multiple lazy attributes depend on a common

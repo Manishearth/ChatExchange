@@ -69,7 +69,7 @@ class Browser(object):
         # Try again if we fail. We're blaming "the internet" for weirdness.
         MAX_HTTP_RETRIES = 5                # EGAD! A MAGIC NUMBER!
         attempt = 0
-        while attempt <= MAX_HTTP_RETRIES:      
+        while attempt <= MAX_HTTP_RETRIES:
             attempt += 1
             response = None
             try:
@@ -549,12 +549,19 @@ class Browser(object):
         else:
             reputation = -1
 
+        stats_elements = profile_soup.select('.user-valuecell')
+        if len(stats_elements) >= 3:
+            last_seen = _utils.parse_last_seen(stats_elements[2].text)
+        else:
+            last_seen = _utils.parse_last_seen('20y ago')
+
         return {
             'name': name,
             'is_moderator': is_moderator,
             'message_count': message_count,
             'room_count': room_count,
-            'reputation': reputation
+            'reputation': reputation,
+            'last_seen': last_seen
         }
 
     def get_room_info(self, room_id):
