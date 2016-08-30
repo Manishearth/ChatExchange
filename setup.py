@@ -1,9 +1,15 @@
 import setuptools
 
 setuptools.setup(
+<<<<<<< HEAD
     name='ChatExchange6',
     version='1.0',
     url='https://github.com/ByteCommander/ChatExchange6',
+=======
+    name='ChatExchange',
+    version='0.0.2',
+    url='https://github.com/Manishearth/ChatExchange',
+>>>>>>> 2a4c096a7886fa747085edd8fe68525a9e355156
     packages=[
         'chatexchange6'
     ],
