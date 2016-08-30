@@ -11,7 +11,7 @@ python:
   - "nightly"
 matrix:
   allow_failures:
-    - python: "nightly"
+    - python: "3.2"
 install:
   - pip install .
 script:
