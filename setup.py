@@ -18,5 +18,6 @@ setuptools.setup(
         'pytest-capturelog>=0.7',
         'pytest-timeout>=0.3',
         'pytest>=2.7.3',
+        'py>=1.4.29'
     ]
 )
