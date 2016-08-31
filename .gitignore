@@ -63,3 +63,4 @@ epydocs/
 
 # Python VirtualEnvs for local testing
 VEnvs/
+/venv-*
