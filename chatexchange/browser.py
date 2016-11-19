@@ -409,7 +409,7 @@ class Browser(object):
             'transcript/message/%s' % (message_id,))
 
         room_soups = transcript_soup.select('.room-name a')
-        room_soup = room_soups[]
+        room_soup = room_soups[-1]
         room_id = int(room_soup['href'].split('/')[-2])
         room_name = room_soup.text
 
