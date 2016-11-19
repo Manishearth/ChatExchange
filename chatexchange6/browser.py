@@ -75,6 +75,7 @@ class Browser(object):
         MAX_HTTP_RETRIES = 5                # EGAD! A MAGIC NUMBER!
         attempt = 0
         response = None
+
         while attempt <= MAX_HTTP_RETRIES:
             attempt += 1
             try:
@@ -228,7 +229,7 @@ class Browser(object):
     @staticmethod
     def user_id_and_name_from_link(link_soup):
         user_name = link_soup.text
-        user_id = int(link_soup['href'].split('/')[2])
+        user_id = int(link_soup['href'].split('/')[-2])
         return user_id, user_name
 
     def _update_chat_fkey_and_user(self):
@@ -415,7 +416,7 @@ class Browser(object):
 
         room_soups = transcript_soup.select('.room-name a')
         room_soup = room_soups[-1]
-        room_id = int(room_soup['href'].split('/')[2])
+        room_id = int(room_soup['href'].split('/')[-2])
         room_name = room_soup.text
 
         messages_data = []
@@ -554,12 +555,19 @@ class Browser(object):
         else:
             reputation = -1
 
+        stats_elements = profile_soup.select('.user-valuecell')
+        if len(stats_elements) >= 3:
+            last_seen = _utils.parse_last_seen(stats_elements[2].text)
+        else:
+            last_seen = _utils.parse_last_seen('20y ago')
+
         return {
             'name': name,
             'is_moderator': is_moderator,
             'message_count': message_count,
             'room_count': room_count,
-            'reputation': reputation
+            'reputation': reputation,
+            'last_seen': last_seen
         }
 
     def get_room_info(self, room_id):
