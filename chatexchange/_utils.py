@@ -66,8 +66,8 @@ def parse_last_seen(text):
     }
     splat = text.split(' ')
     assert len(splat) == 2, "text doesn't appear to be in <x ago> format"
-    char = text[-1]
-    number = int(text[:-1])
+    char = splat[0][-1]
+    number = int(splat[0][:-1])
     assert char in suffixes, "suffix char unrecognized"
     return number * suffixes[char]
 
