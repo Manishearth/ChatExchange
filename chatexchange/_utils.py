@@ -64,6 +64,8 @@ def parse_last_seen(text):
         'd': 86400,
         'y': 31536000
     }
+    if text == "n/a":
+        return -1  # Take this as an error code if you want
     splat = text.split(' ')
     assert len(splat) == 2, "text doesn't appear to be in <x ago> format"
     char = splat[0][-1]
