@@ -1,5 +1,7 @@
-ChatExchange6 - [![Build Status](https://travis-ci.org/ByteCommander/ChatExchange6.svg?branch=master)](https://travis-ci.org/ByteCommander/ChatExchange6)
+ChatExchange
 ============
+
+[![Travis CI build status for master](https://travis-ci.org/Manishearth/ChatExchange.svg?branch=master)](https://travis-ci.org/Manishearth/ChatExchange)
 
 A Python2 and Python3 cross-version API for talking to Stack Exchange chat.
 
