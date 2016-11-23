@@ -1,6 +1,6 @@
 import httmock
 
-from chatexchange6 import Browser
+from chatexchange import Browser
 
 from tests.mock_responses import only_httmock, favorite_with_test_fkey, TEST_FKEY
 

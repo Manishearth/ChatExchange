@@ -4,7 +4,7 @@ if sys.version_info[:2] <= (2, 6):
     logging.Logger.getChild = lambda self, suffix:\
         self.manager.getLogger('.'.join((self.name, suffix)) if self.root is not self else suffix)
 
-from chatexchange6 import Client
+from chatexchange import Client
 
 from tests import live_testing
 

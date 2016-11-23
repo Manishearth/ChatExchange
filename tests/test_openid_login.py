@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from chatexchange6.browser import Browser, LoginError
+from chatexchange.browser import Browser, LoginError
 
 from tests import live_testing
 

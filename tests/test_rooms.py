@@ -4,8 +4,8 @@ if sys.version_info[:2] <= (2, 6):
     logging.Logger.getChild = lambda self, suffix:\
         self.manager.getLogger('.'.join((self.name, suffix)) if self.root is not self else suffix)
 
-import chatexchange6
-from chatexchange6.events import MessageEdited
+import chatexchange
+from chatexchange.events import MessageEdited
 
 from tests import live_testing
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 if live_testing.enabled:
     def test_room_info():
-        client = chatexchange6.Client('stackexchange.com')
+        client = chatexchange.Client('stackexchange.com')
 
         a_feeds_user = client.get_user(-2)
         bot_user = client.get_user(97938)
@@ -33,7 +33,7 @@ if live_testing.enabled:
         sandbox.parent_site_name + sandbox.name
 
     def test_room_iterators():
-        client = chatexchange6.Client(
+        client = chatexchange.Client(
             'stackexchange.com', live_testing.email, live_testing.password)
 
         me = client.get_me()
