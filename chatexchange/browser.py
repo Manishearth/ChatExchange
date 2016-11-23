@@ -550,10 +550,10 @@ class Browser(object):
             reputation = -1
 
         stats_elements = profile_soup.select('.user-valuecell')
-        if len(stats_elements) >= 3:
-            last_seen = _utils.parse_last_seen(stats_elements[1].text)
+        if len(stats_elements) >= 4:
+            last_seen = _utils.parse_last_seen(stats_elements[2].text)
         else:
-            last_seen = _utils.parse_last_seen('20y ago')
+            last_seen = -1
 
         return {
             'name': name,
