@@ -557,7 +557,7 @@ class Browser(object):
 
         stats_elements = profile_soup.select('.user-valuecell')
         if len(stats_elements) >= 3:
-            last_seen = _utils.parse_last_seen(stats_elements[2].text)
+            last_seen = _utils.parse_last_seen(stats_elements[1].text)
         else:
             last_seen = _utils.parse_last_seen('20y ago')
 

@@ -10,7 +10,7 @@ if live_testing.enabled:
         user = client.get_user(-2)
         assert user.id == -2
         assert not user.is_moderator
-        assert user.name == "StackExchange"
+        assert user.name == "Stack Exchange"
         assert user.room_count >= 18
         assert user.message_count >= 129810
         assert user.reputation == -1
@@ -22,3 +22,9 @@ if live_testing.enabled:
         assert user.room_count >= 222
         assert user.message_count >= 89093
         assert user.reputation > 115000
+
+        user = client.get_user(-5)
+        assert user.id == -5
+        assert not user.is_moderator
+        assert user.last_seen == -1
+        assert user.reputation == -1
