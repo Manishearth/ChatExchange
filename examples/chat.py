@@ -6,8 +6,8 @@ import os
 import random
 import sys
 
-import chatexchange6.client
-import chatexchange6.events
+import chatexchange.client
+import chatexchange.events
 
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def main(args):
     else:
         password = getpass.getpass("Password: ")
 
-    client = chatexchange6.client.Client(host_id)
+    client = chatexchange.client.Client(host_id)
     client.login(email, password)
 
     room = client.get_room(room_id)
@@ -46,7 +46,7 @@ def main(args):
 
 
 def on_message(message, client):
-    if not isinstance(message, chatexchange6.events.MessagePosted):
+    if not isinstance(message, chatexchange.events.MessagePosted):
         # Ignore non-message_posted events.
         logger.debug("event: %r", message)
         return
