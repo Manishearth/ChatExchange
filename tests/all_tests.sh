@@ -5,7 +5,7 @@ col_good="\033[0;32m"  # green
 col_bad="\033[0;31m"   # red
 col_off="\033[0m"      # no color
 
-echo "***  Running all tests for ChatExchange6  ***"
+echo "***  Running all tests for ChatExchange  ***"
 echo
 echo "Interpreter:      $(python --version) ( $(which python) )"
 echo "Test directory:   $testdir"
