@@ -13,7 +13,7 @@ test: install-dependencies PHONY
 
 test-coverage: install-dependencies PHONY
 	python -m coverage run --branch -m pytest
-	python -m coverage report --include 'chatexchange3/*'
+	python -m coverage report --include 'chatexchange/*'
 
 install-dependencies: PHONY
 	# This also creates a link to `chatexchange/` in the Python
