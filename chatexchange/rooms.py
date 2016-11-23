@@ -1,9 +1,13 @@
-import Queue
+import sys
+if sys.version_info[0] == 2:
+    import Queue as queue
+else:
+    import queue
 import contextlib
+import collections
 import logging
 
 from . import _utils, events
-import collections
 
 
 logger = logging.getLogger(__name__)
@@ -117,7 +121,7 @@ class Room(object):
 class FilteredEventIterator(object):
     def __init__(self, room, types):
         self.types = types
-        self._queue = Queue.Queue()
+        self._queue = queue.Queue()
 
         room.join()
         self._watcher = room.watch(self._on_event)

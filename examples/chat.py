@@ -13,7 +13,7 @@ import chatexchange.events
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main(args):
     setup_logging()
 
     # Run `. setp.sh` to set the below testing environment variables
@@ -24,7 +24,7 @@ def main():
     if 'ChatExchangeU' in os.environ:
         email = os.environ['ChatExchangeU']
     else:
-        email = raw_input("Email: ")
+        email = input("Email: ")
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:
@@ -37,9 +37,9 @@ def main():
     room.join()
     room.watch(on_message)
 
-    print "(You are now in room #%s on %s.)" % (room_id, host_id)
+    print("(You are now in room #%s on %s.)" % (room_id, host_id))
     while True:
-        message = raw_input("<< ")
+        message = input("<< ")
         room.send_message(message)
 
     client.logout()
@@ -51,11 +51,11 @@ def on_message(message, client):
         logger.debug("event: %r", message)
         return
 
-    print ""
-    print ">> (%s) %s" % (message.user.name, message.content)
+    print("")
+    print(">> (%s) %s" % (message.user.name, message.content))
     if message.content.startswith('!!/random'):
-        print message
-        print "Spawning thread"
+        print(message)
+        print("Spawning thread")
         message.message.reply(str(random.random()))
 
 

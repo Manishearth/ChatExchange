@@ -58,6 +58,9 @@ html/
 epydocs/
 
 # IntelliJ IDEA Project Files
-.idea/*
+.idea/
 .iml
 
+# Python VirtualEnvs for local testing
+VEnvs/
+/venv-*

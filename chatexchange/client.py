@@ -1,11 +1,17 @@
+import sys
+if sys.version_info[0] == 2:
+    import Queue as queue
+else:
+    import queue
+import logging
+if sys.version_info[:2] <= (2, 6):
+    logging.Logger.getChild = lambda self, suffix:\
+        self.manager.getLogger('.'.join((self.name, suffix)) if self.root is not self else suffix)
 import collections
 import re
 import time
-import Queue
 import threading
-import logging
 import weakref
-
 import requests
 
 from . import browser, events, messages, rooms, users
@@ -55,7 +61,7 @@ class Client(object):
         self.host = host
         self.logged_in = False
         self.on_message_sent = None
-        self._request_queue = Queue.Queue()
+        self._request_queue = queue.Queue()
 
         self._br = browser.Browser()
         self._br.host = host
@@ -110,11 +116,7 @@ class Client(object):
 
         return instance
 
-    valid_hosts = {
-        'stackexchange.com',
-        'meta.stackexchange.com',
-        'stackoverflow.com'
-    }
+    valid_hosts = ('stackexchange.com', 'meta.stackexchange.com', 'stackoverflow.com')
 
     def get_me(self):
         """
@@ -236,7 +238,7 @@ class Client(object):
                                 "It is too late to edit this message",
                                 "The message has been deleted and cannot be edited",
                                 "This message has already been deleted."]
-            if isinstance(unpacked, basestring) and unpacked not in ignored_messages:
+            if isinstance(unpacked, str) and unpacked not in ignored_messages:
                 match = re.match(TOO_FAST_RE, unpacked)
                 if match:  # Whoops, too fast.
                     wait = int(match.group(1))

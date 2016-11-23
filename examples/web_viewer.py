@@ -5,13 +5,16 @@ Opens a web page displaying a simple updating view of a chat room.
 This is not meant for unauthenticated, remote, or multi-client use.
 """
 
-import BaseHTTPServer
+import sys
+if sys.version_info[0] == 2:
+    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+else:
+    from http.server import HTTPServer, BaseHTTPRequestHandler
 import collections
 import getpass
 import json
 import logging
 import os
-import sys
 import webbrowser
 
 import chatexchange
@@ -33,7 +36,7 @@ def main(port='8462'):
     else:
         sys.stderr.write("Username: ")
         sys.stderr.flush()
-        email = raw_input()
+        email = input()
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:
@@ -48,7 +51,7 @@ def main(port='8462'):
     httpd.serve_forever()
 
 
-class Server(BaseHTTPServer.HTTPServer, object):
+class Server(HTTPServer, object):
     def __init__(self, *a, **kw):
         self.client = kw.pop('client')
         self.room = self.client.get_room(kw.pop('room_id'))
@@ -86,12 +89,11 @@ class Server(BaseHTTPServer.HTTPServer, object):
         }
 
     def on_chat_event(self, event, client):
-        if (isinstance(event, events.MessagePosted)
-            and event.room is self.room):
+        if isinstance(event, events.MessagePosted) and event.room is self.room:
             self.messages.append(event.message)
 
 
-class Handler(BaseHTTPServer.BaseHTTPRequestHandler, object):
+class Handler(BaseHTTPRequestHandler, object):
     logger = logging.getLogger(__name__).getChild('Handler')
 
     def do_GET(self):

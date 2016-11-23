@@ -1,15 +1,22 @@
+import sys
+if sys.version_info[0] == 2:
+    import Queue as queue
+else:
+    import queue
 import logging
+if sys.version_info[:2] <= (2, 6):
+    logging.Logger.getChild = lambda self, suffix:\
+        self.manager.getLogger('.'.join((self.name, suffix)) if self.root is not self else suffix)
 import time
 import uuid
 import os
-import Queue
 
 import pytest
 
 from chatexchange.client import Client
 from chatexchange import events
 
-import live_testing
+from tests import live_testing
 
 
 logger = logging.getLogger(__name__)
@@ -57,7 +64,7 @@ if live_testing.enabled:
 
         timeout_duration = 60
 
-        pending_events = Queue.Queue()
+        pending_events = queue.Queue()
 
         def get_event(predicate):
             """
@@ -82,7 +89,7 @@ if live_testing.enabled:
                    and time.time() < timeout):
                 try:
                     is_socket, event = pending_events.get(timeout=1)
-                except Queue.Empty:
+                except queue.Empty:
                     continue
 
                 if predicate(event):

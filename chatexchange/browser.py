@@ -1,15 +1,20 @@
 # encoding: utf-8
-import json
+import sys
 import logging
+if sys.version_info[:2] <= (2, 6):
+    logging.Logger.getChild = lambda self, suffix:\
+        self.manager.getLogger('.'.join((self.name, suffix)) if self.root is not self else suffix)
+import json
 import threading
 import time
 
 from bs4 import BeautifulSoup
 import requests
 import websocket
-import _utils
+from . import _utils
 import socket
 import re
+
 
 logger = logging.getLogger(__name__)
 
@@ -69,29 +74,30 @@ class Browser(object):
         # Try again if we fail. We're blaming "the internet" for weirdness.
         MAX_HTTP_RETRIES = 5                # EGAD! A MAGIC NUMBER!
         attempt = 0
+        response = None
+
         while attempt <= MAX_HTTP_RETRIES:
             attempt += 1
-            response = None
             try:
                 response = method_method(
                     url, data=data, headers=headers, timeout=self.request_timeout)
                 break
-            except requests.exceptions.ConnectionError, e:          # We want to try again, so continue
+            except requests.exceptions.ConnectionError as e:          # We want to try again, so continue
                                                                     # BadStatusLine throws this error
-                print "Connection Error -> Trying again..."
-                time.sleep(0.1)     # short pause before retrying
-                if attempt == MAX_HTTP_RETRIES:                     # Only show exception if last try
-                    raise
-                continue
-            except (requests.exceptions.Timeout, socket.timeout) as e:                  # Timeout occurred, retry
-                                                                # Catching both because of this bug in requests
-                                                                # https://github.com/kennethreitz/requests/issues/1236
-                print "Timeout -> Trying again..."
-                time.sleep(1.0)     # Longer pause because it was a time out. Assume overloaded and give them a second
+                print("Connection Error -> Trying again...")
+                time.sleep(0.1)                                     # short pause before retrying
                 if attempt == MAX_HTTP_RETRIES:                     # Only show exception if last try
                     raise
                 continue
 
+            except (requests.exceptions.Timeout, socket.timeout) as e:                  # Timeout occurred, retry
+                                                                # Catching both because of this bug in requests
+                                                                # https://github.com/kennethreitz/requests/issues/1236
+                print("Timeout -> Trying again...")
+                time.sleep(1.0)     # Longer pause because it was a time out. Assume overloaded and give them a second
+                if attempt == MAX_HTTP_RETRIES:                     # Only show exception if last try
+                    raise
+                continue
 
         response.raise_for_status()
 
@@ -108,11 +114,11 @@ class Browser(object):
 
     def get_soup(self, url, data=None, headers=None, with_chat_root=True):
         response = self.get(url, data, headers, with_chat_root)
-        return BeautifulSoup(response.content, "html.parser")
+        return BeautifulSoup(response.text, "html.parser")
 
     def post_soup(self, url, data=None, headers=None, with_chat_root=True):
         response = self.post(url, data, headers, with_chat_root)
-        return BeautifulSoup(response.content, "html.parser")
+        return BeautifulSoup(response.text, "html.parser")
 
     def post_fkeyed(self, url, data=None, headers=None):
         if data is None:
@@ -193,7 +199,7 @@ class Browser(object):
             # no prompt for us to handle
             return prompt_response
 
-        prompt_soup = BeautifulSoup(prompt_response.content, "html.parser")
+        prompt_soup = BeautifulSoup(prompt_response.text, "html.parser")
 
         data = {
             'session': prompt_soup.find('input', {'name': 'session'})['value'],
@@ -540,7 +546,7 @@ class Browser(object):
 
         name = profile_soup.find('h1').text
 
-        is_moderator = bool(u'♦' in profile_soup.select('.user-status')[0].text)
+        is_moderator = bool('♦' in profile_soup.select('.user-status')[0].text)
         message_count = int(profile_soup.select('.user-message-count-xxl')[0].text)
         room_count = int(profile_soup.select('.user-room-count-xxl')[0].text)
         reputation_elements = profile_soup.select('.reputation-score')

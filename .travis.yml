@@ -1,20 +1,28 @@
 language: python
 sudo: false
 python:
-  - '2.7'
+  - "2.6"
+  - "2.7"
+  - "3.2"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.5-dev"
+  - "nightly"
+matrix:
+  allow_failures:
+    - python: "3.2"
 install:
   - pip install .
 script:
-  - python -W default::Warning -m coverage run --branch -m pytest --tb short
-  - python -m coverage report --include 'chatexchange/*'
+  - python -W default::Warning -m coverage.__main__ run --branch -m pytest --tb short
+  - python -m coverage.__main__ report --include 'chatexchange/*'
 branches:
   only:
     - master
-    - test
-    - test-manish
-    - test-jeremy
-    - test-cpython
 env:
   global:
     - secure: "S9c9S/OgKGa7mLz/Ys0aVwbyNtxBubUVWO0i3ew0sm0KwUBFiNNPtWTyCT21jGrjd1Zp0AvMlcSFhJ9auGAMAVIqPTqM1GkNGU5fPwx6Lo3KAGSqW+XN2cAFXljEyAQ2Bhn/ilWeUymC1EpkNRIDarCJZcNsctrs8P3H67gSFtc="
     - secure: "av9hxTZp/Dhe9xAOq6WlhTNDoWjjczN3lFanG6h/3h4kW7DsxhfXMRA96z6MambbC6c9ARFiwsQ24NeCAfPQ1m6r9uZwNkusqnRDOwZQeVQcmopnoNNG4Kd/9oclIVgsAlSG6WfhkyQPUG2p7PkOvxFV4/YjDSViYDR3eoih3JA="
+notifications:
+  email: false

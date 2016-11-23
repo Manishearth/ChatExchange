@@ -1,8 +1,12 @@
+import sys
 import logging
+if sys.version_info[:2] <= (2, 6):
+    logging.Logger.getChild = lambda self, suffix:\
+        self.manager.getLogger('.'.join((self.name, suffix)) if self.root is not self else suffix)
 
 from chatexchange import Client
 
-import live_testing
+from tests import live_testing
 
 
 logger = logging.getLogger(__name__)
