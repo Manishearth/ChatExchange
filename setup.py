@@ -1,11 +1,11 @@
 import setuptools
 
 setuptools.setup(
-    name='ChatExchange6',
-    version='1.0',
-    url='https://github.com/ByteCommander/ChatExchange6',
+    name='ChatExchange',
+    version='0.0.3',
+    url='https://github.com/Manishearth/ChatExchange',
     packages=[
-        'chatexchange6'
+        'chatexchange'
     ],
     install_requires=[
         'beautifulsoup4>=4.3.2',
