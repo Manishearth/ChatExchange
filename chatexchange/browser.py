@@ -1,4 +1,4 @@
-﻿# encoding: utf-8
+# encoding: utf-8
 import sys
 import logging
 if sys.version_info[:2] <= (2, 6):
@@ -546,7 +546,7 @@ class Browser(object):
 
         name = profile_soup.find('h1').text
 
-        is_moderator = bool('♦' in profile_soup.select('.user-status')[0].string.encode('utf-8'))
+        is_moderator = bool('♦' in profile_soup.select('.user-status')[0].text)
         message_count = int(profile_soup.select('.user-message-count-xxl')[0].text)
         room_count = int(profile_soup.select('.user-room-count-xxl')[0].text)
         reputation_elements = profile_soup.select('.reputation-score')
