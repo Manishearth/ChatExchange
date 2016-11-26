@@ -18,7 +18,7 @@ setuptools.setup(
         'pytest-capturelog>=0.7',
         'pytest-timeout>=0.3',
         'pytest>=2.7.3',
-        'py>=1.4.29'
+        'py>=1.4.29',
         # Only for Python 2.6
         'html5lib>=0.999999999'
     ]
