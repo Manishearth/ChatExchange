@@ -71,6 +71,8 @@ def parse_last_seen(text):
     }
     if text == "n/a":
         return -1  # Take this as an error code if you want
+    if text == "just now":
+        return 0
     splat = text.split(' ')
     assert len(splat) == 2, "text doesn't appear to be in <x ago> format"
     char = splat[0][-1]
