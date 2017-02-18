@@ -296,6 +296,10 @@ class Browser(object):
         return self.post_fkeyed(
             'messages/%s/star' % (message_id,))
 
+    def cancel_stars(self, message_id):
+        return self.post_fkeyed(
+            'messages/%s/unstar' % (message_id,))
+
     def toggle_pinning(self, message_id):
         return self.post_fkeyed(
             'messages/%s/owner-star' % (message_id,))
