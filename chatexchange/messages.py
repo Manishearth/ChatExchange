@@ -189,3 +189,15 @@ class Message(object):
                 del self.pinners
         else:
             self._logger.info(".pinned is already %r", value)
+
+    def cancel_stars(self):
+        del self.stars  # don't used cached value
+        if self.stars:
+            self._client._br.cancel_stars(self.id)
+            # we assume this was successfully
+
+            self.starred_by_you = False
+            self.stars = 0
+            self.starred = False
+        else:
+            self._logger.info(".stars is already 0")
