@@ -199,5 +199,8 @@ class Message(object):
             self.starred_by_you = False
             self.stars = 0
             self.starred = False
+            self.pinned = False
+            self.pins = 0
+            self.pinners = []
         else:
             self._logger.info(".stars is already 0")
