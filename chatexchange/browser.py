@@ -300,6 +300,10 @@ class Browser(object):
         return self.post_fkeyed(
             'messages/%s/owner-star' % (message_id,))
 
+    def cancel_stars(self, message_id):
+        return self.post_fkeyed(
+            'messages/%s/unstar' % (message_id,))
+
     def send_message(self, room_id, text):
         return self.post_fkeyed(
             'chats/%s/messages/new' % (room_id,),
