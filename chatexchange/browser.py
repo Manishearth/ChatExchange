@@ -151,7 +151,8 @@ class Browser(object):
 
         if not self.session.cookies.get('usr', None):
             raise LoginError(
-                "failed to get `usr` cookie from Stack Exchange OpenID")
+                "failed to get `usr` cookie from Stack Exchange OpenID, :
+                "check credentials provided for accuracy")
 
     def login_site(self, host):
         """
