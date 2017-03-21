@@ -3,14 +3,14 @@ from chatexchange import events, client
 
 def test_message_posted_event_initialization():
     event_type = 1
-    room_name = "Charcoal Chatbot Sandbox"
+    room_name = "Sandbox"
     content = 'hello <b>world</b>'
     intended_text_content = 'hello world'
     id = 28258802
     message_id = 15249005
-    room_id = 14219
+    room_id = 1
     time_stamp = 1398822427
-    user_id = 97938
+    user_id = 146115
     user_name = "bot"
 
     event_data = {
@@ -44,15 +44,15 @@ def test_message_posted_event_initialization():
 
 def test_message_edited_event_initialization():
     event_type = 2
-    room_name = "Charcoal Chatbot Sandbox"
+    room_name = "Sandbox"
     content = 'hello <b>world</b>'
     intended_text_content = 'hello world'
     id = 28258802
     message_id = 15249005
     message_edits = 2
-    room_id = 14219
+    room_id = 1
     time_stamp = 1398822427
-    user_id = 97938
+    user_id = 146115
     user_name = "bot"
 
     event_data = {
@@ -88,15 +88,15 @@ def test_message_edited_event_initialization():
 
 def test_message_starred_event_initialization():
     event_type = 6
-    room_name = "Charcoal Chatbot Sandbox"
+    room_name = "Sandbox"
     content = 'hello <b>world</b>'
     intended_text_content = 'hello world'
     id = 28258802
     message_id = 15249005
     message_stars = 3
-    room_id = 14219
+    room_id = 1
     time_stamp = 1398822427
-    user_id = 97938
+    user_id = 146115
     user_name = "bot"
 
     event_data = {

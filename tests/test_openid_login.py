@@ -8,6 +8,7 @@ from tests import live_testing
 
 
 if live_testing.enabled:
+    @pytest.mark.timeout(240)
     def test_openid_login_recognizes_failure():
         """
         Tests that failed SE OpenID logins raise errors.

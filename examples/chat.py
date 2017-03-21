@@ -19,7 +19,7 @@ def main(args):
     # Run `. setp.sh` to set the below testing environment variables
 
     host_id = 'stackexchange.com'
-    room_id = '14219'  # Charcoal Chatbot Sandbox
+    room_id = '1'  # Sandbox
 
     if 'ChatExchangeU' in os.environ:
         email = os.environ['ChatExchangeU']

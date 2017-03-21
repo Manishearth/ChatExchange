@@ -426,8 +426,9 @@ class Browser(object):
 
         messages_data = []
 
-        monologues_soups = transcript_soup.select(
-            '#transcript .monologue')
+        monologues_soups = transcript_soup.select('.monologue')
+
+        seen_target_message = False
 
         for monologue_soup in monologues_soups:
             user_link, = monologue_soup.select('.signature .username a')
@@ -436,7 +437,10 @@ class Browser(object):
             message_soups = monologue_soup.select('.message')
 
             for message_soup in message_soups:
-                message_id = int(message_soup['id'].split('-')[1])
+                this_message_id = int(message_soup['id'].split('-')[1])
+
+                if this_message_id == message_id:
+                    seen_target_message = True
 
                 edited = bool(message_soup.select('.edits'))
 
@@ -457,7 +461,7 @@ class Browser(object):
                     parent_message_id = None
 
                 message_data = {
-                    'id': message_id,
+                    'id': this_message_id,
                     'content': content,
                     'room_id': room_id,
                     'room_name': room_name,
@@ -476,6 +480,9 @@ class Browser(object):
                     message_data['edits'] = 0
 
                 messages_data.append(message_data)
+
+        if not seen_target_message:
+            logger.error("Did not see target message %s in scraped page." % (message_id))
 
         data = {
             'room_id': room_id,

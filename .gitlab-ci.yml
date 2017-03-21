@@ -1,0 +1,17 @@
+stages:
+  - test-python3-latest
+  - test-python2-latest
+
+test-python3-latest:
+  stage: test-python3-latest
+  image: python:3
+  script:
+  - pip install .
+  - python -m pytest
+
+test-python2-latest:
+  stage: test-python2-latest
+  image: python:2
+  script:
+  - pip install .
+  - python -m pytest
