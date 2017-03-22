@@ -1,6 +1,8 @@
 stages:
   - test-python3-latest
   - test-python2-latest
+  - build
+  - deploy
 
 test-python3-latest:
   stage: test-python3-latest
@@ -15,3 +17,28 @@ test-python2-latest:
   script:
   - pip install .
   - python -m pytest
+
+build-epydocs:
+  stage: build
+  image: python:2
+  script:
+  - pip install .
+  - make epydocs
+  artifacts:
+    paths:
+    - epydocs/
+
+pages:
+  stage: deploy
+  dependencies:
+  - build-epydocs
+  only:
+  - master
+  - gl-pages
+  image: python:2
+  script:
+  - mkdir public/
+  - mv epydocs/ public/epydocs/
+  artifacts:
+    paths:
+    - public
