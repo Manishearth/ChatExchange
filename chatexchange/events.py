@@ -151,6 +151,7 @@ class MessageEdited(MessageEvent):
 @register_type
 class UserEntered(Event):
     type_id = 3
+
     def _init_from_data(self):
         self.user = self.client.get_user(
             self.data['user_id'], name=self.data['user_name'])
@@ -159,6 +160,7 @@ class UserEntered(Event):
 @register_type
 class UserLeft(Event):
     type_id = 4
+
     def _init_from_data(self):
         self.user = self.client.get_user(
             self.data['user_id'], name=self.data['user_name'])
@@ -171,6 +173,11 @@ class RoomNameChanged(Event):
 @register_type
 class MessageStarred(MessageEvent):
     type_id = 6
+
+
+@register_type
+class InternalEvent7(Event):
+    type_id = 7
 
 
 @register_type
@@ -194,8 +201,11 @@ class FileAdded(Event):
 
 
 @register_type
-class ModeratorFlag(Event):
+class MessageFlaggedForModerator(Event):
     type_id = 12
+
+# backwards-compatiblity alias
+ModeratorFlag = MessageFlaggedForModerator
 
 
 @register_type
@@ -209,8 +219,11 @@ class GlobalNotification(Event):
 
 
 @register_type
-class AccountLevelChanged(Event):
+class AccessLevelChanged(Event):
     type_id = 15
+
+# backwards-compatiblity alias
+AccountLevelChanged = AccessLevelChanged
 
 
 @register_type
@@ -234,8 +247,11 @@ class MessageMovedOut(MessageEvent):
 
 
 @register_type
-class MessagedMovedIn(MessageEvent):
+class MessageMovedIn(MessageEvent):
     type_id = 20
+
+# backwards-compatiblity alias
+MessagedMovedIn = MessageMovedIn
 
 
 @register_type
@@ -249,6 +265,36 @@ class FeedTicker(Event):
 
 
 @register_type
+class InternalEvent23(Event):
+    type_id = 23
+
+
+@register_type
+class InternalEvent24(Event):
+    type_id = 24
+
+
+@register_type
+class InternalEvent25(Event):
+    type_id = 25
+
+
+@register_type
+class InternalEvent26(Event):
+    type_id = 26
+
+
+@register_type
+class InternalEvent27(Event):
+    type_id = 27
+
+
+@register_type
+class InternalEvent28(Event):
+    type_id = 28
+
+
+@register_type
 class UserSuspended(Event):
     type_id = 29
 
@@ -256,3 +302,28 @@ class UserSuspended(Event):
 @register_type
 class UserMerged(Event):
     type_id = 30
+
+
+@register_type
+class InternalEvent31(Event):
+    type_id = 31
+
+
+@register_type
+class InternalEvent32(Event):
+    type_id = 32
+
+
+@register_type
+class InternalEvent33(Event):
+    type_id = 33
+
+
+@register_type
+class UserNameOrAvatarChanged(Event):
+    type_id = 34
+
+
+@register_type
+class InternalEvent35(Event):
+    type_id = 35
