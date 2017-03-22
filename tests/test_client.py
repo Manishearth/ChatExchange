@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 TEST_ROOMS = [
-    ('stackexchange.com', '14219'),  # Charcoal Sandbox
+    ('stackexchange.com', '1'),  # Sandbox
 ]
 
 
@@ -37,6 +37,17 @@ if (os.environ.get('TRAVIS_BUILD_ID') and
         "This is a test of [{0[TRAVIS_REPO_SLUG]}@{short_commit}]("
         "https://github.com/{0[TRAVIS_REPO_SLUG]}/commit/{0[TRAVIS_COMMIT]})."
     ).format(os.environ, short_commit=os.environ['TRAVIS_COMMIT'][:8])
+elif (os.environ.get('CI_PROJECT_URL') and
+    os.environ.get('CI_JOB_ID') and
+    os.environ.get('CI_COMMIT_SHA') and
+    os.environ.get('CI_PROJECT_PATH') and
+    os.environ.get('CI_JOB_NAME')):
+    TEST_MESSAGE_FORMAT = (
+        "[ [GitLab/{0[CI_PROJECT_PATH]}#{0[CI_COMMIT_REF_NAME]}@{short_commit}]("
+        "{0[CI_PROJECT_URL]}/commit/{0[CI_COMMIT_SHA]}) ] "
+        "Running [`{0[CI_JOB_NAME]}`]({0[CI_PROJECT_URL]}/builds/{0[CI_JOB_ID]} \"This is "
+        "a test message for ChatExchange using the nonce {{0}}.\")."
+    ).format(os.environ, short_commit=os.environ['CI_COMMIT_SHA'][:8])
 else:
     TEST_MESSAGE_FORMAT = (
         "[ [ChatExchange@localhost](https://github.com/Manishearth/"
@@ -85,8 +96,10 @@ if live_testing.enabled:
 
             timeout = time.time() + timeout_duration
 
-            while (not (socket_event and polling_event)
-                   and time.time() < timeout):
+            while not (socket_event and polling_event):
+                if time.time() > timeout:
+                    raise Exception("Timed out waiting for event")
+
                 try:
                     is_socket, event = pending_events.get(timeout=1)
                 except queue.Empty:
@@ -198,5 +211,16 @@ if live_testing.enabled:
         assert test_message_posted in client._recently_gotten_objects
         assert test_reply in client._recently_gotten_objects
         assert test_edit in client._recently_gotten_objects
+
+        # Delete the second test message.
+        test_reply.message.delete()
+
+        @get_event
+        def test_deletion(event):
+            return (
+                isinstance(event, events.MessageDeleted)
+                and test_reply.message == event.message)
+
+        assert test_deletion.message == test_reply.message
 
         client.logout()

@@ -29,7 +29,7 @@ def main(port='8462'):
 
     logging.basicConfig(level=logging.INFO)
 
-    room_id = 14219  # Charcoal Chatbot Sandbox
+    room_id = 1  # Sandbox
 
     if 'ChatExchangeU' in os.environ:
         email = os.environ['ChatExchangeU']

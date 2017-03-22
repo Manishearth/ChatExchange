@@ -4,6 +4,8 @@ if sys.version_info[:2] <= (2, 6):
     logging.Logger.getChild = lambda self, suffix:\
         self.manager.getLogger('.'.join((self.name, suffix)) if self.root is not self else suffix)
 
+import pytest
+
 from chatexchange import Client
 
 from tests import live_testing
@@ -13,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 if live_testing.enabled:
+    @pytest.mark.timeout(240)
     def test_specific_messages():
         client = Client('stackexchange.com')
 
@@ -22,7 +25,7 @@ if live_testing.enabled:
         assert message1.text_content == '@JeremyBanks hello'
         assert message1.content_source == ":15358991 **hello**"
         assert message1.owner.id == 1251
-        assert message1.room.id == 14219
+        assert message1.room.id == 1
 
         message2 = message1.parent
 
