@@ -627,43 +627,34 @@ class Browser(object):
             'tags': tags
         }
 
-    def get_pingable_user_ids_in_room(self, room_id):
+    def get_pingable_users_in_room(self, room_id):
         url = "rooms/pingable/{0}".format(room_id)
-        resp_json = self.get(url).json()
-        user_ids = []
-        for user in resp_json:
-            user_ids.append(user[0])
-        return user_ids
+        return self.get(url).json()
+
+    def get_pingable_user_ids_in_room(self, room_id):
+        return [user_id for (user_id, name, _1, _2) in self.get_pingable_users_in_room(room_id)]
 
     def get_pingable_user_names_in_room(self, room_id):
-        url = "rooms/pingable/{0}".format(room_id)
-        resp_json = self.get(url).json()
-        user_names = []
-        for user in resp_json:
-            user_names.append(user[1])
-        return user_names
+        return [name for (user_id, name, _1, _2) in self.get_pingable_users_in_room(room_id)]
+
+    def get_current_users_in_room(self, room_id):
+        url = "/rooms/{0}/".format(room_id)
+        soup = self.get_soup(url)
+        script_tag = soup.body.script
+        users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_tag.text)[0]
+        user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
+        users = []
+        for ud in user_data:
+            user_id = int(re.compile("id: (\d+),").search(ud).group(1))
+            user_name = re.compile("name: \(\"(.+?)\"\),").search(ud).group(1)
+            users.append((user_id, user_name))
+        return users
 
     def get_current_user_ids_in_room(self, room_id):
-        url = "/rooms/{0}/".format(room_id)
-        soup = self.get_soup(url)
-        script_tag = soup.body.script
-        users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_tag.text)[0]
-        user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
-        user_ids = []
-        for ud in user_data:
-            user_ids.append(int(re.compile("id: (\d+),").search(ud).group(1)))
-        return user_ids
+        return [user_id for (user_id, name) in self.get_current_users_in_room(room_id)]
 
     def get_current_user_names_in_room(self, room_id):
-        url = "/rooms/{0}/".format(room_id)
-        soup = self.get_soup(url)
-        script_tag = soup.body.script
-        users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_tag.text)[0]
-        user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
-        user_names = []
-        for ud in user_data:
-            user_names.append(re.compile("name: \(\"(.+?)\"\),").search(ud).group(1))
-        return user_names
+        return [name for (user_id, name) in self.get_current_users_in_room(room_id)]
 
 
     def set_websocket_recovery(self, on_ws_closed):
