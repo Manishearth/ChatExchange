@@ -105,6 +105,20 @@ class Room(object):
     def new_messages(self):
         return MessageIterator(self)
 
+    def get_pingable_users(self):
+        return [
+            self._client.get_user(user_id, name=name)
+            for (user_id, name, _1, _2)
+            in self._client._br.get_pingable_users_in_room(self.id)
+        ]
+
+    def get_current_users(self):
+        return [
+            self._client.get_user(user_id, name=name)
+            for (user_id, name)
+            in self._client._br.get_current_users_in_room(self.id)
+        ]
+
     def get_pingable_user_ids(self):
         return self._client._br.get_pingable_user_ids_in_room(self.id)
 
