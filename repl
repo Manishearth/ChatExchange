@@ -1,0 +1,49 @@
+#!/usr/bin/env bpython -i
+import getpass
+import logging
+import os
+import sys
+
+import chatexchange
+
+
+logging.basicConfig(level=logging.WARNING)
+
+sys.stderr.write("chatexchange == %r\n" % (chatexchange))
+
+host = 'stackexchange.com'
+sys.stderr.write("host == %r\n" % (host))
+
+if 'ChatExchangeU' in os.environ:
+    email = os.environ['ChatExchangeU']
+    sys.stderr.write("# using email from $ChatExchangeU\n")
+else:
+    sys.stderr.write("# email: ")
+    sys.stderr.flush()
+    email = sys.stdin.readline()
+
+if email:
+    if 'ChatExchangeP' in os.environ:
+        password = os.environ['ChatExchangeP']
+        sys.stderr.write("# using password from $ChatExchangeP\n")
+    else:
+        sys.stderr.write("# password: ")
+        sys.stderr.flush()
+        password = getpass.getpass()
+else:
+    sys.stderr.write("# continuing without authentication")
+
+if email:
+    chat = chatexchange.Client(host, email, password)
+else:
+    chat = chatexchange.Client(host)
+sys.stderr.write("chat == %r\n" % (chat))
+
+sandbox = chat.get_room(1)
+sys.stderr.write("sandbox == %r\n" % (sandbox))
+
+me = chat.get_me()
+sys.stderr.write("me == %r\n" % (me))
+sys.stderr.write("me.name == %r\n" % (me.name))
+
+sys.stderr.write("\n")
