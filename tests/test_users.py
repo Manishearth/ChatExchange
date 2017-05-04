@@ -30,4 +30,5 @@ if live_testing.enabled:
         assert user.id == -5
         assert not user.is_moderator
         assert user.last_seen == -1
+        assert user.last_message == -1
         assert user.reputation == -1

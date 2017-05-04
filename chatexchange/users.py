@@ -19,6 +19,7 @@ class User(object):
     room_count = _utils.LazyFrom('scrape_profile')
     reputation = _utils.LazyFrom('scrape_profile')
     last_seen = _utils.LazyFrom('scrape_profile')
+    last_message = _utils.LazyFrom('scrape_profile')
 
     def scrape_profile(self):
         data = self._client._br.get_profile(self.id)
@@ -29,3 +30,4 @@ class User(object):
         self.room_count = data['room_count']
         self.reputation = data['reputation']
         self.last_seen = data['last_seen']
+        self.last_message = data['last_message']

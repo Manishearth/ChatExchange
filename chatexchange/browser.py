@@ -569,8 +569,10 @@ class Browser(object):
 
         stats_elements = profile_soup.select('.user-valuecell')
         if len(stats_elements) >= 4:
+            last_message = _utils.parse_last_seen(stats_elements[1].text)
             last_seen = _utils.parse_last_seen(stats_elements[2].text)
         else:
+            last_message = -1
             last_seen = -1
 
         return {
@@ -579,7 +581,8 @@ class Browser(object):
             'message_count': message_count,
             'room_count': room_count,
             'reputation': reputation,
-            'last_seen': last_seen
+            'last_seen': last_seen,
+            'last_message': last_message
         }
 
     def get_room_info(self, room_id):
