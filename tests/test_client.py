@@ -1,6 +1,6 @@
 import sys
 if sys.version_info[0] == 2:
-    import Queue as queue
+    import queue as queue
 else:
     import queue
 import logging

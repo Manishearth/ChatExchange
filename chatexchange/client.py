@@ -1,6 +1,6 @@
 import sys
 if sys.version_info[0] == 2:
-    import Queue as queue
+    import queue as queue
 else:
     import queue
 import logging
@@ -108,7 +108,7 @@ class Client(object):
     def _get_and_set_deduplicated(self, cls, id, instances, attrs):
         instance = instances.setdefault(id, cls(id, self))
 
-        for key, value in attrs.items():
+        for key, value in list(attrs.items()):
             setattr(instance, key, value)
 
         # we force a fixed number of recent objects to be cached
@@ -150,10 +150,10 @@ class Client(object):
         """
         assert self.logged_in
 
-        for watcher in self._br.sockets.values():
+        for watcher in list(self._br.sockets.values()):
             watcher.killed = True
 
-        for watcher in self._br.polls.values():
+        for watcher in list(self._br.polls.values()):
             watcher.killed = True
 
         self._request_queue.put(SystemExit)

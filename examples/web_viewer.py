@@ -7,7 +7,7 @@ This is not meant for unauthenticated, remote, or multi-client use.
 
 import sys
 if sys.version_info[0] == 2:
-    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+    from http.server import HTTPServer, BaseHTTPRequestHandler
 else:
     from http.server import HTTPServer, BaseHTTPRequestHandler
 import collections
@@ -36,7 +36,7 @@ def main(port='8462'):
     else:
         sys.stderr.write("Username: ")
         sys.stderr.flush()
-        email = input()
+        email = eval(input())
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:
@@ -73,7 +73,7 @@ class Server(HTTPServer, object):
                 'name': self.room.name
             },
             'recent_events':
-                map(str, self.client._recently_gotten_objects),
+                list(map(str, self.client._recently_gotten_objects)),
             'messages': [{
                 'id': message.id,
                 'owner_user_id': message.owner.id,

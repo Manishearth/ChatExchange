@@ -1,8 +1,8 @@
 # encoding: utf-8
 import sys
 if sys.version_info[0] == 2:
-    from HTMLParser import HTMLParser
-    import htmlentitydefs
+    from html.parser import HTMLParser
+    import html.entities
 else:
     from html.parser import HTMLParser
     from html import entities as htmlentitydefs
@@ -47,7 +47,7 @@ class HTMLTextExtractor(HTMLParser):
         self.result.append(chr(codepoint))
 
     def handle_entityref(self, name):
-        codepoint = htmlentitydefs.name2codepoint[name]
+        codepoint = html.entities.name2codepoint[name]
         self.result.append(chr(codepoint))
 
     def get_text(self):
