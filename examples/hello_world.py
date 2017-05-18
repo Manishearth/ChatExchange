@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 if 'ChatExchangeU' in os.environ:
     email = os.environ['ChatExchangeU']
 else:
-    email = input("Email: ")
+    email = eval(input("Email: "))
 if 'ChatExchangeP' in os.environ:
     password = os.environ['ChatExchangeP']
 else:

@@ -558,7 +558,7 @@ class Browser(object):
 
         name = profile_soup.find('h1').text
 
-        is_moderator = bool(u'♦' in profile_soup.select('.user-status')[0].text)
+        is_moderator = bool('♦' in profile_soup.select('.user-status')[0].text)
         message_count = int(profile_soup.select('.user-message-count-xxl')[0].text)
         room_count = int(profile_soup.select('.user-room-count-xxl')[0].text)
         reputation_elements = profile_soup.select('.reputation-score')

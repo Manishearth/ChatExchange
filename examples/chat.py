@@ -24,7 +24,7 @@ def main(args):
     if 'ChatExchangeU' in os.environ:
         email = os.environ['ChatExchangeU']
     else:
-        email = input("Email: ")
+        email = eval(input("Email: "))
     if 'ChatExchangeP' in os.environ:
         password = os.environ['ChatExchangeP']
     else:
@@ -37,9 +37,9 @@ def main(args):
     room.join()
     room.watch(on_message)
 
-    print("(You are now in room #%s on %s.)" % (room_id, host_id))
+    print(("(You are now in room #%s on %s.)" % (room_id, host_id)))
     while True:
-        message = input("<< ")
+        message = eval(input("<< "))
         room.send_message(message)
 
     client.logout()
@@ -52,7 +52,7 @@ def on_message(message, client):
         return
 
     print("")
-    print(">> (%s) %s" % (message.user.name, message.content))
+    print((">> (%s) %s" % (message.user.name, message.content)))
     if message.content.startswith('!!/random'):
         print(message)
         print("Spawning thread")
