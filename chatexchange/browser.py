@@ -230,7 +230,8 @@ class Browser(object):
     @staticmethod
     def user_id_and_name_from_link(link_soup):
         user_name = link_soup.text
-        user_id = int(link_soup['href'].split('/')[-2])
+        split_link = link_soup['href'].split('/')
+        user_id = int(split_link[split_link.index('users') + 1])
         return user_id, user_name
 
     def _update_chat_fkey_and_user(self):
