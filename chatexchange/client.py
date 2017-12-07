@@ -275,6 +275,8 @@ class Client(object):
         if action_type == 'send' and isinstance(unpacked, dict) and self.on_message_sent is not None:
             self.on_message_sent(response.json()["id"], room_id)
 
+        return response
+
     def _join_room(self, room_id):
         self._br.join_room(room_id)
 
