@@ -340,7 +340,7 @@ class Browser(object):
         ).partition('>')[2].rpartition('<')[0].strip()
 
         latest_content_source = (
-            previous_soup[0].select('.message-source')[0].text.strip())
+            history_soup.select('.monologue .message-source')[0].text.strip())
 
         owner_soup = latest_soup.select('.username a')[0]
         owner_user_id, owner_user_name = (
