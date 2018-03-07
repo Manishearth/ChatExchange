@@ -15,9 +15,8 @@ setuptools.setup(
         'coverage==3.7.1',
         'epydoc>=3.0.1',
         'httmock>=1.2.2',
-        'pytest-capturelog>=0.7',
         'pytest-timeout>=0.3',
-        'pytest>=2.7.3',
+        'pytest>=3.4.2',
         'py>=1.4.29',
         'bpython>=0.16'
     ]
