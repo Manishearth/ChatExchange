@@ -5,11 +5,10 @@ ChatExchange
 
 A Python2 and Python3 cross-version API for talking to Stack Exchange chat.
 
- - Supported Python versions (Travis-CI build passes):  
-    <kbd>2.6</kbd> <kbd>2.7</kbd> <kbd>3.3</kbd> <kbd>3.4</kbd> <kbd>3.5</kbd> <kbd>3.5-dev</kbd> <kbd>3.6-dev (nightly)</kbd> 
- - Unclear versions (Travis-CI build fails because of the packages we use for our Travis-CI tests):  
-    Those Python versions are always built by Travis-CI, but the result is ignored in the summary.  
-    <kbd>3.2</kbd> because of package `pytest`
+ - Supported Python versions (Travis CI build run for each of these):  
+    `2.7`, `3.4`, `3.5`, `3.6`, `3.7-dev`, `nightly` 
+ - Unclear versions (not run on Travis CI as `pytest` does not support them):
+    `2.6`, `3.2`, `3.3`
 
 ## Dependencies
 **Make sure you use either `pip2` or `pip3` depending on which Python version you want to run this on.**
