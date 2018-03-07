@@ -21,7 +21,7 @@ if live_testing.enabled:
         client = chatexchange.Client('stackexchange.com')
 
         a_feeds_user = client.get_user(-2)
-        bot_user = client.get_user(146115)
+        jeremy_user = client.get_user(1251)
         sandbox = client.get_room(1)
 
         assert bot_user in sandbox.owners
