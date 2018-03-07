@@ -24,7 +24,7 @@ if live_testing.enabled:
         jeremy_user = client.get_user(1251)
         sandbox = client.get_room(1)
 
-        assert bot_user in sandbox.owners
+        assert jeremy_user in sandbox.owners
         assert a_feeds_user not in sandbox.owners
         assert sandbox.user_count >= 4
         assert sandbox.message_count >= 10
