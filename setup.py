@@ -17,7 +17,7 @@ setuptools.setup(
         'httmock>=1.2.2',
         'pytest-timeout>=0.3',
         'pytest>=3.4.2',
-        'py>=1.4.29',
+        'py>=1.5.0',
         'bpython>=0.16'
     ]
 )
