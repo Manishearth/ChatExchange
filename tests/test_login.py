@@ -10,22 +10,25 @@ from tests import live_testing
 if live_testing.enabled:
 
     @pytest.mark.timeout(240)
-    def test_openid_login():
+    def test_login():
         """
         Tests that login works.
         """
-        browser = Browser()
 
-        # avoid hitting the SE servers too frequently
-        time.sleep(2)
+        for host in ['stackoverflow.com', 'stackexchange.com', 'meta.stackexchange.com']:
+            browser = Browser()
 
-        browser.login_se_openid(
-            live_testing.email,
-            live_testing.password)
+            # avoid hitting the SE servers too frequently
+            time.sleep(2)
+
+            browser.login_site(
+                host,
+                live_testing.email,
+                live_testing.password)
 
 
     @pytest.mark.timeout(240)
-    def test_openid_login_recognizes_failure():
+    def test_login_recognizes_failure():
         """
         Tests that failed SE OpenID logins raise errors.
         """
@@ -37,6 +40,7 @@ if live_testing.enabled:
         with pytest.raises(LoginError):
             invalid_password = 'no' + 't' * len(live_testing.password)
 
-            browser.login_se_openid(
+            browser.login_site(
+                'stackoverflow.com',
                 live_testing.email,
                 invalid_password)

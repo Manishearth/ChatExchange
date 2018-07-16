@@ -134,40 +134,29 @@ class Browser(object):
 
     # authentication
 
-    def login_se_openid(self, user, password):
-        """
-        Logs the browser into Stack Exchange's OpenID provider.
-        """
-        self.userlogin = user
-        self.userpass = password
-
-        self._se_openid_login_with_fkey(
-            'https://openid.stackexchange.com/account/login',
-            'https://openid.stackexchange.com/account/login/submit',
-            {
-                'email': user,
-                'password': password,
-            })
-
-        if not self.session.cookies.get('usr', None):
-            raise LoginError(
-                "failed to get `usr` cookie from Stack Exchange OpenID, "
-                "check credentials provided for accuracy")
-
-    def login_site(self, host):
+    def login_site(self, host, email, password):
         """
         Logs the browser into a Stack Exchange site.
         """
         assert self.host is None or self.host is host
 
+        if host == 'stackexchange.com':
+             login_host = 'meta.stackexchange.com'
+        else:
+            login_host = host
+
         self._se_openid_login_with_fkey(
-            'https://%s/users/login?returnurl = %%2f' % (host,),
-            'https://%s/users/authenticate' % (host,),
+            'https://%s/users/login?returnurl = %%2f' % (login_host,),
+            'https://%s/users/login' % (login_host,),
             {
-                'oauth_version': '',
-                'oauth_server': '',
-                'openid_identifier': 'https://openid.stackexchange.com/'
+                'email': email,
+                'password': password
             })
+
+        if not self.session.cookies.get('acct', None):
+            raise LoginError(
+                "failed to get `acct` cookie from Stack Exchange OpenID, "
+                "check credentials provided for accuracy")
 
         self.host = host
 
