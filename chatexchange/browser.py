@@ -342,9 +342,14 @@ class Browser(object):
         latest_content_source = (
             history_soup.select('.monologue .message-source')[0].text.strip())
 
-        owner_soup = latest_soup.select('.username a')[0]
-        owner_user_id, owner_user_name = (
-            self.user_id_and_name_from_link(owner_soup))
+        try:
+            owner_soup = latest_soup.select('.username a')[0]
+            owner_user_id, owner_user_name = (
+                self.user_id_and_name_from_link(owner_soup))
+        except IndexError:
+            owner_soup = latest_soup.select('.username')[0]
+            owner_user_id = None
+            owner_user_name = owner_soup.text
 
         edits = 0
         has_editor_name = False
@@ -357,9 +362,14 @@ class Browser(object):
 
             if not has_editor_name:
                 has_editor_name = True
-                user_soup = item.select('.username a')[0]
-                latest_editor_user_id, latest_editor_user_name = (
-                    self.user_id_and_name_from_link(user_soup))
+                try:
+                    user_soup = item.select('.username a')[0]
+                    latest_editor_user_id, latest_editor_user_name = (
+                        self.user_id_and_name_from_link(user_soup))
+                except IndexError:
+                    user_soup = item.select('.username')[0]
+                    latest_editor_user_id = None
+                    latest_editor_user_name = user_soup.text
 
         assert (edits > 0) == has_editor_name
 
@@ -432,8 +442,13 @@ class Browser(object):
         seen_target_message = False
 
         for monologue_soup in monologues_soups:
-            user_link, = monologue_soup.select('.signature .username a')
-            user_id, user_name = self.user_id_and_name_from_link(user_link)
+            try:
+                user_link, = monologue_soup.select('.signature .username a')
+                user_id, user_name = self.user_id_and_name_from_link(user_link)
+            except ValueError:
+                username_div, = monologue_soup.select('.signature .username')
+                user_id = None
+                user_name = username_div.text
 
             message_soups = monologue_soup.select('.message')
 
