@@ -21,10 +21,10 @@ if live_testing.enabled:
         client = chatexchange.Client('stackexchange.com')
 
         a_feeds_user = client.get_user(-2)
-        jeremy_user = client.get_user(1251)
+        programfox_user = client.get_user(88521)
         sandbox = client.get_room(1)
 
-        assert jeremy_user in sandbox.owners
+        assert programfox_user in sandbox.owners
         assert a_feeds_user not in sandbox.owners
         assert sandbox.user_count >= 4
         assert sandbox.message_count >= 10
