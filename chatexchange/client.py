@@ -135,13 +135,26 @@ class Client(object):
         assert not self.logged_in
         self.logger.info("Logging in.")
 
-        cookie = self._br.login_site(self.host, email, password)
+        cookies = self._br.login_site(self.host, email, password)
 
         self.logged_in = True
         self.logger.info("Logged in.")
         self._thread.start()
 
-        return cookie
+        return cookies
+
+    def login_with_cookie(self, cookie_jar):
+        """
+        Authenticates using a pre-fetched (by the client application) `acct` cookie.
+        """
+        assert not self.logged_in
+        self.logger.info("Logging in with acct cookie.")
+
+        self._br.login_site_with_cookie(self.host, cookie_jar)
+
+        self.logged_in = True
+        self.logger.info("Logged in (cookie).")
+        self._thread.start()
 
     def logout(self):
         """
