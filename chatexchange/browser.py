@@ -159,7 +159,18 @@ class Browser(object):
                 "check credentials provided for accuracy")
 
         self.host = host
-        return self.session.cookies.get('acct', None)
+        return self.session.cookies
+
+    def login_site_with_cookie(self, host, cookie_jar):
+        self.session.cookies.update(cookie_jar)
+
+        verify_soup = self.get_soup('https://%s/users/login' % (host,), with_chat_root=False)
+        profile_link = verify_soup.select('.my-profile')
+        logged_in = profile_link is not None and len(profile_link) > 0
+
+        if not logged_in:
+            raise LoginError("login with cookie could not be verified, "
+                             "try credential login instead")
 
     def _se_openid_login_with_fkey(self, fkey_url, post_url, data=()):
         """
