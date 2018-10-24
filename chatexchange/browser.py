@@ -159,6 +159,7 @@ class Browser(object):
                 "check credentials provided for accuracy")
 
         self.host = host
+        return self.session.cookies.get('acct', None)
 
     def _se_openid_login_with_fkey(self, fkey_url, post_url, data=()):
         """
