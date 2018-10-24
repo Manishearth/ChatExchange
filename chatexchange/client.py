@@ -135,11 +135,13 @@ class Client(object):
         assert not self.logged_in
         self.logger.info("Logging in.")
 
-        self._br.login_site(self.host, email, password)
+        cookie = self._br.login_site(self.host, email, password)
 
         self.logged_in = True
         self.logger.info("Logged in.")
         self._thread.start()
+
+        return cookie
 
     def logout(self):
         """
