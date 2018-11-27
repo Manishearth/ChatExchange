@@ -163,6 +163,10 @@ class Browser(object):
 
     def login_site_with_cookie(self, host, cookie_jar):
         self.session.cookies.update(cookie_jar)
+        
+        # Can't log in to stackexchange.com any more because OpenID is gone; use meta instead.
+        if host == 'stackexchange.com':
+            host = 'meta.stackexchange.com'
 
         verify_soup = self.get_soup('https://%s/users/login' % (host,), with_chat_root=False)
         profile_link = verify_soup.select('.my-profile')
