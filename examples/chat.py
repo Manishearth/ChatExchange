@@ -13,7 +13,7 @@ import chatexchange.events
 logger = logging.getLogger(__name__)
 
 
-def main(args):
+def main():
     setup_logging()
 
     # Run `. setp.sh` to set the below testing environment variables
@@ -77,4 +77,4 @@ def setup_logging():
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    main()
