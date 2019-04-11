@@ -18,6 +18,7 @@ class Room(object):
         self.id = id
         self._logger = logger.getChild('Room')
         self._client = client
+        self.send_aggressively = client.aggressive_sender
 
     name = _utils.LazyFrom('scrape_info')
     description = _utils.LazyFrom('scrape_info')
@@ -53,6 +54,16 @@ class Room(object):
     def leave(self):
         return self._client._leave_room(self.id)
 
+    def _mergeable_send(self, message):
+        """
+        Helper for self.send_aggressively: accept a message as mewrgeable if it's plain text
+        """
+        for sep in ('[', ']', '`'):
+            fragments = message.split(sep)
+            if not all(x.endswith('\\') for x in fragments[:-1]):
+                return False
+        return True
+
     def send_message(self, text, length_check=True):
         """
         Sends a message (queued, to avoid getting throttled)
@@ -65,6 +76,20 @@ class Room(object):
         if len(text) == 0:
             self._logger.info("Could not send message because it was empty.")
             return
+        if self.send_aggressively and self._mergeable_send(text):
+            previous_request = self._client._request_queue.peek_latest()
+            if previous_request is not None and previous_request[0] == 'send' and \
+                previous_request[1] == self.id and \
+                    self._mergeable_send(previous_request[2]):
+                merged_text = '\n'.join([previous_request[2], text])
+                if len(merged_text) <= 500 and \
+                    self._client._request_queue.poke_latest(
+                        previous_request, (
+                            previous_request[0], previous_request[1], merged_text)):
+                    self._logger.info(
+                        "Merging message %r for room_id #%r to previous queued message",
+                            text, self.id)
+                    return
         self._client._request_queue.put(('send', self.id, text))
         self._logger.info("Queued message %r for room_id #%r.", text, self.id)
         self._logger.info("Queue length: %d.", self._client._request_queue.qsize())

@@ -23,6 +23,30 @@ TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"
 logger = logging.getLogger(__name__)
 
 
+class PeekableQueue(queue.Queue):
+    """
+    A simple extension of the standard Queue object which allows inspection of the tail
+    and manipulating the returned value.
+    """
+    def peek_latest(self):
+        """
+        Return the last object which was added to the queue without modifying the queue
+        """
+        if self.qsize() > 0:
+            # Implementation detail: queue grows rightward, last element is [-1]
+            return self.queue[-1]
+
+    def poke_latest(self, oldvalue, newvalue):
+        """
+        Replace the lastest value if it is identical to the passed-in oldvalue.
+        Otherwise, return False to signify failure.
+        """
+        if self.queue[-1] is oldvalue:
+            self.queue[-1] = newvalue
+            return True
+        return False
+
+
 class Client(object):
     """
     A high-level interface for interacting with Stack Exchange chat.
@@ -38,7 +62,8 @@ class Client(object):
 
     _max_recently_gotten_objects = 5000
 
-    def __init__(self, host='stackexchange.com', email=None, password=None):
+    def __init__(self,
+            host='stackexchange.com', email=None, password=None, send_aggressively=False):
         """
         Initializes a client for a specific chat host.
 
@@ -61,7 +86,7 @@ class Client(object):
         self.host = host
         self.logged_in = False
         self.on_message_sent = None
-        self._request_queue = queue.Queue()
+        self._request_queue = PeekableQueue()
 
         self._br = browser.Browser()
         self._br.host = host
@@ -70,6 +95,8 @@ class Client(object):
         self._requests_served = 0
         self._thread = threading.Thread(target=self._worker, name="message_sender")
         self._thread.setDaemon(True)
+
+        self.aggressive_sender = send_aggressively
 
         if email or password:
             assert email and password
