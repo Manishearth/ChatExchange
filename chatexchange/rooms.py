@@ -7,7 +7,7 @@ import contextlib
 import collections
 import logging
 
-from . import _utils, events
+from . import _utils, events, markdown_detector
 
 
 logger = logging.getLogger(__name__)
@@ -54,14 +54,24 @@ class Room(object):
     def leave(self):
         return self._client._leave_room(self.id)
 
-    def _mergeable_send(self, message):
+    def _mergeable_pair(self, message1, message2):
         """
-        Helper for self.send_aggressively: accept a message as mewrgeable if it's plain text
+        Helper for self.send_aggressively: determine if two messages can be merged
         """
-        for sep in ('[', ']', '`'):
-            fragments = message.split(sep)
-            if not all(x.endswith('\\') for x in fragments[:-1]):
-                return False
+        if message1 is None or message2 is None: return False
+        op1, room1, msg1 = message1
+        op2, room2, msg2 = message2
+        if op1 != 'send': return False
+        if op2 != 'send': return False
+        if room1 != room2: return False
+        # If one starts with four spaces, the other also needs to start with four spaces
+        indent1 = msg1.startswith('    ')
+        indent2 = msg2.startswith('    ')
+        if indent1 != indent2: return False
+        if indent1 and indent2: return True
+
+        if markdown_detector.markdown(msg1): return False
+        if markdown_detector.markdown(msg2): return False
         return True
 
     def send_message(self, text, length_check=True):
@@ -76,16 +86,13 @@ class Room(object):
         if len(text) == 0:
             self._logger.info("Could not send message because it was empty.")
             return
-        if self.send_aggressively and self._mergeable_send(text):
+        if self.send_aggressively:
             previous_request = self._client._request_queue.peek_latest()
-            if previous_request is not None and previous_request[0] == 'send' and \
-                previous_request[1] == self.id and \
-                    self._mergeable_send(previous_request[2]):
+            if self._mergeable_pair(previous_request, ('send', self.id, text)):
                 merged_text = '\n'.join([previous_request[2], text])
-                if len(merged_text) <= 500 and \
-                    self._client._request_queue.poke_latest(
-                        previous_request, (
-                            previous_request[0], previous_request[1], merged_text)):
+                if (not length_check or len(merged_text) <= 500) and \
+                    self._client._request_queue.poke_latest(previous_request, (
+                        tuple(list(previous_request[0:2]) + [merged_text]))):
                     self._logger.info(
                         "Merging message %r for room_id #%r to previous queued message",
                             text, self.id)
