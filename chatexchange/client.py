@@ -229,8 +229,6 @@ class Client(object):
     # Appeasing the rate limiter gods is hard.
     _BACKOFF_ADDER = 5
 
-    # When told to wait n seconds, wait n * BACKOFF_MULTIPLIER + BACKOFF_ADDER
-
     @staticmethod
     def _unpack_response(response):
         try:
@@ -279,14 +277,14 @@ class Client(object):
                                 "The message has been deleted and cannot be edited",
                                 "This message has already been deleted."]
             if isinstance(unpacked, str) and unpacked not in ignored_messages:
+                # We received a text response, but it's not one of the ones we ignore.
                 match = re.match(TOO_FAST_RE, unpacked)
-                if match:  # Whoops, too fast.
+                if match:  # Whoops, too fast. The response says we must wait N seconds.
                     wait = int(match.group(1))
                     self.logger.debug(
                         "Attempt %d: denied: throttled, must wait %.1f seconds",
                         attempt, wait)
-                    # Wait more than that, though.
-                    wait += 1
+                    # We don't need to wait any more than what the API tells us.
                 else:  # Something went wrong. I guess that happens.
                     if attempt > 5:
                         err = ChatActionError("5 failed attempts to do chat action. Unknown reason: %s" % unpacked)
@@ -306,7 +304,10 @@ class Client(object):
             if wait:
                 self.logger.debug("Attempt %d: waiting %.1f seconds", attempt, wait)
             else:
-                wait = self._BACKOFF_ADDER
+                if action_type != 'send':
+                    # There's no reason to wait after sending a message.
+                    # At least for sending a message, SE chat responses make it clear when a wait is needed.
+                    wait = self._BACKOFF_ADDER
                 self.logger.debug("Attempt %d: success. Waiting %.1f seconds", attempt, wait)
                 sent = True
                 self._previous = text
