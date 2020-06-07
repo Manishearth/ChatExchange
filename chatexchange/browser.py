@@ -665,7 +665,10 @@ class Browser(object):
         url = "/rooms/{0}/".format(room_id)
         soup = self.get_soup(url)
         script_tag = soup.body.script
-        users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_tag.text)[0]
+        script_text = script_tag.text;
+        if not script_text:
+            script_text = str(script_tag.string);
+        users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_text)[0]
         user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
         users = []
         for ud in user_data:
