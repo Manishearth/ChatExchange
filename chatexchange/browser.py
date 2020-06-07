@@ -715,7 +715,7 @@ class RoomSocketWatcher(object):
         self.ws = websocket.create_connection(
             wsurl, origin=self.browser.chat_root)
 
-        self.thread = threading.Thread(target=self._runner)
+        self.thread = threading.Thread(name="ChatExchange: RoomSocketWatcher for room #{}".format(self.room_id), target=self._runner)
         self.thread.setDaemon(True)
         self.thread.start()
 
@@ -747,7 +747,7 @@ class RoomPollingWatcher(object):
         self.killed = False
 
     def start(self):
-        self.thread = threading.Thread(target=self._runner)
+        self.thread = threading.Thread(name="ChatExchange: RoomPollingWatcher for room #{}".format(self.room_id), target=self._runner)
         self.thread.setDaemon(True)
         self.thread.start()
 
