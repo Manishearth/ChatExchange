@@ -17,7 +17,7 @@ import requests
 from . import browser, events, messages, rooms, users
 
 
-TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"
+TOO_FAST_RE = r"You can perform this action again in (\d+) second"
 
 
 logger = logging.getLogger(__name__)
