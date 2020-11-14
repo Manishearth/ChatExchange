@@ -664,18 +664,29 @@ class Browser(object):
     def get_current_users_in_room(self, room_id):
         url = "/rooms/{0}/".format(room_id)
         soup = self.get_soup(url)
-        script_tag = soup.body.script
-        script_text = script_tag.text;
-        if not script_text:
-            script_text = str(script_tag.string);
-        users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_text)[0]
-        user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
-        users = []
-        for ud in user_data:
-            user_id = int(re.compile("id: (\d+),").search(ud).group(1))
-            user_name = re.compile("name: \(\"(.+?)\"\),").search(ud).group(1)
-            users.append((user_id, user_name))
-        return users
+        try:
+            # Sometime around 2020-11, SE changed to sending data for the users present in the room data in a
+            # <div class="js-present" data-users="<JSON encoded list of user records>">
+            users_data = json.loads(soup.find('div', class_='js-present')['data-users'])
+            users = []
+            for user in users_data:
+                users.append((user['id'], user['name']))
+            return users
+        except (json.decoder.JSONDecodeError, KeyError, TypeError):
+            # Getting the users present failed when trying to use the post 2020-11 format. Try the earlier format
+            # where the list of users present in the room is in JavaScript code within a <script>.
+            script_tag = soup.body.script
+            script_text = script_tag.text;
+            if not script_text:
+                script_text = str(script_tag.string);
+            users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_text)[0]
+            user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
+            users = []
+            for ud in user_data:
+                user_id = int(re.compile("id: (\d+),").search(ud).group(1))
+                user_name = re.compile("name: \(\"(.+?)\"\),").search(ud).group(1)
+                users.append((user_id, user_name))
+            return users
 
     def get_current_user_ids_in_room(self, room_id):
         return [user_id for (user_id, name) in self.get_current_users_in_room(room_id)]
