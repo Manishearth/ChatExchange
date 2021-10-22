@@ -82,18 +82,21 @@ class Browser(object):
                 response = method_method(
                     url, data=data, headers=headers, timeout=self.request_timeout)
                 break
-            except requests.exceptions.ConnectionError as e:          # We want to try again, so continue
-                                                                    # BadStatusLine throws this error
-                print("Connection Error -> Trying again...")
-                time.sleep(0.1)                                     # short pause before retrying
-                if attempt == MAX_HTTP_RETRIES:                     # Only show exception if last try
+
+            # We want to try again, so continue
+            # BadStatusLine throws this error
+            except requests.exceptions.ConnectionError as e:
+                print("Connection Error %s -> Trying again..." % e)
+                time.sleep(0.1)                  # short pause before retrying
+                if attempt == MAX_HTTP_RETRIES:  # Only show exception if last try
                     raise
                 continue
 
-            except (requests.exceptions.Timeout, socket.timeout) as e:                  # Timeout occurred, retry
-                                                                # Catching both because of this bug in requests
-                                                                # https://github.com/kennethreitz/requests/issues/1236
-                print("Timeout -> Trying again...")
+            except (requests.exceptions.Timeout, socket.timeout) as e:
+                # Timeout occurred, retry
+                # Catching both because of this bug in requests
+                # https://github.com/kennethreitz/requests/issues/1236
+                print("Timeout %s -> Trying again..." % e)
                 time.sleep(1.0)     # Longer pause because it was a time out. Assume overloaded and give them a second
                 if attempt == MAX_HTTP_RETRIES:                     # Only show exception if last try
                     raise
@@ -141,7 +144,7 @@ class Browser(object):
         assert self.host is None or self.host is host
 
         if host == 'stackexchange.com':
-             login_host = 'meta.stackexchange.com'
+            login_host = 'meta.stackexchange.com'
         else:
             login_host = host
 
@@ -163,7 +166,7 @@ class Browser(object):
 
     def login_site_with_cookie(self, host, cookie_jar):
         self.session.cookies.update(cookie_jar)
-        
+
         # Can't log in to stackexchange.com any more because OpenID is gone; use meta instead.
         if host == 'stackexchange.com':
             host = 'meta.stackexchange.com'
@@ -676,15 +679,15 @@ class Browser(object):
             # Getting the users present failed when trying to use the post 2020-11 format. Try the earlier format
             # where the list of users present in the room is in JavaScript code within a <script>.
             script_tag = soup.body.script
-            script_text = script_tag.text;
+            script_text = script_tag.text
             if not script_text:
-                script_text = str(script_tag.string);
+                script_text = str(script_tag.string)
             users_js = re.compile(r"(?s)CHAT\.RoomUsers\.initPresent\(\[.+\]\);").findall(script_text)[0]
             user_data = [x.strip() for x in users_js.split('\n') if len(x.strip()) > 0][1:-1]
             users = []
             for ud in user_data:
-                user_id = int(re.compile("id: (\d+),").search(ud).group(1))
-                user_name = re.compile("name: \(\"(.+?)\"\),").search(ud).group(1)
+                user_id = int(re.compile("id: (\\d+),").search(ud).group(1))
+                user_name = re.compile("name: \\(\"(.+?)\"\\),").search(ud).group(1)
                 users.append((user_id, user_name))
             return users
 
@@ -693,7 +696,6 @@ class Browser(object):
 
     def get_current_user_names_in_room(self, room_id):
         return [name for (user_id, name) in self.get_current_users_in_room(room_id)]
-
 
     def set_websocket_recovery(self, on_ws_closed):
         self.on_websocket_closed = on_ws_closed
@@ -729,12 +731,15 @@ class RoomSocketWatcher(object):
         self.ws = websocket.create_connection(
             wsurl, origin=self.browser.chat_root)
 
-        self.thread = threading.Thread(name="ChatExchange: RoomSocketWatcher for room #{}".format(self.room_id), target=self._runner)
+        self.thread = threading.Thread(
+            name="ChatExchange: RoomSocketWatcher for room #{}".format(
+                self.room_id),
+            target=self._runner)
         self.thread.setDaemon(True)
         self.thread.start()
 
     def _runner(self):
-        #look at wsdump.py later to handle opcodes
+        # look at wsdump.py later to handle opcodes
         while not self.killed:
             try:
                 a = self.ws.recv()
@@ -761,7 +766,10 @@ class RoomPollingWatcher(object):
         self.killed = False
 
     def start(self):
-        self.thread = threading.Thread(name="ChatExchange: RoomPollingWatcher for room #{}".format(self.room_id), target=self._runner)
+        self.thread = threading.Thread(
+            name="ChatExchange: RoomPollingWatcher for room #{}".format(
+                self.room_id),
+            target=self._runner)
         self.thread.setDaemon(True)
         self.thread.start()
 
@@ -779,7 +787,7 @@ class RoomPollingWatcher(object):
                 room_result = activity['r' + self.room_id]
                 eventtime = room_result['t']
                 self.browser.rooms[self.room_id]['eventtime'] = eventtime
-            except KeyError as ex:
+            except KeyError:
                 pass  # no updated time from room
 
             self.on_activity(activity)

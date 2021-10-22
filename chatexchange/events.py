@@ -101,8 +101,8 @@ class MessageEvent(Event):
 
         if pinned:
             if not messages.Message.pinned.values.get(message):
-            # If it just became pinned but was previously known unpinned,
-            # these cached pin details will be stale if set.
+                # If it just became pinned but was previously known unpinned,
+                # these cached pin details will be stale if set.
                 try:
                     del message.pinner_user_ids
                     del message.pinner_user_names
@@ -165,6 +165,7 @@ class UserLeft(Event):
         self.user = self.client.get_user(
             self.data['user_id'], name=self.data['user_name'])
 
+
 @register_type
 class RoomNameChanged(Event):
     type_id = 5
@@ -204,6 +205,7 @@ class FileAdded(Event):
 class MessageFlaggedForModerator(Event):
     type_id = 12
 
+
 # backwards-compatiblity alias
 ModeratorFlag = MessageFlaggedForModerator
 
@@ -221,6 +223,7 @@ class GlobalNotification(Event):
 @register_type
 class AccessLevelChanged(Event):
     type_id = 15
+
 
 # backwards-compatiblity alias
 AccountLevelChanged = AccessLevelChanged
@@ -249,6 +252,7 @@ class MessageMovedOut(MessageEvent):
 @register_type
 class MessageMovedIn(MessageEvent):
     type_id = 20
+
 
 # backwards-compatiblity alias
 MessagedMovedIn = MessageMovedIn

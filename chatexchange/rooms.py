@@ -3,8 +3,6 @@ if sys.version_info[0] == 2:
     import Queue as queue
 else:
     import queue
-import contextlib
-import collections
 import logging
 
 from . import _utils, events, markdown_detector
@@ -58,20 +56,28 @@ class Room(object):
         """
         Helper for self.send_aggressively: determine if two messages can be merged
         """
-        if message1 is None or message2 is None: return False
+        if message1 is None or message2 is None:
+            return False
         op1, room1, msg1 = message1
         op2, room2, msg2 = message2
-        if op1 != 'send': return False
-        if op2 != 'send': return False
-        if room1 != room2: return False
+        if op1 != 'send':
+            return False
+        if op2 != 'send':
+            return False
+        if room1 != room2:
+            return False
         # If one starts with four spaces, the other also needs to start with four spaces
         indent1 = msg1.startswith('    ')
         indent2 = msg2.startswith('    ')
-        if indent1 != indent2: return False
-        if indent1 and indent2: return True
+        if indent1 != indent2:
+            return False
+        if indent1 and indent2:
+            return True
 
-        if markdown_detector.markdown(msg1): return False
-        if markdown_detector.markdown(msg2): return False
+        if markdown_detector.markdown(msg1):
+            return False
+        if markdown_detector.markdown(msg2):
+            return False
         return True
 
     def send_message(self, text, length_check=True):
@@ -95,7 +101,7 @@ class Room(object):
                         tuple(list(previous_request[0:2]) + [merged_text]))):
                     self._logger.info(
                         "Merging message %r for room_id #%r to previous queued message",
-                            text, self.id)
+                        text, self.id)
                     return
         self._client._request_queue.put(('send', self.id, text))
         self._logger.info("Queued message %r for room_id #%r.", text, self.id)

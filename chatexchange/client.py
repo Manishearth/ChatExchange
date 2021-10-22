@@ -14,7 +14,7 @@ import threading
 import weakref
 import requests
 
-from . import browser, events, messages, rooms, users
+from . import browser, messages, rooms, users
 
 
 TOO_FAST_RE = r"You can perform this action again in (\d+) second"
@@ -62,8 +62,12 @@ class Client(object):
 
     _max_recently_gotten_objects = 5000
 
-    def __init__(self,
-            host='stackexchange.com', email=None, password=None, send_aggressively=False):
+    def __init__(
+            self,
+            host='stackexchange.com',
+            email=None, password=None,
+            send_aggressively=False
+    ):
         """
         Initializes a client for a specific chat host.
 
