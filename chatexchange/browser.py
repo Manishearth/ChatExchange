@@ -327,6 +327,58 @@ class Browser(object):
     def delete_message(self, message_id):
         return self.post_fkeyed('messages/%s/delete' % (message_id, ))
 
+    def _get_edits(self, previous_soup):
+        """
+        Helper for get_history: Get number of edits and editor name
+        """
+        edits = 0
+        has_editor_name = False
+        for item in previous_soup:
+            if item.select('b')[0].text != 'edited:':
+                continue
+
+            edits += 1
+            if not has_editor_name:
+                has_editor_name = True
+                try:
+                    user_soup = item.select('.username a')[0]
+                    latest_editor_user_id, latest_editor_user_name = (
+                        self.user_id_and_name_from_link(user_soup))
+                except IndexError:
+                    user_soup = item.select('.username')[0]
+                    latest_editor_user_id = None
+                    latest_editor_user_name = user_soup.text
+
+        assert (edits > 0) == has_editor_name
+
+        if not edits:
+            latest_editor_user_id = None
+            latest_editor_user_name = None
+
+        return edits, has_editor_name, \
+            latest_editor_user_id, latest_editor_user_name
+
+    def _get_pin_data(self, data, history_soup):
+        """
+        Helper for get_history: Extract users who pinned a message
+        """
+        pins = 0
+        pinner_user_ids = []
+        pinner_user_names = []
+        if data['pinned']:
+            for p_soup in history_soup.select('#content p'):
+                if not p_soup.select('.stars.owner-star'):
+                    break
+
+                a_soup = p_soup.select('a')[0]
+
+                pins += 1
+                user_id, user_name = self.user_id_and_name_from_link(a_soup)
+                pinner_user_ids.append(user_id)
+                pinner_user_names.append(user_name)
+
+        return pins, pinner_user_ids, pinner_user_names
+
     def get_history(self, message_id):
         """
         Returns the data from the history page for message_id.
@@ -359,58 +411,14 @@ class Browser(object):
             owner_user_id = None
             owner_user_name = owner_soup.text
 
-        edits = 0
-        has_editor_name = False
+        edits, has_editor_name, latest_editor_user_id, \
+            latest_editor_user_name = self._get_edits(previous_soup)
 
-        for item in previous_soup:
-            if item.select('b')[0].text != 'edited:':
-                continue
-
-            edits += 1
-
-            if not has_editor_name:
-                has_editor_name = True
-                try:
-                    user_soup = item.select('.username a')[0]
-                    latest_editor_user_id, latest_editor_user_name = (
-                        self.user_id_and_name_from_link(user_soup))
-                except IndexError:
-                    user_soup = item.select('.username')[0]
-                    latest_editor_user_id = None
-                    latest_editor_user_name = user_soup.text
-
-        assert (edits > 0) == has_editor_name
-
-        if not edits:
-            latest_editor_user_id = None
-            latest_editor_user_name = None
-
-        star_data = self._get_star_data(
+        data = self._get_star_data(
             latest_soup, include_starred_by_you=False)
 
-        if star_data['pinned']:
-            pins = 0
-            pinner_user_ids = []
-            pinner_user_names = []
-
-            for p_soup in history_soup.select('#content p'):
-                if not p_soup.select('.stars.owner-star'):
-                    break
-
-                a_soup = p_soup.select('a')[0]
-
-                pins += 1
-                user_id, user_name = self.user_id_and_name_from_link(a_soup)
-                pinner_user_ids.append(user_id)
-                pinner_user_names.append(user_name)
-        else:
-            pins = 0
-            pinner_user_ids = []
-            pinner_user_names = []
-
-        data = {}
-
-        data.update(star_data)
+        pins, pinner_user_ids, pinner_user_names = self._get_pin_data(
+                data, history_soup)
 
         data.update({
             'room_id': room_id,
