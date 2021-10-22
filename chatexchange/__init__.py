@@ -5,7 +5,6 @@ from . import messages
 from . import rooms
 from . import events
 from . import client
-from . import _utils
 
 
 Browser = browser.Browser

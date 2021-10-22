@@ -8,7 +8,7 @@ import re
 mdre_code = re.compile(r'^ {4}')
 mdre_reply = re.compile(r'^:\d{8}')
 mdre_mono = re.compile(r'(?<!`)(`+)(?:[^`](?:.*?[^`])?)\1(?!`)')
-mdre_url  = re.compile(r'\b(?:https?|ftp)://[-~.%\w/]+')
+mdre_url = re.compile(r'\b(?:https?|ftp)://[-~.%\w/]+')
 mdre_link = re.compile(r'\[(?:[^]\\]|\\.)+\]\({0}\)'.format(mdre_url.pattern))
 mdre_italics = re.compile(
     r'(?<![*])[*](?:[^*]+|[*]{3,}|[*]{2}[^*]+[*]{2})+[*](?![*])')
@@ -24,5 +24,5 @@ def markdown(text):
     """
     return mdre_code.match(text) or mdre_reply.match(text) or \
         mdre_mono.search(text) or mdre_link.search(text) or \
-            mdre_url.search(text) or mdre_italics.search(text) or \
-                mdre_bold.search(text)
+        mdre_url.search(text) or mdre_italics.search(text) or \
+        mdre_bold.search(text)
