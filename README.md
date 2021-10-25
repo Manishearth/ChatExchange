@@ -1,7 +1,7 @@
 ChatExchange
 ============
 
-[![Travis CI build status for master](https://travis-ci.org/Manishearth/ChatExchange.svg?branch=master)](https://travis-ci.org/Manishearth/ChatExchange)
+[![Github Actions build status for master](https://github.com/Manishearth/ChatExchange/actions/workflows/lint+test.yml/badge.svg)](https://github.com/Manishearth/ChatExchange/actions)
 
 A Python2 and Python3 cross-version API for talking to Stack Exchange chat.
 
