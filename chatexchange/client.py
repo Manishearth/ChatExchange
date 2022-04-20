@@ -298,6 +298,9 @@ class Client(object):
                         "Attempt %d: denied: unknown reason %r",
                         attempt, unpacked)
                     return wait
+            else:
+                # It was one of the ignored ones
+                return 0, ""
         elif isinstance(unpacked, dict):
             if unpacked["id"] is None:  # Duplicate message?
                 wait = self._BACKOFF_ADDER
@@ -305,6 +308,9 @@ class Client(object):
                     "Attempt %d: denied: duplicate, waiting %.1f seconds.",
                     attempt, wait)
                 return wait, " "  # add padding because markdown
+        else:
+            self.logger.warning(
+                "Unhandled case in _wait_for(%r,%r)", response, attempt)
 
     def _do_action_despite_throttling(self, action):
         action_type = action[0]
