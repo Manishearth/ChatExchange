@@ -241,77 +241,6 @@ class Client(object):
         except ValueError:
             return response.text
 
-    def _try_send(self, action_type, room_id, message_id, text):
-        """
-        Helper function for _do_action_despite_throttling: try to send
-        the message
-        """
-        try:
-            if action_type == 'send':
-                return self._br.send_message(room_id, text)
-            elif action_type == 'edit':
-                return self._br.edit_message(message_id, text)
-            else:
-                assert action_type == 'delete'
-                return self._br.delete_message(message_id)
-        except requests.HTTPError as ex:
-            if ex.response.status_code == 409:
-                # this could be a throttling message we know how to handle
-                return ex.response
-            else:
-                raise
-
-    def _wait_for(self, response, attempt):
-        """
-        Helper function for _do_action_despite_throttling: Figure out
-        how long to wait, depending on the type of the client response.
-        """
-        unpacked = Client._unpack_response(response)
-
-        if isinstance(unpacked, str):
-            ignored_messages = [
-                "ok",
-                "It is too late to delete this message",
-                "It is too late to edit this message",
-                "The message has been deleted and cannot be edited",
-                "This message has already been deleted."
-            ]
-            if unpacked not in ignored_messages:
-                # We received a text response, but it's not one of the ignored ones
-                match = re.match(TOO_FAST_RE, unpacked)
-                if match:
-                    # Whoops, too fast. The response says we must wait N seconds.
-                    wait = int(match.group(1))
-                    self.logger.debug(
-                        "Attempt %d: denied: throttled, must wait %.1f seconds",
-                        attempt, wait)
-                    # We don't need to wait any more than what the API tells us.
-                    return wait
-
-                else:  # Something went wrong. I guess that happens.
-                    if attempt > 5:
-                        raise ChatActionError(
-                            "5 failed attempts to do chat action. "
-                            "Unknown reason: %s" % unpacked)
-                    wait = self._BACKOFF_ADDER
-                    logging.error(
-                        "Attempt %d: denied: unknown reason %r",
-                        attempt, unpacked)
-                    return wait
-            else:
-                # It was one of the ignored ones
-                return 0, ""
-        elif isinstance(unpacked, dict):
-            if unpacked["id"] is None:  # Duplicate message?
-                wait = self._BACKOFF_ADDER
-                self.logger.debug(
-                    "Attempt %d: denied: duplicate, waiting %.1f seconds.",
-                    attempt, wait)
-                return wait, " "  # add padding because markdown
-        else:
-            self.logger.warning(
-                "Unhandled case in _wait_for(%r,%r)", response, attempt)
-
     def _do_action_despite_throttling(self, action):
         action_type = action[0]
         if action_type == 'send':
@@ -332,26 +261,63 @@ class Client(object):
             attempt += 1
             self.logger.debug("Attempt %d: start.", attempt)
 
-            response = self._try_send(action_type, room_id, message_id, text)
+            try:
+                if action_type == 'send':
+                    response = self._br.send_message(room_id, text)
+                elif action_type == 'edit':
+                    response = self._br.edit_message(message_id, text)
+                else:
+                    assert action_type == 'delete'
+                    response = self._br.delete_message(message_id)
+            except requests.HTTPError as ex:
+                if ex.response.status_code == 409:
+                    # this could be a throttling message we know how to handle
+                    response = ex.response
+                else:
+                    raise
 
-            wait, padding = self._wait_for(response, attempt)
-            dbg = "Attempt %d: waiting %.1f seconds", attempt, wait
+            unpacked = Client._unpack_response(response)
+            ignored_messages = ["ok", "It is too late to delete this message",
+                                "It is too late to edit this message",
+                                "The message has been deleted and cannot be edited",
+                                "This message has already been deleted."]
+            if isinstance(unpacked, str) and unpacked not in ignored_messages:
+                # We received a text response, but it's not one of the ones we ignore.
+                match = re.match(TOO_FAST_RE, unpacked)
+                if match:  # Whoops, too fast. The response says we must wait N seconds.
+                    wait = int(match.group(1))
+                    self.logger.debug(
+                        "Attempt %d: denied: throttled, must wait %.1f seconds",
+                        attempt, wait)
+                    # We don't need to wait any more than what the API tells us.
+                else:  # Something went wrong. I guess that happens.
+                    if attempt > 5:
+                        err = ChatActionError("5 failed attempts to do chat action. Unknown reason: %s" % unpacked)
+                        raise err
+                    wait = self._BACKOFF_ADDER
+                    logging.error(
+                        "Attempt %d: denied: unknown reason %r",
+                        attempt, unpacked)
+            elif isinstance(unpacked, dict):
+                if unpacked["id"] is None:  # Duplicate message?
+                    text += " "  # Append because markdown
+                    wait = self._BACKOFF_ADDER
+                    self.logger.debug(
+                        "Attempt %d: denied: duplicate, waiting %.1f seconds.",
+                        attempt, wait)
 
-            if padding:
-                text += padding
-
-            if not wait and action_type != 'send':
-                # There's no reason to wait after sending a message.
-                # At least for sending a message, SE chat responses make
-                # it clear when a wait is needed.
-                wait = self._BACKOFF_ADDER
-                dbg = "Attempt %d: success. Waiting %.1f seconds", attempt, wait
+            if wait:
+                self.logger.debug("Attempt %d: waiting %.1f seconds", attempt, wait)
+            else:
+                if action_type != 'send':
+                    # There's no reason to wait after sending a message.
+                    # At least for sending a message, SE chat responses make it clear when a wait is needed.
+                    wait = self._BACKOFF_ADDER
+                self.logger.debug("Attempt %d: success. Waiting %.1f seconds", attempt, wait)
                 sent = True
                 self._previous = text
 
-            self.logger.debug(dbg)
             time.sleep(wait)
-
         if action_type == 'send' and isinstance(unpacked, dict) and self.on_message_sent is not None:
             self.on_message_sent(response.json()["id"], room_id)
 
