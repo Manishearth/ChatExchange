@@ -19,6 +19,13 @@ A Python2 and Python3 cross-version API for talking to Stack Exchange chat.
    *Note that Ubuntu comes with an old version of `pip` that is not compatible any more with the latest version of `requests`. It will be broken after you installed `requests`, except if you update it before (or afterwards) with `easy_install pip` or `pip install --upgrade pip` (that one works only before).*
  - python-websockets for the experimental websocket listener (`pip install websocket-client`). This module is optional, without it `initSocket()` from SEChatBrowser will not work
 
+The package has a number of additional development requirements;
+install them with
+
+    pip install chatexchange[dev]
+
+or `.[dev]` if you are in the top directory of a local copy of the source.
+
 ## Shortcuts
 
 1. `make install-dependencies` will install the necessary Python package dependencies into your current environment (active virtualenv or system site packages)
