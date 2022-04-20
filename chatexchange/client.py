@@ -241,6 +241,28 @@ class Client(object):
         except ValueError:
             return response.text
 
+    def _handle_throttled_text(self, unpacked, attempt):
+        """
+        Helper function for _do_action_despite_throttling: handle text response
+        """
+        # We received a text response, but it's not one of the ones we ignore.
+        match = re.match(TOO_FAST_RE, unpacked)
+        if match:  # Whoops, too fast. The response says we must wait N seconds.
+            wait = int(match.group(1))
+            self.logger.debug(
+                "Attempt %d: denied: throttled, must wait %.1f seconds",
+                attempt, wait)
+            # We don't need to wait any more than what the API tells us.
+            return wait
+
+        # Something went wrong. I guess that happens.
+        if attempt > 5:
+            raise ChatActionError("5 failed attempts to do chat action. Unknown reason: %s" % unpacked)
+
+        logging.error(
+            "Attempt %d: denied: unknown reason %r", attempt, unpacked)
+        return self._BACKOFF_ADDER
+
     def _do_action_despite_throttling(self, action):
         action_type = action[0]
         if action_type == 'send':
@@ -256,6 +278,14 @@ class Client(object):
             text = " " + text
         response = None
         unpacked = None
+        ignored_messages = [
+            "ok",
+            "It is too late to delete this message",
+            "It is too late to edit this message",
+            "The message has been deleted and cannot be edited",
+            "This message has already been deleted."
+        ]
+
         while not sent:
             wait = 0
             attempt += 1
@@ -277,27 +307,8 @@ class Client(object):
                     raise
 
             unpacked = Client._unpack_response(response)
-            ignored_messages = ["ok", "It is too late to delete this message",
-                                "It is too late to edit this message",
-                                "The message has been deleted and cannot be edited",
-                                "This message has already been deleted."]
             if isinstance(unpacked, str) and unpacked not in ignored_messages:
-                # We received a text response, but it's not one of the ones we ignore.
-                match = re.match(TOO_FAST_RE, unpacked)
-                if match:  # Whoops, too fast. The response says we must wait N seconds.
-                    wait = int(match.group(1))
-                    self.logger.debug(
-                        "Attempt %d: denied: throttled, must wait %.1f seconds",
-                        attempt, wait)
-                    # We don't need to wait any more than what the API tells us.
-                else:  # Something went wrong. I guess that happens.
-                    if attempt > 5:
-                        err = ChatActionError("5 failed attempts to do chat action. Unknown reason: %s" % unpacked)
-                        raise err
-                    wait = self._BACKOFF_ADDER
-                    logging.error(
-                        "Attempt %d: denied: unknown reason %r",
-                        attempt, unpacked)
+                wait = self._handle_throttled_text(unpacked, attempt)
             elif isinstance(unpacked, dict):
                 if unpacked["id"] is None:  # Duplicate message?
                     text += " "  # Append because markdown
@@ -318,7 +329,9 @@ class Client(object):
                 self._previous = text
 
             time.sleep(wait)
-        if action_type == 'send' and isinstance(unpacked, dict) and self.on_message_sent is not None:
+
+        if action_type == 'send' and isinstance(
+                unpacked, dict) and self.on_message_sent is not None:
             self.on_message_sent(response.json()["id"], room_id)
 
         return response
