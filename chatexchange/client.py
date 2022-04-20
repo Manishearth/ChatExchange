@@ -310,6 +310,7 @@ class Client(object):
         action_type = action[0]
         if action_type == 'send':
             action_type, room_id, text = action
+            message_id = None
         else:
             assert action_type == 'edit' or action_type == 'delete'
             action_type, message_id, text = action
