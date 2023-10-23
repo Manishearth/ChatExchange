@@ -226,7 +226,11 @@ class Client(object):
                     "Now serving customer %d, %r",
                     self._requests_served, next_action)
 
+            try:
                 self._do_action_despite_throttling(next_action)
+            except requests.HTTPError as exc:
+                self.logger.error(
+                    "Attempt %d: denied: %s", self._requests_served, exc)
 
             self._request_queue.task_done()
 
