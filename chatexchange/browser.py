@@ -743,7 +743,7 @@ class RoomSocketWatcher(object):
             name="ChatExchange: RoomSocketWatcher for room #{}".format(
                 self.room_id),
             target=self._runner)
-        self.thread.setDaemon(True)
+        self.thread.daemon = True
         self.thread.start()
 
     def _runner(self):
@@ -778,7 +778,7 @@ class RoomPollingWatcher(object):
             name="ChatExchange: RoomPollingWatcher for room #{}".format(
                 self.room_id),
             target=self._runner)
-        self.thread.setDaemon(True)
+        self.thread.daemon = True
         self.thread.start()
 
     def close(self):

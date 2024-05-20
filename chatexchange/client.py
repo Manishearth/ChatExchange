@@ -98,7 +98,7 @@ class Client(object):
         self._recently_gotten_objects = collections.deque(maxlen=self._max_recently_gotten_objects)
         self._requests_served = 0
         self._thread = threading.Thread(target=self._worker, name="ChatExchange: message_sender for chat.{}".format(host))
-        self._thread.setDaemon(True)
+        self._thread.daemon = True
 
         self.aggressive_sender = send_aggressively
 
