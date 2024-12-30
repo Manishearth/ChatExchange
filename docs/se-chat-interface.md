@@ -21,7 +21,7 @@ fields:
 - `2` - message edited
 - `6` - message starred or unstarred
 
-All message events contain the the following fields based on the message
+All message events contain the following fields based on the message
 they refer to:
 
 - `message_id` - integer
