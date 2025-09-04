@@ -483,7 +483,7 @@ class Browser(object):
                 star_data = self._get_star_data(
                     message_soup, include_starred_by_you=True)
 
-                parent_info_soups = message_soup.select('.reply-info')
+                parent_info_soups = message_soup.select('.reply-info-container')
 
                 if parent_info_soups:
                     parent_info_soup, = parent_info_soups
